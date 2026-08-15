@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your account — INGENIOUX Shop</title>
+<meta name="description" content="View your INGENIOUX shop account details." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">INGENIOUX</span>
+      <span class="brand-sub">/ shop</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">↤ back to shop</a>
+    </div>
+  </div>
+</header>
+
+<main class="auth-main">
+  <div class="auth-grid is-wide">
+    <div class="auth-form-side">
+
+      <!-- Signed-in view -->
+      <div id="profile-signed-in" style="display:none">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profile-avatar">?</div>
+          <div>
+            <h1 id="profile-name">—</h1>
+            <p class="sub" id="profile-email-sub">—</p>
+          </div>
+        </div>
+
+        <div class="profile-accordion">
+
+          <details class="profile-accordion-item" open>
+            <summary class="profile-accordion-trigger">
+              <span>Personal info</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="personal-info-form">
+                <div class="field">
+                  <label for="pi-name">Name</label>
+                  <input id="pi-name" type="text" required autocomplete="name" />
+                </div>
+                <div class="field">
+                  <label for="pi-phone">Phone number</label>
+                  <input id="pi-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+                </div>
+                <div class="field">
+                  <label for="pi-email">Email</label>
+                  <input id="pi-email" type="email" readonly />
+                </div>
+                <p class="field-note">Email can't be changed.</p>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Security</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="password-form">
+                <div class="field">
+                  <label for="pw-new">New password</label>
+                  <input id="pw-new" type="password" required minlength="4" autocomplete="new-password" placeholder="At least 4 characters" />
+                </div>
+                <div class="field">
+                  <label for="pw-confirm">Confirm new password</label>
+                  <input id="pw-confirm" type="password" required minlength="4" autocomplete="new-password" placeholder="Re-enter password" />
+                </div>
+                <button type="submit" class="btn btn-primary">Update password</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Digital purchases</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <div id="purchases-list-digital"><p class="purchase-loading">Loading…</p></div>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Physical purchases</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <div id="purchases-list-physical"><p class="purchase-loading">Loading…</p></div>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Raise a query</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="query-form">
+                <div class="field">
+                  <label for="query-category">What's this about?</label>
+                  <select id="query-category" required>
+                    <option value="" disabled selected>Choose one…</option>
+                    <option value="profile">Profile</option>
+                    <option value="orders">Orders</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field" id="query-profile-reason-field" style="display:none">
+                  <label for="query-profile-reason">What about your profile?</label>
+                  <select id="query-profile-reason">
+                    <option value="" disabled selected>Choose one…</option>
+                    <option value="change-email">Change email</option>
+                    <option value="update-details">Update details</option>
+                    <option value="delete-account">Delete account</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div class="field" id="query-order-field" style="display:none">
+                  <label for="query-order-select">Which order?</label>
+                  <select id="query-order-select">
+                    <option value="" disabled selected>Choose an order…</option>
+                  </select>
+                </div>
+
+                <div class="field">
+                  <label for="query-message">Your message</label>
+                  <textarea id="query-message" required placeholder="Describe your issue or question…" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit query</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Your queries</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <div id="queries-list"><p class="purchase-loading">Loading…</p></div>
+            </div>
+          </details>
+
+        </div>
+
+        <button type="button" class="btn btn-block btn-danger-outline" id="logout-btn">Log out</button>
+      </div>
+
+      <!-- Signed-out view (only flashes briefly before redirect) -->
+      <div id="profile-signed-out" style="display:none">
+        <div class="profile-guest">
+          <h1>You're not logged in</h1>
+          <p>Log in to see your account details.</p>
+          <a class="btn btn-primary btn-block" href="login.html">Log in</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  function initials(name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  const user = getUser();
+
+  if (user && user.name) {
+    document.getElementById("profile-signed-in").style.display = "block";
+
+    function paint(u) {
+      document.getElementById("profile-avatar").textContent = initials(u.name);
+      document.getElementById("profile-name").textContent = u.name;
+      document.getElementById("profile-email-sub").textContent = u.email || "";
+    }
+
+    paint(user);
+
+    // Personal info form — prefilled from the local session, then
+    // refreshed once the cloud copy comes back below.
+    const piNameEl = document.getElementById("pi-name");
+    const piPhoneEl = document.getElementById("pi-phone");
+    const piEmailEl = document.getElementById("pi-email");
+
+    function paintPersonalInfo(u) {
+      piNameEl.value = u.name || "";
+      piPhoneEl.value = u.phone || "";
+      piEmailEl.value = u.email || "";
+    }
+    paintPersonalInfo(user);
+
+    // Pull the latest saved profile from Firebase in case it was
+    // updated from another browser/device, and refresh the view + the
+    // local session if it's different.
+    fetchUserFromCloud(user.email).then((cloudProfile) => {
+      if (!cloudProfile) return;
+      const merged = { name: cloudProfile.name || user.name, email: user.email, phone: cloudProfile.phone || user.phone || "" };
+      paint(merged);
+      paintPersonalInfo(merged);
+      try {
+        localStorage.setItem(AUTH_KEY, JSON.stringify(merged));
+      } catch (err) {
+        console.error("Could not refresh session:", err);
+      }
+    }).catch((err) => {
+      console.error("Could not refresh profile from Firebase:", err);
+    });
+
+    // Personal info — Name and Phone are editable; Email stays
+    // read-only (it's the record's key in /users, so it can't change
+    // here). Writes with .update() rather than .set() so the stored
+    // password isn't touched by this form.
+    const personalInfoForm = document.getElementById("personal-info-form");
+    const personalInfoBtn = personalInfoForm.querySelector("button[type=submit]");
+    personalInfoForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+      const name = piNameEl.value.trim();
+      const phone = piPhoneEl.value.trim();
+
+      personalInfoBtn.disabled = true;
+      const originalLabel = personalInfoBtn.textContent;
+      personalInfoBtn.textContent = "Saving…";
+      try {
+        await db.ref("users/" + emailToKey(user.email)).update({ name, phone, updatedAt: Date.now() });
+        const merged = { name, email: user.email, phone };
+        setUser(merged);
+        paint(merged);
+        syncAccountLink();
+        showToast("Profile updated");
+      } catch (err) {
+        console.error("Could not update profile:", err);
+        showToast("Couldn't save — try again");
+      } finally {
+        personalInfoBtn.disabled = false;
+        personalInfoBtn.textContent = originalLabel;
+      }
+    });
+
+    // Security — sets a new password on the /users record. No
+    // current-password check, matching the rest of this stub auth
+    // (see auth.js) — swap for real auth before this handles anyone's
+    // actual account.
+    const passwordForm = document.getElementById("password-form");
+    const passwordBtn = passwordForm.querySelector("button[type=submit]");
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById("pw-new").value;
+      const confirmPassword = document.getElementById("pw-confirm").value;
+
+      if (newPassword !== confirmPassword) {
+        showToast("Passwords don't match");
+        return;
+      }
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      passwordBtn.disabled = true;
+      const originalLabel = passwordBtn.textContent;
+      passwordBtn.textContent = "Saving…";
+      try {
+        await db.ref("users/" + emailToKey(user.email)).update({ password: newPassword, updatedAt: Date.now() });
+        passwordForm.reset();
+        showToast("Password updated");
+      } catch (err) {
+        console.error("Could not update password:", err);
+        showToast("Couldn't save — try again");
+      } finally {
+        passwordBtn.disabled = false;
+        passwordBtn.textContent = originalLabel;
+      }
+    });
+
+    // Purchases — one entry per successful order, written to
+    // /purchases/<emailKey>/<orderId> by cart.js right after a
+    // Razorpay payment succeeds. An order's `items` can mix digital
+    // and physical products (they share one cart), so instead of one
+    // list this renders each order twice — once filtered down to its
+    // digital items (with a "Download" link per item) and once to its
+    // physical items (no link, since those ship) — into the "Digital
+    // purchases" / "Physical purchases" sections. An order that's
+    // entirely one type just won't show up in the other section.
+    //
+    // Each item recorded since the physical/digital split carries its
+    // own `type` (cart.js sets this at checkout). Older orders from
+    // before the split don't have it, so as a fallback this also
+    // fetches /products-digital to know which ids are digital.
+    // "Download" itself still looks the id up in /products-digital/<id>/link
+    // (fetched once below into purchaseLinksMap) and either redirects to the
+    // saved URL or shows "No link found" — the link lives on the product
+    // record itself, set from admin.html's Digital Products section, so it
+    // always reflects whatever's current there.
+    let purchaseLinksMap = {};
+    let digitalProductIds = new Set();
+    // Kept in sync with the purchases fetch below so "Raise a query" can
+    // populate its order dropdown without a second Firebase read.
+    let userOrdersForQuery = [];
+
+    function itemIsDigital(item) {
+      if (item.type) return item.type === "digital";
+      return digitalProductIds.has(item.id);
+    }
+
+    function purchaseItemHTML(p, digital) {
+      const items = (p.items || []).filter((i) => itemIsDigital(i) === digital);
+      if (items.length === 0) return "";
+      const itemsSummary = items
+        .map((i) =>
+          digital
+            ? `<div class="purchase-item-line">${i.title} <a href="#" class="download-link" data-product-id="${i.id}">Download</a></div>`
+            : `<div class="purchase-item-line">${i.title} × ${i.qty}</div>`
+        )
+        .join("");
+      const date = p.date ? new Date(p.date).toLocaleString("en-IN") : "";
+      const lineTotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+      const total = "₹" + lineTotal.toLocaleString("en-IN");
+      // Physical orders only — shipping status, set by an executive on
+      // executive.html once the order's on its way. Until then it just
+      // reads "Pending" with the courier/tracking fields left blank.
+      const trackingHTML = digital
+        ? ""
+        : (() => {
+            const shipped = p.tracking && p.tracking.courier && p.tracking.trackingId;
+            const statusClass = shipped ? "status-closed" : "status-open";
+            return `
+              <div class="purchase-item-line">Status: <span class="query-status ${statusClass}">${shipped ? "Shipped" : "Pending"}</span></div>
+              <div class="purchase-item-line">Courier partner: ${shipped ? p.tracking.courier : "—"}</div>
+              <div class="purchase-item-line">Tracking ID: ${shipped ? p.tracking.trackingId : "—"}</div>`;
+          })();
+      return `
+        <div class="purchase-item">
+          <div class="purchase-item-head">
+            <span class="purchase-id">${p.id || ""}</span>
+            <span class="purchase-status status-successful">Paid</span>
+          </div>
+          <div class="purchase-item-items">${itemsSummary}</div>
+          ${trackingHTML}
+          <div class="purchase-item-foot">
+            <span class="purchase-date">${date}</span>
+            <span class="price">${total}</span>
+          </div>
+        </div>`;
+    }
+
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest(".download-link");
+      if (!link) return;
+      e.preventDefault();
+      const url = purchaseLinksMap[link.dataset.productId];
+      if (url) {
+        window.location.href = url;
+      } else {
+        showToast("No link found");
+      }
+    });
+
+    const purchasesListDigitalEl = document.getElementById("purchases-list-digital");
+    const purchasesListPhysicalEl = document.getElementById("purchases-list-physical");
+
+    if (db) {
+      Promise.all([
+        db.ref("purchases/" + emailToKey(user.email)).once("value"),
+        db.ref("products-digital").once("value"),
+      ])
+        .then(([purchasesSnap, digitalProductsSnap]) => {
+          purchaseLinksMap = {};
+          digitalProductIds = new Set();
+          if (digitalProductsSnap.exists()) {
+            Object.entries(digitalProductsSnap.val()).forEach(([id, p]) => {
+              digitalProductIds.add(id);
+              if (p && p.link) purchaseLinksMap[id] = p.link;
+            });
+          }
+          if (!purchasesSnap.exists()) {
+            purchasesListDigitalEl.innerHTML = `<p class="purchase-empty">No digital purchases yet.</p>`;
+            purchasesListPhysicalEl.innerHTML = `<p class="purchase-empty">No physical purchases yet.</p>`;
+            userOrdersForQuery = [];
+            populateOrderSelect();
+            return;
+          }
+          const purchases = Object.values(purchasesSnap.val()).sort((a, b) => new Date(b.date) - new Date(a.date));
+          userOrdersForQuery = purchases;
+          populateOrderSelect();
+          const digitalHTML = purchases.map((p) => purchaseItemHTML(p, true)).filter(Boolean).join("");
+          const physicalHTML = purchases.map((p) => purchaseItemHTML(p, false)).filter(Boolean).join("");
+          purchasesListDigitalEl.innerHTML = digitalHTML
+            ? `<div class="purchase-list">${digitalHTML}</div>`
+            : `<p class="purchase-empty">No digital purchases yet.</p>`;
+          purchasesListPhysicalEl.innerHTML = physicalHTML
+            ? `<div class="purchase-list">${physicalHTML}</div>`
+            : `<p class="purchase-empty">No physical purchases yet.</p>`;
+        })
+        .catch((err) => {
+          console.error("Could not load purchases:", err);
+          purchasesListDigitalEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+          purchasesListPhysicalEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+        });
+    } else {
+      purchasesListDigitalEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+      purchasesListPhysicalEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+    }
+
+    // Queries — threaded support tickets at /queries/<emailKey>/<queryId>.
+    // Each query holds a `messages` map (push-keyed) so either side can
+    // add as many messages as they need; the query itself only carries
+    // status: "open" until an admin marks it "closed". While a query is
+    // open, a small reply box lets the shopper add another message —
+    // once it's closed, the thread becomes read-only here.
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function queryStatusClass(status) {
+      return status === "open" ? "status-open" : "status-closed";
+    }
+
+    function sortedMessages(q) {
+      return q.messages ? Object.values(q.messages).sort((a, b) => (a.date || 0) - (b.date || 0)) : [];
+    }
+
+    function messageBubbleHTML(m) {
+      const date = m.date ? new Date(m.date).toLocaleString("en-IN") : "";
+      const isExecutive = m.sender === "executive";
+      // On this page "you" are the shopper, so your own messages should sit
+      // on the right and the support reply on the left — the opposite of
+      // the sender-user/sender-admin classes' default (right-for-admin)
+      // alignment in style.css. Swap which class each sender gets here
+      // (labels stay tied to the real sender) so executive.html, which wants
+      // the executive's own reply on the right, is unaffected.
+      return `
+        <div class="query-thread-msg sender-${isExecutive ? "user" : "admin"}">
+          <span class="msg-meta">${isExecutive ? "Support" : "You"} · ${date}</span>${escapeHTML(m.text || "")}
+        </div>`;
+    }
+
+    function queryAboutLabel(q) {
+      // Older queries submitted before this field existed just won't
+      // show a subject line — nothing to fall back to for those.
+      if (!q.category) return "";
+      if (q.category === "profile") {
+        const reasonLabels = {
+          "change-email": "Change email",
+          "update-details": "Update details",
+          "delete-account": "Delete account",
+          other: "Other",
+        };
+        return `Profile — ${reasonLabels[q.profileReason] || "Other"}`;
+      }
+      if (q.category === "orders") {
+        return `Order — ${escapeHTML(q.orderId || "—")}`;
+      }
+      return "Other";
+    }
+
+    function queryItemHTML(q) {
+      const status = q.status || "open";
+      const messages = sortedMessages(q);
+      const headDate = messages[0] ? new Date(messages[0].date).toLocaleString("en-IN") : "";
+      const thread = messages.map(messageBubbleHTML).join("");
+      const about = queryAboutLabel(q);
+      const replyForm =
+        status === "open"
+          ? `
+        <form class="query-reply-form" data-query-id="${q.queryId}">
+          <textarea rows="2" placeholder="Add more detail or reply…" required></textarea>
+          <button type="submit" class="btn btn-small">Send</button>
+        </form>`
+          : "";
+      return `
+        <details class="query-item" data-query-id="${q.queryId}">
+          <summary class="query-item-head">
+            <span class="query-date">${headDate}</span>
+            <span class="query-item-head-right">
+              <span class="query-status ${queryStatusClass(status)}">${escapeHTML(status)}</span>
+              <span class="icon query-item-icon">+</span>
+            </span>
+          </summary>
+          <div class="query-item-panel">
+            ${about ? `<p class="query-about">${about}</p>` : ""}
+            <div class="query-thread">${thread}</div>
+            ${replyForm}
+          </div>
+        </details>`;
+    }
+
+    const queriesListEl = document.getElementById("queries-list");
+
+    function loadQueries() {
+      if (!db) {
+        queriesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your queries — try refreshing.</p>`;
+        return;
+      }
+      db.ref("queries/" + emailToKey(user.email))
+        .once("value")
+        .then((snap) => {
+          if (!snap.exists()) {
+            queriesListEl.innerHTML = `<p class="purchase-empty">No queries yet.</p>`;
+            return;
+          }
+          const queries = Object.entries(snap.val())
+            .map(([queryId, q]) => ({ ...q, queryId }))
+            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          queriesListEl.innerHTML = `<div class="query-list">${queries.map(queryItemHTML).join("")}</div>`;
+        })
+        .catch((err) => {
+          console.error("Could not load queries:", err);
+          queriesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your queries — try refreshing.</p>`;
+        });
+    }
+    loadQueries();
+
+    const queryForm = document.getElementById("query-form");
+    const queryBtn = queryForm.querySelector("button[type=submit]");
+    const queryMessageEl = document.getElementById("query-message");
+
+    // "What's this about?" drives two optional follow-up fields:
+    // a Profile query asks which of a fixed set of reasons, an Orders
+    // query asks which order (picked from this shopper's own purchase
+    // history, populated from userOrdersForQuery — see the purchases
+    // fetch above). Only the one matching the chosen category is shown
+    // and required; the other stays hidden and gets cleared out.
+    const queryCategoryEl = document.getElementById("query-category");
+    const queryProfileReasonField = document.getElementById("query-profile-reason-field");
+    const queryProfileReasonEl = document.getElementById("query-profile-reason");
+    const queryOrderField = document.getElementById("query-order-field");
+    const queryOrderSelectEl = document.getElementById("query-order-select");
+
+    function populateOrderSelect() {
+      if (!queryOrderSelectEl) return;
+      if (userOrdersForQuery.length === 0) {
+        queryOrderSelectEl.innerHTML = `<option value="" disabled selected>No orders yet</option>`;
+        return;
+      }
+      queryOrderSelectEl.innerHTML =
+        `<option value="" disabled selected>Choose an order…</option>` +
+        userOrdersForQuery
+          .map((o) => {
+            const date = o.date ? new Date(o.date).toLocaleDateString("en-IN") : "";
+            return `<option value="${o.id}">${o.id}${date ? " — " + date : ""}</option>`;
+          })
+          .join("");
+    }
+
+    queryCategoryEl.addEventListener("change", () => {
+      const val = queryCategoryEl.value;
+      queryProfileReasonField.style.display = val === "profile" ? "block" : "none";
+      queryOrderField.style.display = val === "orders" ? "block" : "none";
+      queryProfileReasonEl.required = val === "profile";
+      queryOrderSelectEl.required = val === "orders";
+      if (val === "orders") populateOrderSelect();
+      if (val !== "profile") queryProfileReasonEl.value = "";
+      if (val !== "orders") queryOrderSelectEl.value = "";
+    });
+
+    queryForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = queryMessageEl.value.trim();
+      const category = queryCategoryEl.value;
+
+      if (!category) {
+        showToast("Choose what your query is about");
+        return;
+      }
+      if (category === "profile" && !queryProfileReasonEl.value) {
+        showToast("Choose a profile option");
+        return;
+      }
+      if (category === "orders" && !queryOrderSelectEl.value) {
+        showToast("Choose an order");
+        return;
+      }
+      if (!message) return;
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      queryBtn.disabled = true;
+      const originalLabel = queryBtn.textContent;
+      queryBtn.textContent = "Submitting…";
+      try {
+        const now = Date.now();
+        const queryRef = db.ref("queries/" + emailToKey(user.email)).push();
+        const msgKey = queryRef.child("messages").push().key;
+        await queryRef.set({
+          name: piNameEl.value.trim() || user.name || "",
+          email: user.email,
+          category,
+          profileReason: category === "profile" ? queryProfileReasonEl.value : null,
+          orderId: category === "orders" ? queryOrderSelectEl.value : null,
+          status: "open",
+          createdAt: now,
+          updatedAt: now,
+          messages: { [msgKey]: { sender: "user", text: message, date: now } },
+        });
+        queryForm.reset();
+        queryProfileReasonField.style.display = "none";
+        queryOrderField.style.display = "none";
+        showToast("Query submitted");
+        loadQueries();
+      } catch (err) {
+        console.error("Could not submit query:", err);
+        showToast("Couldn't submit — try again");
+      } finally {
+        queryBtn.disabled = false;
+        queryBtn.textContent = originalLabel;
+      }
+    });
+
+    // Follow-up messages on an already-open query — one reply form per
+    // query item, wired via delegation since the list re-renders often.
+    queriesListEl.addEventListener("submit", async (e) => {
+      const form = e.target.closest(".query-reply-form");
+      if (!form) return;
+      e.preventDefault();
+
+      const textarea = form.querySelector("textarea");
+      const text = textarea.value.trim();
+      if (!text) return;
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      const queryId = form.dataset.queryId;
+      const sendBtn = form.querySelector("button[type=submit]");
+      sendBtn.disabled = true;
+      try {
+        const now = Date.now();
+        const emailKey = emailToKey(user.email);
+        await db.ref(`queries/${emailKey}/${queryId}/messages`).push({ sender: "user", text, date: now });
+        await db.ref(`queries/${emailKey}/${queryId}`).update({ updatedAt: now });
+        showToast("Message sent");
+        loadQueries();
+      } catch (err) {
+        console.error("Could not send message:", err);
+        showToast("Couldn't send — try again");
+        sendBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      logoutUser();
+      window.location.href = "index.html";
+    });
+  } else {
+    document.getElementById("profile-signed-out").style.display = "block";
+  }
+</script>
+</body>
+</html>

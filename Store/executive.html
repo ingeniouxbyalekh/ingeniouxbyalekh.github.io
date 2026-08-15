@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>executive — INGENIOUX Shop</title>
+<meta name="robots" content="noindex, nofollow" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">INGENIOUX</span>
+      <span class="brand-sub">/ executive</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">↤ back to shop</a>
+    </div>
+  </div>
+</header>
+
+<!-- executive sign in / sign up — same pattern as the shop's own
+     login.html: an "executive" record in Firebase, password checked
+     client-side. See the comment in the script block below before
+     treating this as real access control. -->
+<main class="auth-main" id="executive-auth">
+  <div class="auth-grid">
+    <div class="auth-form-side">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab" id="executive-tab-login" role="tab" aria-selected="true" type="button">Log in</button>
+        <button class="auth-tab" id="executive-tab-signup" role="tab" aria-selected="false" type="button">Sign up</button>
+      </div>
+
+      <div class="auth-form is-active" id="executive-form-login">
+        <h1>executive sign in</h1>
+        <p class="sub">Log in with an executive account to continue.</p>
+        <form id="executive-login-form">
+          <div class="field">
+            <label for="executive-login-email">Email</label>
+            <input id="executive-login-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="executive-login-password">Password</label>
+            <input id="executive-login-password" type="password" required autocomplete="current-password" minlength="4" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+        <p class="auth-form-foot" id="executive-signup-foot">No executive account yet? <button type="button" id="executive-go-signup">Create one</button></p>
+      </div>
+
+      <div class="auth-form" id="executive-form-signup">
+        <h1>Create executive account</h1>
+        <form id="executive-signup-form">
+          <div class="field">
+            <label for="executive-signup-name">Name</label>
+            <input id="executive-signup-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="executive-signup-phone">Phone number</label>
+            <input id="executive-signup-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="executive-signup-email">Email</label>
+            <input id="executive-signup-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="executive-signup-role">Role</label>
+            <select id="executive-signup-role" required>
+              <option value="" disabled selected>Select a role</option>
+              <option value="customer-support">Customer Support</option>
+              <option value="order-handling">Order Handling</option>
+              <option value="product-update">Product Update</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="executive-signup-password">Password</label>
+            <input id="executive-signup-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="executive-signup-confirm-password">Confirm password</label>
+            <input id="executive-signup-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+        <p class="auth-form-foot">Already have one? <button type="button" id="executive-go-login">Log in</button></p>
+      </div>
+
+      <!-- Covers both log in and sign up: a first-time Google
+           sign-in still lands in /executive-temp pending admin
+           approval (same as the traditional flow above), just
+           skipping the separate verification-email step since
+           Google already verified the address. Returning, already-
+           approved executives log straight in. Placed below the
+           traditional forms, shared by both tabs above. -->
+      <div class="auth-divider" id="executive-google-divider">or</div>
+      <div class="auth-google-row" id="executive-google-row">
+        <button type="button" class="btn btn-google btn-block" id="executive-google-auth-btn">
+          <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.68-3.87 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- Shown only after a brand-new Google sign-in — Google gives
+           us name + email but not a phone number or role, both
+           required on the executive-temp record admin.html reviews. -->
+      <div class="auth-form" id="executive-form-google-complete">
+        <h1>Almost there</h1>
+        <p class="sub">Just need a couple more details — including a password — before this goes to an admin for approval.</p>
+        <form id="executive-google-complete-form">
+          <div class="field">
+            <label for="executive-google-complete-phone">Phone number</label>
+            <input id="executive-google-complete-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="executive-google-complete-role">Role</label>
+            <select id="executive-google-complete-role" required>
+              <option value="" disabled selected>Select a role</option>
+              <option value="customer-support">Customer Support</option>
+              <option value="order-handling">Order Handling</option>
+              <option value="product-update">Product Update</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="executive-google-complete-password">Create password</label>
+            <input id="executive-google-complete-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="executive-google-complete-confirm-password">Confirm password</label>
+            <input id="executive-google-complete-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Submit for approval</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- executive body -->
+<main class="executive-main" id="executive-body" style="display:none">
+  <div class="wrap">
+
+    <div class="executive-topbar">
+      <span class="executive-welcome" id="executive-welcome"></span>
+      <button type="button" class="account-link" id="executive-changepw-btn">change password</button>
+      <button type="button" class="account-link" id="executive-logout-btn">log out</button>
+    </div>
+
+    <div class="pw-panel" id="executive-changepw-panel" style="display:none">
+      <form id="executive-changepw-form">
+        <div class="field">
+          <label for="executive-new-password">New password</label>
+          <input id="executive-new-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+        </div>
+        <div class="field">
+          <label for="executive-confirm-new-password">Confirm new password</label>
+          <input id="executive-confirm-new-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter new password" />
+        </div>
+        <div class="pw-panel-actions">
+          <button type="submit" class="btn btn-primary btn-small">Save password</button>
+          <button type="button" class="btn btn-small" id="executive-changepw-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Section visibility below is role-gated by applyRoleVisibility()
+         in the script block — each executive only ever sees the
+         sections that match the role they signed up with (see the
+         Role dropdown on the signup form above). An account with no
+         role saved yet (e.g. verified before this feature existed)
+         falls back to seeing everything, same as before. -->
+
+    <details class="executive-section is-collapsible" id="executive-section-orders" open>
+      <summary><h2>Pending orders</h2><span class="icon">+</span></summary>
+      
+
+      <div id="executive-pending-orders-list">
+        <p class="executive-empty">Loading…</p>
+      </div>
+    </details>
+
+    <details class="executive-section is-collapsible" id="executive-section-customers" open>
+      <summary><h2>Customers</h2><span class="icon">+</span></summary>
+      
+
+      <div class="executive-table-wrap">
+        <table class="executive-table" id="customers-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="customers-table-body">
+            <tr><td colspan="4" class="executive-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="executive-section is-collapsible" id="executive-section-queries" open>
+      <summary><h2>Support queries</h2><span class="icon">+</span></summary>
+      
+
+      <div id="executive-queries-list">
+        <p class="executive-empty">Loading…</p>
+      </div>
+    </details>
+
+    <!-- Digital/Physical Products and Coupons — moved here from
+         admin.html so a Product Update executive can manage the
+         catalog without needing full admin access. Only shown to
+         that role; see applyRoleVisibility() below. -->
+
+    <details class="executive-section is-collapsible" id="executive-section-digital" open>
+      <summary><h2>Digital Products</h2><span class="icon">+</span></summary>
+
+
+      <form class="admin-link-form" id="product-add-form">
+        <div class="field">
+          <label for="product-add-id">ID</label>
+          <input id="product-add-id" type="text" required placeholder="e.g. research-deepfake" />
+        </div>
+        <div class="field">
+          <label for="product-add-category">Category</label>
+          <select id="product-add-category" required></select>
+        </div>
+        <div class="field">
+          <label for="product-add-title">Title</label>
+          <input id="product-add-title" type="text" required />
+        </div>
+        <div class="field">
+          <label for="product-add-blurb">Blurb</label>
+          <input id="product-add-blurb" type="text" required />
+        </div>
+        <div class="field">
+          <label for="product-add-price">Price (₹)</label>
+          <input id="product-add-price" type="number" min="0" step="1" required />
+        </div>
+        <div class="field">
+          <label for="product-add-format">Format</label>
+          <input id="product-add-format" type="text" required placeholder="PDF, ZIP, APK…" />
+        </div>
+        <div class="field">
+          <label for="product-add-tag">Tag</label>
+          <input id="product-add-tag" type="text" required placeholder="Card badge text" />
+        </div>
+        <div class="field">
+          <label for="product-add-link">Link (URL)</label>
+          <input id="product-add-link" type="url" placeholder="https://… (download link, optional for now)" />
+        </div>
+        <button type="submit" class="btn btn-primary">Add digital product</button>
+      </form>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table admin-table-2line" id="products-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category</th>
+              <th>Title</th>
+              <th>Blurb</th>
+              <th>Price</th>
+              <th>Format</th>
+              <th>Tag</th>
+            </tr>
+          </thead>
+          <tbody id="products-table-body">
+            <tr><td colspan="7" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="executive-section is-collapsible" id="executive-section-physical" open>
+      <summary><h2>Physical Products</h2><span class="icon">+</span></summary>
+
+
+      <form class="admin-link-form" id="product-physical-add-form">
+        <div class="field">
+          <label for="product-physical-add-id">ID</label>
+          <input id="product-physical-add-id" type="text" required placeholder="e.g. ingenioux-notebook" />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-category">Category</label>
+          <select id="product-physical-add-category" required></select>
+        </div>
+        <div class="field">
+          <label for="product-physical-add-title">Title</label>
+          <input id="product-physical-add-title" type="text" required />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-blurb">Blurb</label>
+          <input id="product-physical-add-blurb" type="text" required />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-price">Price (₹)</label>
+          <input id="product-physical-add-price" type="number" min="0" step="1" required />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-format">Format</label>
+          <input id="product-physical-add-format" type="text" required placeholder="Paperback, Kit…" />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-tag">Tag</label>
+          <input id="product-physical-add-tag" type="text" required placeholder="Card badge text" />
+        </div>
+        <div class="field">
+          <label for="product-physical-add-stock">Stock</label>
+          <input id="product-physical-add-stock" type="number" min="0" step="1" required placeholder="e.g. 25" />
+        </div>
+        <button type="submit" class="btn btn-primary">Add physical product</button>
+      </form>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="products-physical-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Category</th>
+              <th>Title</th>
+              <th>Blurb</th>
+              <th>Price</th>
+              <th>Format</th>
+              <th>Tag</th>
+              <th>Stock</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="products-physical-table-body">
+            <tr><td colspan="9" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="executive-section is-collapsible" id="executive-section-coupons" open>
+      <summary><h2>Coupons</h2><span class="icon">+</span></summary>
+      
+
+      <form class="admin-link-form" id="coupon-add-form">
+        <div class="field">
+          <label for="coupon-add-code">Code</label>
+          <input id="coupon-add-code" type="text" required placeholder="e.g. WELCOME10" style="text-transform:uppercase" />
+        </div>
+        <div class="field">
+          <label for="coupon-add-percent">Discount %</label>
+          <input id="coupon-add-percent" type="number" min="1" max="100" step="1" required placeholder="e.g. 10" />
+        </div>
+        <div class="field">
+          <label for="coupon-add-max">Max discount (₹)</label>
+          <input id="coupon-add-max" type="number" min="0" step="1" required placeholder="e.g. 200" />
+        </div>
+        <button type="submit" class="btn btn-primary">Add coupon</button>
+      </form>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="coupons-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Discount %</th>
+              <th>Max discount (₹)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="coupons-table-body">
+            <tr><td colspan="4" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  /* ---------------------------------------------------------------
+     executive session
+     ---------------------------------------------------------------
+     Mirrors the shop's own customer accounts (see auth.js), with one
+     extra step: signing up here does NOT create a working login.
+     Sign up writes { name, phone, email, password, createdAt } to
+     Firebase at /executive-temp/<emailKey>. An admin has to review
+     it on admin.html (Executive Verification) and accept it before
+     the same record is copied to /executive/<emailKey> — login below
+     only ever checks /executive, so a pending or declined signup
+     can't get in. Any number of executives can exist; there's no
+     one-executive limit the way there is for /admin.
+
+     There's still no backend, so this is exactly as strong as the
+     shop's own login and no stronger: anyone who can read the
+     Firebase config (already public in auth.js) can read /executive
+     and /executive-temp directly. Before this is trusted with
+     anything real, lock down Firebase's Realtime Database rules —
+     e.g. restrict writes to /executive and /executive-temp,
+     and restrict reads of the full /purchases tree — since right now
+     nothing at the rules level distinguishes an executive from any
+     other visitor; this login only gates the page, not the database.
+  --------------------------------------------------------------- */
+  const executive_SESSION_KEY = "ingenioux_executive_user_v1";
+
+  const authGateEl = document.getElementById("executive-auth");
+  const bodyEl = document.getElementById("executive-body");
+  const welcomeEl = document.getElementById("executive-welcome");
+
+  function getexecutiveSession() {
+    try {
+      const raw = localStorage.getItem(executive_SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.error("Could not read executive session:", err);
+      return null;
+    }
+  }
+
+  function setexecutiveSession(executive) {
+    try {
+      localStorage.setItem(executive_SESSION_KEY, JSON.stringify(executive));
+    } catch (err) {
+      console.error("Could not save executive session:", err);
+    }
+  }
+
+  function clearexecutiveSession() {
+    localStorage.removeItem(executive_SESSION_KEY);
+  }
+
+  /* ---------------------------------------------------------------
+     Role-gated sections
+     ---------------------------------------------------------------
+     Each executive picks a Role on signup (Customer Support / Order
+     Handling / Product Update — see the dropdown above and
+     record.role read at login). That role decides which of the
+     sections below this executive actually sees:
+       - Customer Support -> Customers, Support queries (profile/other)
+       - Order Handling   -> Pending orders, Support queries (orders only)
+       - Product Update   -> Digital Products, Physical Products, Coupons
+     An account with no role saved (e.g. verified before this feature
+     existed) falls back to seeing every section, same as before.
+  --------------------------------------------------------------- */
+  const EXECUTIVE_ROLE_LABELS = {
+    "customer-support": "Customer Support",
+    "order-handling": "Order Handling",
+    "product-update": "Product Update",
+  };
+
+  const EXECUTIVE_ROLE_SECTIONS = {
+    "customer-support": ["customers", "queries"],
+    "order-handling": ["orders", "queries"],
+    "product-update": ["digital", "physical", "coupons"],
+  };
+
+  const EXECUTIVE_SECTION_LOADERS = {
+    orders: () => loadPendingOrders(),
+    customers: () => loadCustomers(),
+    queries: () => loadQueries(),
+    digital: () => loadProducts(),
+    physical: () => loadPhysicalProducts(),
+    coupons: () => loadCoupons(),
+  };
+
+  const EXECUTIVE_SECTION_ELS = {
+    orders: document.getElementById("executive-section-orders"),
+    customers: document.getElementById("executive-section-customers"),
+    queries: document.getElementById("executive-section-queries"),
+    digital: document.getElementById("executive-section-digital"),
+    physical: document.getElementById("executive-section-physical"),
+    coupons: document.getElementById("executive-section-coupons"),
+  };
+
+  // Tracks the signed-in executive's role so loadQueries() can filter
+  // which support queries show up (see queryMatchesExecutiveRole()).
+  let currentExecutiveRole = "";
+
+  function applyExecutiveRoleVisibility(role) {
+    const allowed = new Set(EXECUTIVE_ROLE_SECTIONS[role] || Object.keys(EXECUTIVE_SECTION_ELS));
+    Object.entries(EXECUTIVE_SECTION_ELS).forEach(([key, el]) => {
+      if (el) el.style.display = allowed.has(key) ? "" : "none";
+    });
+    return allowed;
+  }
+
+  function unlockexecutive(executive) {
+    authGateEl.style.display = "none";
+    bodyEl.style.display = "block";
+    const roleLabel = executive && EXECUTIVE_ROLE_LABELS[executive.role];
+    welcomeEl.textContent = executive && executive.name
+      ? `signed in as ${executive.name}${roleLabel ? " · " + roleLabel : ""}`
+      : "";
+    currentExecutiveRole = (executive && executive.role) || "";
+    const allowedSections = applyExecutiveRoleVisibility(currentExecutiveRole);
+    allowedSections.forEach((key) => EXECUTIVE_SECTION_LOADERS[key]());
+  }
+
+  document.getElementById("executive-logout-btn").addEventListener("click", () => {
+    clearexecutiveSession();
+    window.location.reload();
+  });
+
+  /* ---------------------------------------------------------------
+     Change password — writes straight to this executive's own
+     /executive/<emailKey> record via .update(), same "no
+     current-password check yet" stub as the shop's own profile.html.
+  --------------------------------------------------------------- */
+  const changePwBtn = document.getElementById("executive-changepw-btn");
+  const changePwPanel = document.getElementById("executive-changepw-panel");
+  const changePwForm = document.getElementById("executive-changepw-form");
+  const changePwCancelBtn = document.getElementById("executive-changepw-cancel");
+
+  changePwBtn.addEventListener("click", () => {
+    const isOpen = changePwPanel.style.display !== "none";
+    changePwPanel.style.display = isOpen ? "none" : "block";
+    if (!isOpen) document.getElementById("executive-new-password").focus();
+  });
+  changePwCancelBtn.addEventListener("click", () => {
+    changePwForm.reset();
+    changePwPanel.style.display = "none";
+  });
+
+  changePwForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const session = getexecutiveSession();
+    if (!session || !session.email) {
+      showToast("You're not logged in");
+      return;
+    }
+    const newPassword = document.getElementById("executive-new-password").value;
+    const confirmNewPassword = document.getElementById("executive-confirm-new-password").value;
+    if (newPassword !== confirmNewPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const saveBtn = changePwForm.querySelector("button[type=submit]");
+    saveBtn.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.textContent = "Saving…";
+    try {
+      await db.ref("executive/" + emailToKey(session.email)).update({ password: newPassword, updatedAt: Date.now() });
+      showToast("Password updated");
+      changePwForm.reset();
+      changePwPanel.style.display = "none";
+    } catch (err) {
+      console.error("Could not update password:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+  /* tabs */
+  const executiveTabLogin = document.getElementById("executive-tab-login");
+  const executiveTabSignup = document.getElementById("executive-tab-signup");
+  const executiveFormLoginEl = document.getElementById("executive-form-login");
+  const executiveFormSignupEl = document.getElementById("executive-form-signup");
+  const executiveSignupFootEl = document.getElementById("executive-signup-foot");
+
+  function showexecutiveTab(which) {
+    const isLogin = which === "login";
+    executiveFormLoginEl.classList.toggle("is-active", isLogin);
+    executiveFormSignupEl.classList.toggle("is-active", !isLogin);
+    executiveTabLogin.setAttribute("aria-selected", String(isLogin));
+    executiveTabSignup.setAttribute("aria-selected", String(!isLogin));
+  }
+  executiveTabLogin.addEventListener("click", () => showexecutiveTab("login"));
+  executiveTabSignup.addEventListener("click", () => showexecutiveTab("signup"));
+  document.getElementById("executive-go-signup").addEventListener("click", () => showexecutiveTab("signup"));
+  document.getElementById("executive-go-login").addEventListener("click", () => showexecutiveTab("login"));
+
+  // Any number of executives can sign up — unlike /admin, there's no
+  // one-account limit here, so the signup tab always stays available.
+  const existingexecutiveSession = getexecutiveSession();
+  if (existingexecutiveSession && existingexecutiveSession.email) {
+    unlockexecutive(existingexecutiveSession);
+  }
+
+  /* login / signup */
+  const executiveLoginForm = document.getElementById("executive-login-form");
+  const executiveSignupForm = document.getElementById("executive-signup-form");
+  const executiveLoginBtn = executiveLoginForm.querySelector("button[type=submit]");
+  const executiveSignupBtn = executiveSignupForm.querySelector("button[type=submit]");
+
+  // Login only ever checks the verified /executive table — a pending
+  // (/executive-temp) or declined signup simply won't be found here,
+  // which is what keeps them locked out until an admin accepts them.
+  // Executive login requires BOTH a verified email address (Firebase
+  // Auth, checked first below) AND admin approval (the existing
+  // /executive-temp -> /executive move on admin.html). Accounts with
+  // no Firebase Auth record at all (pre-existing executives, or ones
+  // whose signup fell back to traditional-only) skip the email-
+  // verification step and use the original RTDB password check.
+  executiveLoginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("executive-login-email").value.trim();
+    const password = document.getElementById("executive-login-password").value;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    executiveLoginBtn.disabled = true;
+    executiveLoginBtn.textContent = "Logging in…";
+    try {
+      let usedFirebaseAuth = false;
+      try {
+        const cred = await fbAuthLogIn(email, password);
+        usedFirebaseAuth = true;
+        if (!cred.user.emailVerified) {
+          try {
+            await fbAuthSendVerification(cred.user);
+          } catch (sendErr) {
+            console.error("Could not resend verification email:", sendErr);
+          }
+          await fbAuthSignOut();
+          showToast("Please verify your email first — check your inbox for the link");
+          return;
+        }
+      } catch (fbErr) {
+        // No Firebase Auth account for this email/password — fall
+        // through to the traditional RTDB check below.
+      }
+
+      const key = emailToKey(email);
+      const snap = await db.ref("executive/" + key).once("value");
+      const record = snap.exists() ? snap.val() : null;
+
+      if (usedFirebaseAuth) {
+        // Email/password already confirmed by Firebase Auth and
+        // verified — only thing left to check is admin approval.
+        if (!record) {
+          const pendingSnap = await db.ref("executive-temp/" + key).once("value");
+          showToast(
+            pendingSnap.exists()
+              ? "Your account is still awaiting admin verification"
+              : "Couldn't find your executive profile — contact support"
+          );
+          return;
+        }
+      } else if (!record || record.password !== password) {
+        // Give a more useful message if the account is real but still
+        // sitting in the pending-verification table.
+        const pendingSnap = await db.ref("executive-temp/" + key).once("value");
+        if (pendingSnap.exists()) {
+          showToast("Your account is still awaiting admin verification");
+        } else {
+          showToast("Incorrect email or password");
+        }
+        return;
+      }
+      const executive = { name: record.name, email: record.email, role: record.role || "" };
+      setexecutiveSession(executive);
+      unlockexecutive(executive);
+    } catch (err) {
+      console.error("executive login failed:", err);
+      showToast("Couldn't reach the server — try again");
+    } finally {
+      executiveLoginBtn.disabled = false;
+      executiveLoginBtn.textContent = "Log in";
+    }
+  });
+
+  // Signup writes to /executive-temp, never straight to /executive —
+  // see the comment at the top of this script block. No session is
+  // created here since the account isn't usable yet.
+  executiveSignupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("executive-signup-name").value.trim();
+    const phone = document.getElementById("executive-signup-phone").value.trim();
+    const email = document.getElementById("executive-signup-email").value.trim();
+    const role = document.getElementById("executive-signup-role").value;
+    const password = document.getElementById("executive-signup-password").value;
+    const confirmPassword = document.getElementById("executive-signup-confirm-password").value;
+
+    if (!role) {
+      showToast("Pick a role");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    executiveSignupBtn.disabled = true;
+    executiveSignupBtn.textContent = "Creating account…";
+    try {
+      const key = emailToKey(email);
+      const [verifiedSnap, pendingSnap] = await Promise.all([
+        db.ref("executive/" + key).once("value"),
+        db.ref("executive-temp/" + key).once("value"),
+      ]);
+      if (verifiedSnap.exists()) {
+        showToast("An executive account with this email already exists");
+        return;
+      }
+      if (pendingSnap.exists()) {
+        showToast("A signup with this email is already awaiting verification");
+        return;
+      }
+      await db.ref("executive-temp/" + key).set({ name, phone, email, role, password, createdAt: Date.now() });
+
+      // Also create a real Firebase Auth account and send a
+      // verification email — login (above) requires this email to
+      // be verified in addition to admin approval. Best-effort: if
+      // Auth itself is unavailable, the traditional signup above has
+      // already succeeded, so just skip the verification step.
+      let verificationSent = false;
+      try {
+        const cred = await fbAuthSignUp(email, password);
+        await fbAuthSendVerification(cred.user);
+        await fbAuthSignOut();
+        verificationSent = true;
+      } catch (fbErr) {
+        console.error("Firebase Auth signup failed (continuing without email verification):", fbErr);
+      }
+
+      showToast(
+        verificationSent
+          ? "Account created — verify your email, then wait for admin approval before logging in"
+          : "Account created — waiting on admin verification before you can log in"
+      );
+      executiveSignupForm.reset();
+      showexecutiveTab("login");
+    } catch (err) {
+      console.error("executive signup failed:", err);
+      showToast("Couldn't create the executive account — try again");
+    } finally {
+      executiveSignupBtn.disabled = false;
+      executiveSignupBtn.textContent = "Create account";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Google Sign-In — covers both executive log in and sign up.
+     Google already verifies the email address, so a brand-new
+     Google sign-in skips straight to admin approval instead of also
+     needing a separate verification email like the traditional form
+     above. Google gives us name + email but not phone/role, so a
+     first-time signup is held in `pendingGoogleExecutive` while a
+     short form collects those before writing /executive-temp.
+  --------------------------------------------------------------- */
+  const executiveGoogleAuthBtn = document.getElementById("executive-google-auth-btn");
+  const executiveFormGoogleCompleteEl = document.getElementById("executive-form-google-complete");
+  const executiveGoogleCompleteForm = document.getElementById("executive-google-complete-form");
+  const executiveGoogleCompleteBtn = executiveGoogleCompleteForm.querySelector("button[type=submit]");
+  let pendingGoogleExecutive = null; // { name, email } — set only while the complete-profile form is showing
+
+  function showExecutiveGoogleCompleteForm() {
+    executiveFormLoginEl.classList.remove("is-active");
+    executiveFormSignupEl.classList.remove("is-active");
+    executiveFormGoogleCompleteEl.classList.add("is-active");
+    document.querySelector("#executive-auth .auth-tabs").style.display = "none";
+    document.getElementById("executive-google-row").style.display = "none";
+    document.getElementById("executive-google-divider").style.display = "none";
+  }
+
+  executiveGoogleAuthBtn.addEventListener("click", async () => {
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+    const originalLabel = executiveGoogleAuthBtn.innerHTML;
+    executiveGoogleAuthBtn.disabled = true;
+    executiveGoogleAuthBtn.textContent = "Connecting…";
+    try {
+      const cred = await fbAuthGoogleSignIn();
+      const email = cred.user.email;
+      const name = cred.user.displayName || "";
+      const key = emailToKey(email);
+
+      const verifiedSnap = await db.ref("executive/" + key).once("value");
+      if (verifiedSnap.exists()) {
+        // Approved executive, logging back in with Google.
+        const record = verifiedSnap.val();
+        const executive = { name: record.name, email: record.email, role: record.role || "" };
+        setexecutiveSession(executive);
+        unlockexecutive(executive);
+        return;
+      }
+
+      const pendingSnap = await db.ref("executive-temp/" + key).once("value");
+      if (pendingSnap.exists()) {
+        showToast("Your account is still awaiting admin verification");
+        await fbAuthSignOut();
+        return;
+      }
+
+      // Brand-new executive signup via Google — still needs phone +
+      // role before it can go into /executive-temp for admin review.
+      pendingGoogleExecutive = { name, email };
+      showExecutiveGoogleCompleteForm();
+    } catch (err) {
+      console.error("Executive Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      executiveGoogleAuthBtn.disabled = false;
+      executiveGoogleAuthBtn.innerHTML = originalLabel;
+    }
+  });
+
+  executiveGoogleCompleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pendingGoogleExecutive || !db) return;
+    const phone = document.getElementById("executive-google-complete-phone").value.trim();
+    const role = document.getElementById("executive-google-complete-role").value;
+    const password = document.getElementById("executive-google-complete-password").value;
+    const confirmPassword = document.getElementById("executive-google-complete-confirm-password").value;
+    if (!role) {
+      showToast("Pick a role");
+      return;
+    }
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    executiveGoogleCompleteBtn.disabled = true;
+    executiveGoogleCompleteBtn.textContent = "Submitting…";
+    try {
+      const key = emailToKey(pendingGoogleExecutive.email);
+      // Also save the password just created here, so the traditional
+      // RTDB-password fallback in the log-in handler works for this
+      // account too, once it's approved — not just Google sign-in.
+      await db.ref("executive-temp/" + key).set({
+        name: pendingGoogleExecutive.name,
+        phone,
+        email: pendingGoogleExecutive.email,
+        role,
+        password,
+        createdAt: Date.now(),
+      });
+      showToast("Account created — waiting on admin approval before you can log in");
+      pendingGoogleExecutive = null;
+      showexecutiveTab("login");
+      document.querySelector("#executive-auth .auth-tabs").style.display = "";
+      document.getElementById("executive-google-row").style.display = "";
+      document.getElementById("executive-google-divider").style.display = "";
+      executiveFormGoogleCompleteEl.classList.remove("is-active");
+    } catch (err) {
+      console.error("Could not submit executive signup:", err);
+      showToast("Couldn't submit — try again");
+    } finally {
+      executiveGoogleCompleteBtn.disabled = false;
+      executiveGoogleCompleteBtn.textContent = "Submit for approval";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Customers — every /users/<emailKey> record, editable inline.
+     Name/Phone/Email are plain inputs; hitting Save either:
+       - updates name/phone in place (email unchanged, password left
+         untouched via .update()), or
+       - if the email changed: writes a brand-new /users/<newKey> row
+         carrying over the existing password, and ONLY THEN removes
+         the old /users/<oldKey> row — so a failed write never loses
+         the original account, and the table just reflects the new
+         key afterwards.
+     Delete removes the account entirely after a confirmation prompt.
+  --------------------------------------------------------------- */
+  function customerRowHTML(key, u) {
+    const name = String(u.name || "").replace(/"/g, "&quot;");
+    const phone = String(u.phone || "").replace(/"/g, "&quot;");
+    const email = String(u.email || "").replace(/"/g, "&quot;");
+    return `
+      <tr data-key="${key}">
+        <td><input type="text" class="cust-name" value="${name}" /></td>
+        <td><input type="tel" class="cust-phone" value="${phone}" inputmode="numeric" maxlength="10" /></td>
+        <td><input type="email" class="cust-email" value="${email}" /></td>
+        <td>
+          <button type="button" class="btn btn-small executive-save-customer-btn">Save</button>
+          <button type="button" class="btn btn-small btn-danger-outline executive-delete-customer-btn">Delete</button>
+        </td>
+      </tr>`;
+  }
+
+  async function loadCustomers() {
+    const tbody = document.getElementById("customers-table-body");
+    tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("users").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">No customer accounts yet.</td></tr>`;
+        return;
+      }
+      const users = snap.val();
+      const keys = Object.keys(users).sort((a, b) => String(users[a].name || "").localeCompare(String(users[b].name || "")));
+      tbody.innerHTML = keys.map((key) => customerRowHTML(key, users[key])).join("");
+    } catch (err) {
+      console.error("Could not load customers:", err);
+      tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Couldn't load customers — try refreshing.</td></tr>`;
+    }
+  }
+
+  document.getElementById("customers-table-body").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".executive-save-customer-btn");
+    const deleteBtn = e.target.closest(".executive-delete-customer-btn");
+    if (!saveBtn && !deleteBtn) return;
+
+    const row = (saveBtn || deleteBtn).closest("tr[data-key]");
+    const originalKey = row.dataset.key;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    if (deleteBtn) {
+      if (!confirm("Delete this customer account? This can't be undone.")) return;
+      deleteBtn.disabled = true;
+      try {
+        await db.ref("users/" + originalKey).remove();
+        showToast("Customer removed");
+        row.remove();
+        if (!document.querySelector("#customers-table-body tr[data-key]")) {
+          document.getElementById("customers-table-body").innerHTML = `<tr><td colspan="4" class="executive-empty">No customer accounts yet.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Could not delete customer:", err);
+        showToast("Couldn't delete — try again");
+        deleteBtn.disabled = false;
+      }
+      return;
+    }
+
+    // Save
+    const name = row.querySelector(".cust-name").value.trim();
+    const phone = row.querySelector(".cust-phone").value.trim();
+    const email = row.querySelector(".cust-email").value.trim();
+    if (!name || !email) {
+      showToast("Name and email are required");
+      return;
+    }
+
+    const newKey = emailToKey(email);
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    try {
+      if (newKey === originalKey) {
+        // Email unchanged — just update name/phone; password untouched.
+        await db.ref("users/" + originalKey).update({ name, phone, updatedAt: Date.now() });
+        showToast("Customer updated");
+      } else {
+        // Email changed — refuse to silently overwrite a different
+        // existing account that already sits at the new email.
+        const clash = await db.ref("users/" + newKey).once("value");
+        if (clash.exists()) {
+          showToast("That email is already used by another account");
+          return;
+        }
+
+        const now = Date.now();
+        const [userSnap, purchasesSnap, queriesSnap, checkoutSnap] = await Promise.all([
+          db.ref("users/" + originalKey).once("value"),
+          db.ref("purchases/" + originalKey).once("value"),
+          db.ref("queries/" + originalKey).once("value"),
+          db.ref("checkout").once("value"),
+        ]);
+        const existingUser = userSnap.exists() ? userSnap.val() : {};
+        const oldEmail = existingUser.email || "";
+
+        // Every order under /purchases/<oldKey> and every query under
+        // /queries/<oldKey> moves with the account — each record's own
+        // `email` field is updated to match, same shape as before,
+        // just with the new address in it.
+        let newPurchases = null;
+        if (purchasesSnap.exists()) {
+          newPurchases = {};
+          Object.entries(purchasesSnap.val()).forEach(([orderId, order]) => {
+            newPurchases[orderId] = { ...order, email };
+          });
+        }
+
+        let newQueries = null;
+        if (queriesSnap.exists()) {
+          newQueries = {};
+          Object.entries(queriesSnap.val()).forEach(([queryId, q]) => {
+            newQueries[queryId] = { ...q, email };
+          });
+        }
+
+        // /checkout/<orderId> is a flat order-tracking mirror keyed by
+        // order id, not by account — it doesn't need to move, but any
+        // entry carrying the old email gets updated to the new one so
+        // nothing under the old address is left behind anywhere.
+        const checkoutUpdates = {};
+        if (checkoutSnap.exists()) {
+          Object.entries(checkoutSnap.val()).forEach(([orderId, entry]) => {
+            if (entry && entry.email === oldEmail) {
+              checkoutUpdates[orderId] = { ...entry, email };
+            }
+          });
+        }
+
+        // Write every new copy first — nothing old is removed until
+        // all of this has succeeded.
+        await db.ref("users/" + newKey).set({
+          name,
+          phone,
+          email,
+          password: existingUser.password || "",
+          updatedAt: now,
+        });
+        if (newPurchases) await db.ref("purchases/" + newKey).set(newPurchases);
+        if (newQueries) await db.ref("queries/" + newKey).set(newQueries);
+        await Promise.all(
+          Object.entries(checkoutUpdates).map(([orderId, entry]) => db.ref("checkout/" + orderId).set(entry))
+        );
+
+        // Now that every new copy exists, remove the old ones.
+        await db.ref("users/" + originalKey).remove();
+        if (newPurchases) await db.ref("purchases/" + originalKey).remove();
+        if (newQueries) await db.ref("queries/" + originalKey).remove();
+
+        row.dataset.key = newKey;
+        showToast("Email updated — account and history moved");
+      }
+    } catch (err) {
+      console.error("Could not save customer:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Pending orders — successful orders that contain at least one
+     physical item and don't have tracking details saved yet.
+
+     Read from the flat /checkout/<orderId> mirror (written by
+     cart.js on every checkout attempt, keyed by order id) rather than
+     walking every customer's /purchases/<emailKey> tree, since that's
+     the only place order data lives without already knowing which
+     shopper placed which order.
+
+     An item's own `type` (set by cart.js at checkout) says whether
+     it's physical or digital; older orders from before that split
+     don't have it, so — same fallback as profile.html — this also
+     checks the item's id against the current /products-digital table.
+
+     Saving tracking details writes the SAME { courier, trackingId,
+     updatedAt } object to both /checkout/<orderId> (so this order
+     stops showing up here) and /purchases/<emailKey>/<orderId> (so
+     the shopper's own profile page picks it up) — emailKey is derived
+     from the order's own `email` field.
+  --------------------------------------------------------------- */
+  let executiveDigitalProductIds = new Set();
+
+  function executiveItemIsPhysical(item) {
+    return item.type ? item.type === "physical" : !executiveDigitalProductIds.has(item.id);
+  }
+
+  function pendingOrderItemsHTML(order) {
+    return (order.items || [])
+      .map(
+        (i) =>
+          `<div class="purchase-item-line">${escapeHTML(i.title)} × ${i.qty}
+             <span class="executive-mono">(${executiveItemIsPhysical(i) ? "physical" : "digital"})</span>
+             — ₹${(i.price * i.qty).toLocaleString("en-IN")}</div>`
+      )
+      .join("");
+  }
+
+  function pendingOrderItemHTML(orderId, order) {
+    const date = order.date ? new Date(order.date).toLocaleString("en-IN") : "";
+    return `
+      <div class="executive-query-item executive-order-item" data-order-id="${orderId}">
+        <div class="executive-query-head">
+          <span>${escapeHTML(order.name || "")} <span class="executive-mono">· ${escapeHTML(order.email || "")} · ${escapeHTML(order.phone || "")}</span></span>
+          <span class="query-date">${date}</span>
+        </div>
+        <div class="purchase-item-items">${pendingOrderItemsHTML(order)}</div>
+        <div class="purchase-item-foot">
+          <span class="purchase-id">${escapeHTML(orderId)}</span>
+          <span class="price">₹${(order.total || 0).toLocaleString("en-IN")}</span>
+        </div>
+        <div class="executive-link-form">
+          <div class="field">
+            <label>Courier partner</label>
+            <input type="text" class="tracking-courier-input" placeholder="e.g. Delhivery" />
+          </div>
+          <div class="field">
+            <label>Tracking ID</label>
+            <input type="text" class="tracking-id-input" placeholder="Tracking / AWB number" />
+          </div>
+          <button type="button" class="btn btn-primary btn-small executive-save-tracking-btn">Save tracking</button>
+        </div>
+      </div>`;
+  }
+
+  async function loadPendingOrders() {
+    const listEl = document.getElementById("executive-pending-orders-list");
+    listEl.innerHTML = `<p class="executive-empty">Loading…</p>`;
+
+    if (!db) {
+      listEl.innerHTML = `<p class="executive-empty">Firebase isn't initialized.</p>`;
+      return;
+    }
+
+    try {
+      const [checkoutSnap, digitalProductsSnap] = await Promise.all([
+        db.ref("checkout").once("value"),
+        db.ref("products-digital").once("value"),
+      ]);
+
+      executiveDigitalProductIds = new Set(digitalProductsSnap.exists() ? Object.keys(digitalProductsSnap.val()) : []);
+
+      const pending = [];
+      if (checkoutSnap.exists()) {
+        Object.entries(checkoutSnap.val()).forEach(([orderId, order]) => {
+          if (!order || order.status !== "successful" || order.tracking) return;
+          if (!(order.items || []).some(executiveItemIsPhysical)) return;
+          pending.push({ ...order, orderId });
+        });
+      }
+
+      if (pending.length === 0) {
+        listEl.innerHTML = `<p class="executive-empty">No pending physical orders.</p>`;
+        return;
+      }
+
+      // Oldest first, so the longest-waiting orders get shipped first.
+      pending.sort((a, b) => new Date(a.date) - new Date(b.date));
+      listEl.innerHTML = `<div class="executive-query-list">${pending.map((o) => pendingOrderItemHTML(o.orderId, o)).join("")}</div>`;
+    } catch (err) {
+      console.error("Could not load pending orders:", err);
+      listEl.innerHTML = `<p class="executive-empty">Couldn't load pending orders — try refreshing.</p>`;
+    }
+  }
+
+  document.getElementById("executive-pending-orders-list").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".executive-save-tracking-btn");
+    if (!saveBtn) return;
+
+    const itemEl = saveBtn.closest(".executive-order-item");
+    const orderId = itemEl.dataset.orderId;
+    const courier = itemEl.querySelector(".tracking-courier-input").value.trim();
+    const trackingId = itemEl.querySelector(".tracking-id-input").value.trim();
+
+    if (!courier || !trackingId) {
+      showToast("Enter both courier partner and tracking ID");
+      return;
+    }
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    saveBtn.disabled = true;
+    const originalLabel = saveBtn.textContent;
+    saveBtn.textContent = "Saving…";
+    try {
+      const orderSnap = await db.ref("checkout/" + orderId).once("value");
+      const order = orderSnap.exists() ? orderSnap.val() : null;
+      if (!order || !order.email) {
+        showToast("Couldn't find that order");
+        return;
+      }
+
+      const tracking = { courier, trackingId, updatedAt: Date.now() };
+      await Promise.all([
+        db.ref("checkout/" + orderId).update({ tracking }),
+        db.ref("purchases/" + emailToKey(order.email) + "/" + orderId).update({ tracking }),
+      ]);
+
+      showToast("Tracking details saved");
+      itemEl.remove();
+      if (!document.querySelector("#executive-pending-orders-list .executive-order-item")) {
+        document.getElementById("executive-pending-orders-list").innerHTML = `<p class="executive-empty">No pending physical orders.</p>`;
+      }
+    } catch (err) {
+      console.error("Could not save tracking details:", err);
+      showToast("Couldn't save — try again");
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Support queries — flattens every /queries/<emailKey>/<queryId>
+     record across all shoppers and shows only the ones still "open".
+     Each query is a thread: a `messages` map that either side keeps
+     appending to (the shopper from profile.html, executive here) — no
+     message ever overwrites another. "Save reply" appends an executive
+     message and leaves the query open (it stays in this list, so a
+     query can go back and forth as many times as it needs to).
+     "Mark as closed" appends the textarea's text too (if any), then
+     sets status:"closed" and drops it from this list — the shopper
+     still sees the full thread, closed, under their own "Your
+     queries".
+  --------------------------------------------------------------- */
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function executiveSortedMessages(q) {
+    return q.messages ? Object.values(q.messages).sort((a, b) => (a.date || 0) - (b.date || 0)) : [];
+  }
+
+  // Mirrors queryAboutLabel() in profile.html — the shopper picks this
+  // subject when raising the query there; older queries submitted
+  // before that field existed just won't show a subject line.
+  function executiveQueryAboutLabel(q) {
+    if (!q.category) return "";
+    if (q.category === "profile") {
+      const reasonLabels = {
+        "change-email": "Change email",
+        "update-details": "Update details",
+        "delete-account": "Delete account",
+        other: "Other",
+      };
+      return `Profile — ${reasonLabels[q.profileReason] || "Other"}`;
+    }
+    if (q.category === "orders") {
+      return `Order — ${escapeHTML(q.orderId || "—")}`;
+    }
+    return "Other";
+  }
+
+  function executiveMessageBubbleHTML(m, shopperName) {
+    const date = m.date ? new Date(m.date).toLocaleString("en-IN") : "";
+    const isExecutive = m.sender === "executive";
+    // Own replies sit on the right (reusing the existing sender-admin
+    // styling), the shopper's messages sit on the left — and show the
+    // shopper's actual name when the query has one, falling back to
+    // "Shopper" for older records saved before names were captured.
+    const label = isExecutive ? "You" : shopperName || "Shopper";
+    return `
+      <div class="query-thread-msg sender-${isExecutive ? "admin" : "user"}">
+        <span class="msg-meta">${escapeHTML(label)} · ${date}</span>${escapeHTML(m.text || "")}
+      </div>`;
+  }
+
+  function executiveQueryItemHTML(q) {
+    const messages = executiveSortedMessages(q);
+    const headDate = messages[0] ? new Date(messages[0].date).toLocaleString("en-IN") : "";
+    const thread = messages.map((m) => executiveMessageBubbleHTML(m, q.name)).join("");
+    const about = executiveQueryAboutLabel(q);
+    return `
+      <div class="executive-query-item" data-email-key="${q.emailKey}" data-query-id="${q.queryId}">
+        <div class="executive-query-head">
+          <span>${escapeHTML(q.name || "Shopper")} <span class="executive-mono">· ${escapeHTML(q.email || "")}</span></span>
+          <span class="query-date">${headDate}</span>
+        </div>
+        ${about ? `<p class="query-about">${about}</p>` : ""}
+        <div class="query-thread">${thread}</div>
+        <div class="field executive-query-reply-field">
+          <label>Add a reply</label>
+          <textarea class="executive-query-reply-input" rows="2" placeholder="Write a reply…"></textarea>
+        </div>
+        <div class="executive-query-actions">
+          <button type="button" class="btn btn-small executive-save-reply-btn">Send reply</button>
+          <button type="button" class="btn btn-primary btn-small executive-close-query-btn">Mark as closed</button>
+        </div>
+      </div>`;
+  }
+
+  // Customer Support sees profile/other queries; Order Handling sees
+  // only order queries (see EXECUTIVE_ROLE_SECTIONS above — Product
+  // Update never reaches this section at all). No role saved (legacy
+  // accounts) falls back to showing every query, same as before.
+  function queryMatchesExecutiveRole(q, role) {
+    if (role === "customer-support") return q.category !== "orders";
+    if (role === "order-handling") return q.category === "orders";
+    return true;
+  }
+
+  async function loadQueries() {
+    const listEl = document.getElementById("executive-queries-list");
+
+    if (!db) {
+      listEl.innerHTML = `<p class="executive-empty">Firebase isn't initialized.</p>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("queries").once("value");
+      const openQueries = [];
+      if (snap.exists()) {
+        Object.entries(snap.val()).forEach(([emailKey, userQueries]) => {
+          Object.entries(userQueries).forEach(([queryId, q]) => {
+            if ((q.status || "open") === "open" && queryMatchesExecutiveRole(q, currentExecutiveRole)) {
+              openQueries.push({ ...q, emailKey, queryId });
+            }
+          });
+        });
+      }
+
+      openQueries.sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+
+      if (openQueries.length === 0) {
+        listEl.innerHTML = `<p class="executive-empty">No open queries.</p>`;
+        return;
+      }
+
+      listEl.innerHTML = `<div class="executive-query-list">${openQueries.map(executiveQueryItemHTML).join("")}</div>`;
+    } catch (err) {
+      console.error("Could not load queries:", err);
+      listEl.innerHTML = `<p class="executive-empty">Couldn't load queries — try refreshing.</p>`;
+    }
+  }
+
+  document.getElementById("executive-queries-list").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".executive-save-reply-btn");
+    const closeBtn = e.target.closest(".executive-close-query-btn");
+    if (!saveBtn && !closeBtn) return;
+
+    const itemEl = (saveBtn || closeBtn).closest(".executive-query-item");
+    const emailKey = itemEl.dataset.emailKey;
+    const queryId = itemEl.dataset.queryId;
+    const textarea = itemEl.querySelector(".executive-query-reply-input");
+    const replyText = textarea.value.trim();
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const btn = saveBtn || closeBtn;
+    const originalLabel = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+    try {
+      const now = Date.now();
+      if (replyText) {
+        await db.ref(`queries/${emailKey}/${queryId}/messages`).push({ sender: "executive", text: replyText, date: now });
+      }
+
+      if (saveBtn) {
+        // Reply appended above — query stays open and stays in this list.
+        await db.ref(`queries/${emailKey}/${queryId}`).update({ updatedAt: now });
+        showToast("Reply saved");
+        textarea.value = "";
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+        return;
+      }
+
+      // Mark as closed — the reply (if any) is already appended above.
+      await db.ref(`queries/${emailKey}/${queryId}`).update({ status: "closed", updatedAt: now });
+      showToast("Query closed");
+      itemEl.remove();
+      const listEl = document.getElementById("executive-queries-list");
+      if (!listEl.querySelector(".executive-query-item")) {
+        listEl.innerHTML = `<p class="executive-empty">No open queries.</p>`;
+      }
+    } catch (err) {
+      console.error("Could not save:", err);
+      showToast("Couldn't save — try again");
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Digital Products — the digital half of the catalog shown on
+     index.html / product.html, at /products-digital/<id> in
+     Firebase (see products.js — it merges this with
+     /products-physical/<id> into one INGENIOUX_PRODUCTS array,
+     tagging each item's `type`). The id doubles as the Firebase key,
+     and is what a shopper's cart (localStorage) and purchase history
+     reference — so it's fixed once a product exists; every other
+     field is editable in place, same pattern as the Executives table
+     below. The Physical Products section right after this one is
+     the same pattern minus the Link field.
+  --------------------------------------------------------------- */
+  function categoryOptionsHTML(selected) {
+    return INGENIOUX_CATEGORIES.filter((c) => c.id !== "all")
+      .map((c) => `<option value="${c.id}" ${c.id === selected ? "selected" : ""}>${c.label}</option>`)
+      .join("");
+  }
+
+  const productAddCategorySelect = document.getElementById("product-add-category");
+  if (productAddCategorySelect) productAddCategorySelect.innerHTML = categoryOptionsHTML();
+
+  function productRowHTML(id, p) {
+    const title = escapeHTML(p.title || "");
+    const blurb = escapeHTML(p.blurb || "");
+    const format = escapeHTML(p.format || "");
+    const tag = escapeHTML(p.tag || "");
+    const link = escapeHTML(p.link || "");
+    const price = Number(p.price) || 0;
+    // Two <tr>s per product, sharing data-id: the first keeps every
+    // existing field as-is; the second (full-width, colspan) holds the
+    // Link field plus Save/Delete, so the Link input finally has room
+    // to breathe instead of squeezing into a narrow table column.
+    return `
+      <tr class="product-row-main" data-id="${id}">
+        <td class="admin-mono">${escapeHTML(id)}</td>
+        <td><select class="product-category">${categoryOptionsHTML(p.category)}</select></td>
+        <td><input type="text" class="product-title" value="${title}" /></td>
+        <td class="admin-blurb-cell"><input type="text" class="product-blurb" value="${blurb}" /></td>
+        <td><input type="number" min="0" step="1" class="product-price" value="${price}" /></td>
+        <td><input type="text" class="product-format" value="${format}" /></td>
+        <td><input type="text" class="product-tag" value="${tag}" /></td>
+      </tr>
+      <tr class="product-row-link" data-id="${id}">
+        <td colspan="7">
+          <div class="product-link-row">
+            <span class="product-link-label">Link</span>
+            <input type="url" class="product-link" value="${link}" placeholder="https://… (download link)" />
+            <div class="product-link-actions">
+              <button type="button" class="btn btn-small product-save-btn">Save</button>
+              <button type="button" class="btn btn-small btn-danger-outline product-delete-btn">Delete</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  async function loadProducts() {
+    const tbody = document.getElementById("products-table-body");
+    tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("products-digital").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">No digital products yet — add one above.</td></tr>`;
+        return;
+      }
+      const products = snap.val();
+      const ids = Object.keys(products).sort((a, b) => a.localeCompare(b));
+      tbody.innerHTML = ids.map((id) => productRowHTML(id, products[id])).join("");
+    } catch (err) {
+      console.error("Could not load digital products:", err);
+      tbody.innerHTML = `<tr><td colspan="7" class="admin-empty">Couldn't load products — try refreshing.</td></tr>`;
+    }
+  }
+
+  const productAddForm = document.getElementById("product-add-form");
+  productAddForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const id = document.getElementById("product-add-id").value.trim();
+    const category = document.getElementById("product-add-category").value;
+    const title = document.getElementById("product-add-title").value.trim();
+    const blurb = document.getElementById("product-add-blurb").value.trim();
+    const price = Number(document.getElementById("product-add-price").value);
+    const format = document.getElementById("product-add-format").value.trim();
+    const tag = document.getElementById("product-add-tag").value.trim();
+    const link = document.getElementById("product-add-link").value.trim();
+
+    // No format restriction on the ID itself — the only real limit is
+    // Firebase RTDB's own key rules: a key can't be empty or contain
+    // ".", "#", "$", "[", "]", or "/", since those have special
+    // meaning in a database path.
+    if (!id || /[.#$\[\]/]/.test(id)) {
+      showToast("ID can't be empty or contain . # $ [ ] /");
+      return;
+    }
+    if (!title || !blurb || !format || !tag || !Number.isFinite(price) || price < 0) {
+      showToast("Fill in every field with a valid price");
+      return;
+    }
+
+    const submitBtn = productAddForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Adding…";
+    try {
+      const existing = await db.ref("products-digital/" + id).once("value");
+      if (existing.exists()) {
+        showToast("A product with this ID already exists");
+        return;
+      }
+      await db.ref("products-digital/" + id).set({ id, category, title, blurb, price, format, tag, link });
+      showToast("Product added");
+      productAddForm.reset();
+      productAddCategorySelect.innerHTML = categoryOptionsHTML();
+      loadProducts();
+    } catch (err) {
+      console.error("Could not add digital product:", err);
+      showToast("Couldn't add product — try again");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add digital product";
+    }
+  });
+
+  document.getElementById("products-table-body").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".product-save-btn");
+    const deleteBtn = e.target.closest(".product-delete-btn");
+    if (!saveBtn && !deleteBtn) return;
+
+    // Each product is now two adjacent <tr>s sharing one data-id: the
+    // "main" row (id/category/title/blurb/price/format/tag) and the
+    // "link" row right after it (link input + these buttons). Find
+    // both so Save/Delete can reach every field regardless of which
+    // row the click happened in.
+    const linkRow = (saveBtn || deleteBtn).closest("tr[data-id]");
+    const mainRow = linkRow.previousElementSibling;
+    const id = linkRow.dataset.id;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    if (deleteBtn) {
+      if (!confirm("Remove this product? It disappears from the catalog immediately — existing orders/receipts that already reference it are unaffected.")) return;
+      deleteBtn.disabled = true;
+      try {
+        await db.ref("products-digital/" + id).remove();
+        showToast("Product removed");
+        mainRow.remove();
+        linkRow.remove();
+        if (!document.querySelector("#products-table-body tr[data-id]")) {
+          document.getElementById("products-table-body").innerHTML = `<tr><td colspan="7" class="admin-empty">No digital products yet — add one above.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Could not delete digital product:", err);
+        showToast("Couldn't delete — try again");
+        deleteBtn.disabled = false;
+      }
+      return;
+    }
+
+    const category = mainRow.querySelector(".product-category").value;
+    const title = mainRow.querySelector(".product-title").value.trim();
+    const blurb = mainRow.querySelector(".product-blurb").value.trim();
+    const price = Number(mainRow.querySelector(".product-price").value);
+    const format = mainRow.querySelector(".product-format").value.trim();
+    const tag = mainRow.querySelector(".product-tag").value.trim();
+    const link = linkRow.querySelector(".product-link").value.trim();
+
+    if (!title || !blurb || !format || !tag || !Number.isFinite(price) || price < 0) {
+      showToast("Fill in every field with a valid price");
+      return;
+    }
+
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    try {
+      await db.ref("products-digital/" + id).update({ category, title, blurb, price, format, tag, link });
+      showToast("Product updated");
+    } catch (err) {
+      console.error("Could not save digital product:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Physical Products — the physical half of the catalog, at
+     /products-physical/<id> in Firebase. Same shape and pattern as
+     Digital Products above, minus the Link field (nothing to
+     download — these ship). One <tr> per product rather than two,
+     since there's no Link row to hold the Save/Delete buttons — they
+     get their own last column instead.
+  --------------------------------------------------------------- */
+  const productPhysicalAddCategorySelect = document.getElementById("product-physical-add-category");
+  if (productPhysicalAddCategorySelect) productPhysicalAddCategorySelect.innerHTML = categoryOptionsHTML();
+
+  function productPhysicalRowHTML(id, p) {
+    const title = escapeHTML(p.title || "");
+    const blurb = escapeHTML(p.blurb || "");
+    const format = escapeHTML(p.format || "");
+    const tag = escapeHTML(p.tag || "");
+    const price = Number(p.price) || 0;
+    // Pre-existing rows created before Stock existed have no field at
+    // all — default the input to 0 rather than leaving it blank, so
+    // Save always writes a real number instead of NaN.
+    const stock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+    return `
+      <tr data-id="${id}">
+        <td class="admin-mono">${escapeHTML(id)}</td>
+        <td><select class="product-physical-category">${categoryOptionsHTML(p.category)}</select></td>
+        <td><input type="text" class="product-physical-title" value="${title}" /></td>
+        <td class="admin-blurb-cell"><input type="text" class="product-physical-blurb" value="${blurb}" /></td>
+        <td><input type="number" min="0" step="1" class="product-physical-price" value="${price}" /></td>
+        <td><input type="text" class="product-physical-format" value="${format}" /></td>
+        <td><input type="text" class="product-physical-tag" value="${tag}" /></td>
+        <td><input type="number" min="0" step="1" class="product-physical-stock" value="${stock}" /></td>
+        <td>
+          <button type="button" class="btn btn-small product-physical-save-btn">Save</button>
+          <button type="button" class="btn btn-small btn-danger-outline product-physical-delete-btn">Delete</button>
+        </td>
+      </tr>`;
+  }
+
+  async function loadPhysicalProducts() {
+    const tbody = document.getElementById("products-physical-table-body");
+    tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("products-physical").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">No physical products yet — add one above.</td></tr>`;
+        return;
+      }
+      const products = snap.val();
+      const ids = Object.keys(products).sort((a, b) => a.localeCompare(b));
+      tbody.innerHTML = ids.map((id) => productPhysicalRowHTML(id, products[id])).join("");
+    } catch (err) {
+      console.error("Could not load physical products:", err);
+      tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Couldn't load products — try refreshing.</td></tr>`;
+    }
+  }
+
+  const productPhysicalAddForm = document.getElementById("product-physical-add-form");
+  productPhysicalAddForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const id = document.getElementById("product-physical-add-id").value.trim();
+    const category = document.getElementById("product-physical-add-category").value;
+    const title = document.getElementById("product-physical-add-title").value.trim();
+    const blurb = document.getElementById("product-physical-add-blurb").value.trim();
+    const price = Number(document.getElementById("product-physical-add-price").value);
+    const format = document.getElementById("product-physical-add-format").value.trim();
+    const tag = document.getElementById("product-physical-add-tag").value.trim();
+    const stock = Number(document.getElementById("product-physical-add-stock").value);
+
+    if (!id || /[.#$\[\]/]/.test(id)) {
+      showToast("ID can't be empty or contain . # $ [ ] /");
+      return;
+    }
+    if (!title || !blurb || !format || !tag || !Number.isFinite(price) || price < 0) {
+      showToast("Fill in every field with a valid price");
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      showToast("Enter a valid stock quantity (0 or more)");
+      return;
+    }
+
+    const submitBtn = productPhysicalAddForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Adding…";
+    try {
+      const existing = await db.ref("products-physical/" + id).once("value");
+      if (existing.exists()) {
+        showToast("A product with this ID already exists");
+        return;
+      }
+      await db.ref("products-physical/" + id).set({ id, category, title, blurb, price, format, tag, stock });
+      showToast("Product added");
+      productPhysicalAddForm.reset();
+      productPhysicalAddCategorySelect.innerHTML = categoryOptionsHTML();
+      loadPhysicalProducts();
+    } catch (err) {
+      console.error("Could not add physical product:", err);
+      showToast("Couldn't add product — try again");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add physical product";
+    }
+  });
+
+  document.getElementById("products-physical-table-body").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".product-physical-save-btn");
+    const deleteBtn = e.target.closest(".product-physical-delete-btn");
+    if (!saveBtn && !deleteBtn) return;
+
+    const row = (saveBtn || deleteBtn).closest("tr[data-id]");
+    const id = row.dataset.id;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    if (deleteBtn) {
+      if (!confirm("Remove this product? It disappears from the catalog immediately — existing orders/receipts that already reference it are unaffected.")) return;
+      deleteBtn.disabled = true;
+      try {
+        await db.ref("products-physical/" + id).remove();
+        showToast("Product removed");
+        row.remove();
+        if (!document.querySelector("#products-physical-table-body tr[data-id]")) {
+          document.getElementById("products-physical-table-body").innerHTML = `<tr><td colspan="9" class="admin-empty">No physical products yet — add one above.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Could not delete physical product:", err);
+        showToast("Couldn't delete — try again");
+        deleteBtn.disabled = false;
+      }
+      return;
+    }
+
+    const category = row.querySelector(".product-physical-category").value;
+    const title = row.querySelector(".product-physical-title").value.trim();
+    const blurb = row.querySelector(".product-physical-blurb").value.trim();
+    const price = Number(row.querySelector(".product-physical-price").value);
+    const format = row.querySelector(".product-physical-format").value.trim();
+    const tag = row.querySelector(".product-physical-tag").value.trim();
+    const stock = Number(row.querySelector(".product-physical-stock").value);
+
+    if (!title || !blurb || !format || !tag || !Number.isFinite(price) || price < 0) {
+      showToast("Fill in every field with a valid price");
+      return;
+    }
+    if (!Number.isFinite(stock) || stock < 0) {
+      showToast("Enter a valid stock quantity (0 or more)");
+      return;
+    }
+
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    try {
+      await db.ref("products-physical/" + id).update({ category, title, blurb, price, format, tag, stock });
+      showToast("Product updated");
+    } catch (err) {
+      console.error("Could not save physical product:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Coupons — codes shoppers can enter at checkout, stored at
+     /coupon/<CODE> (code is upper-cased and doubles as the Firebase
+     key, same pattern as /products/<id>). checkout reads this table
+     directly in cart.js's coupon-apply handler.
+       { code, discountPercent, maxDiscount }
+     Discount applied = min(subtotal * discountPercent / 100,
+     maxDiscount, subtotal) — worked out client-side at checkout.
+  --------------------------------------------------------------- */
+  function couponRowHTML(code, c) {
+    const percent = Number(c.discountPercent) || 0;
+    const maxDiscount = Number(c.maxDiscount) || 0;
+    return `
+      <tr data-code="${escapeHTML(code)}">
+        <td class="admin-mono">${escapeHTML(code)}</td>
+        <td><input type="number" min="1" max="100" step="1" class="coupon-percent" value="${percent}" /></td>
+        <td><input type="number" min="0" step="1" class="coupon-max" value="${maxDiscount}" /></td>
+        <td>
+          <button type="button" class="btn btn-small coupon-save-btn">Save</button>
+          <button type="button" class="btn btn-small btn-danger-outline coupon-delete-btn">Delete</button>
+        </td>
+      </tr>`;
+  }
+
+  async function loadCoupons() {
+    const tbody = document.getElementById("coupons-table-body");
+    tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("coupon").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">No coupons yet — add one above.</td></tr>`;
+        return;
+      }
+      const coupons = snap.val();
+      const codes = Object.keys(coupons).sort((a, b) => a.localeCompare(b));
+      tbody.innerHTML = codes.map((code) => couponRowHTML(code, coupons[code])).join("");
+    } catch (err) {
+      console.error("Could not load coupons:", err);
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Couldn't load coupons — try refreshing.</td></tr>`;
+    }
+  }
+
+  const couponAddForm = document.getElementById("coupon-add-form");
+  couponAddForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const code = document.getElementById("coupon-add-code").value.trim().toUpperCase();
+    const discountPercent = Number(document.getElementById("coupon-add-percent").value);
+    const maxDiscount = Number(document.getElementById("coupon-add-max").value);
+
+    // Same key restriction as product IDs — a Firebase RTDB key can't
+    // be empty or contain ".", "#", "$", "[", "]", or "/".
+    if (!code || /[.#$\[\]/]/.test(code)) {
+      showToast("Code can't be empty or contain . # $ [ ] /");
+      return;
+    }
+    if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent > 100) {
+      showToast("Discount % must be between 1 and 100");
+      return;
+    }
+    if (!Number.isFinite(maxDiscount) || maxDiscount < 0) {
+      showToast("Max discount must be 0 or more");
+      return;
+    }
+
+    const submitBtn = couponAddForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Adding…";
+    try {
+      const existing = await db.ref("coupon/" + code).once("value");
+      if (existing.exists()) {
+        showToast("A coupon with this code already exists");
+        return;
+      }
+      await db.ref("coupon/" + code).set({ code, discountPercent, maxDiscount, createdAt: Date.now() });
+      showToast("Coupon added");
+      couponAddForm.reset();
+      loadCoupons();
+    } catch (err) {
+      console.error("Could not add coupon:", err);
+      showToast("Couldn't add coupon — try again");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Add coupon";
+    }
+  });
+
+  document.getElementById("coupons-table-body").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".coupon-save-btn");
+    const deleteBtn = e.target.closest(".coupon-delete-btn");
+    if (!saveBtn && !deleteBtn) return;
+
+    const row = (saveBtn || deleteBtn).closest("tr[data-code]");
+    const code = row.dataset.code;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    if (deleteBtn) {
+      if (!confirm("Remove this coupon? It stops working at checkout immediately.")) return;
+      deleteBtn.disabled = true;
+      try {
+        await db.ref("coupon/" + code).remove();
+        showToast("Coupon removed");
+        row.remove();
+        if (!document.querySelector("#coupons-table-body tr[data-code]")) {
+          document.getElementById("coupons-table-body").innerHTML = `<tr><td colspan="4" class="admin-empty">No coupons yet — add one above.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Could not delete coupon:", err);
+        showToast("Couldn't delete — try again");
+        deleteBtn.disabled = false;
+      }
+      return;
+    }
+
+    const discountPercent = Number(row.querySelector(".coupon-percent").value);
+    const maxDiscount = Number(row.querySelector(".coupon-max").value);
+
+    if (!Number.isFinite(discountPercent) || discountPercent <= 0 || discountPercent > 100) {
+      showToast("Discount % must be between 1 and 100");
+      return;
+    }
+    if (!Number.isFinite(maxDiscount) || maxDiscount < 0) {
+      showToast("Max discount must be 0 or more");
+      return;
+    }
+
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    try {
+      await db.ref("coupon/" + code).update({ discountPercent, maxDiscount });
+      showToast("Coupon updated");
+    } catch (err) {
+      console.error("Could not save coupon:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — INGENIOUX Shop</title>
+<meta name="description" content="Log in or create an account at the INGENIOUX shop." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">INGENIOUX</span>
+      <span class="brand-sub">/ shop</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">↤ back to shop</a>
+    </div>
+  </div>
+</header>
+
+<main class="auth-main">
+  <div class="auth-grid">
+    <div class="auth-form-side">
+      <div class="auth-tabs" role="tablist" id="auth-tabs-row">
+        <button class="auth-tab" id="tab-login" role="tab" aria-selected="true" type="button">Log in</button>
+        <button class="auth-tab" id="tab-signup" role="tab" aria-selected="false" type="button">Sign up</button>
+      </div>
+
+      <!-- Log in -->
+      <div class="auth-form is-active" id="form-login">
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to pick up your cart where you left it.</p>
+        <form id="login-form">
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" required autocomplete="current-password" minlength="4" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+        <p class="auth-form-foot">New here? <button type="button" id="go-signup">Create an account</button></p>
+      </div>
+
+      <!-- Sign up -->
+      <div class="auth-form" id="form-signup">
+        <h1>Create your account</h1>
+        <p class="sub">Takes a few seconds — no charge, no spam.</p>
+        <form id="signup-form">
+          <div class="field">
+            <label for="signup-name">Name</label>
+            <input id="signup-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="signup-phone">Phone number</label>
+            <input id="signup-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="signup-confirm-password">Confirm password</label>
+            <input id="signup-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+        <p class="auth-form-foot">Already have an account? <button type="button" id="go-login">Log in</button></p>
+      </div>
+
+      <!-- Shared row, below whichever tab form is active: Traditional
+           method (above) -> or -> Google -> or -> guest. Google covers
+           both log in and sign up (signInWithPopup() creates a
+           brand-new account the first time, signs into an existing
+           one after that), and "Continue as guest" applies regardless
+           of which tab is showing. -->
+      <div class="auth-divider" id="google-divider">or</div>
+      <div class="auth-google-row" id="auth-google-row">
+        <button type="button" class="btn btn-google btn-block" id="google-auth-btn">
+          <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.68-3.87 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+      <div class="auth-divider" id="guest-divider">or</div>
+      <a class="auth-guest-link" href="index.html" id="guest-link">Continue as guest →</a>
+
+      <!-- Shown only after a brand-new Google sign-in — Google gives
+           us name + email but not a phone number, and the rest of the
+           app (checkout, receipts) expects one on every profile. -->
+      <div class="auth-form" id="form-google-complete">
+        <h1>Almost there</h1>
+        <p class="sub">A couple more things — a phone number, and a password so you can log in without Google too.</p>
+        <form id="google-complete-form">
+          <div class="field">
+            <label for="google-complete-phone">Phone number</label>
+            <input id="google-complete-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="google-complete-password">Create password</label>
+            <input id="google-complete-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="google-complete-confirm-password">Confirm password</label>
+            <input id="google-complete-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Continue</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  const tabLogin = document.getElementById("tab-login");
+  const tabSignup = document.getElementById("tab-signup");
+  const formLogin = document.getElementById("form-login");
+  const formSignup = document.getElementById("form-signup");
+  const formGoogleComplete = document.getElementById("form-google-complete");
+
+  function showTab(which) {
+    const isLogin = which === "login";
+    formLogin.classList.toggle("is-active", isLogin);
+    formSignup.classList.toggle("is-active", !isLogin);
+    tabLogin.setAttribute("aria-selected", String(isLogin));
+    tabSignup.setAttribute("aria-selected", String(!isLogin));
+  }
+
+  tabLogin.addEventListener("click", () => showTab("login"));
+  tabSignup.addEventListener("click", () => showTab("signup"));
+  document.getElementById("go-signup").addEventListener("click", () => showTab("signup"));
+  document.getElementById("go-login").addEventListener("click", () => showTab("login"));
+
+  // If we got here via a checkout redirect (openCheckout() in cart.js
+  // sends guests here with ?next=<page they were on>), send them back
+  // there after logging in/signing up instead of always to the catalog.
+  function postLoginDestination() {
+    const raw = new URLSearchParams(window.location.search).get("next");
+    if (!raw) return "index.html";
+    try {
+      const decoded = decodeURIComponent(raw);
+      // only ever follow a same-site relative path, never an absolute URL
+      if (decoded.startsWith("http") || decoded.startsWith("//")) return "index.html";
+      return decoded;
+    } catch {
+      return "index.html";
+    }
+  }
+
+  // Sign up WRITES the account (name/phone/email/password) to Firebase.
+  // Log in READS that record and checks the password before treating
+  // anyone as signed in — see auth.js for saveUserToCloud/fetchUserFromCloud.
+  const loginSubmitBtn = document.querySelector("#login-form button[type=submit]");
+  const signupSubmitBtn = document.querySelector("#signup-form button[type=submit]");
+
+  // Tries the real Firebase Auth account first (createUserWithEmail-
+  // AndPassword at signup); falls back to the traditional RTDB
+  // password check for accounts that don't have one (older accounts,
+  // or ones where the Auth signup call failed but the RTDB record
+  // still got written). Either path signs the shopper in — no email
+  // verification required for shop accounts.
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value.trim();
+    const password = document.getElementById("login-password").value;
+
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.textContent = "Logging in…";
+    try {
+      let profile = null;
+
+      try {
+        await fbAuthLogIn(email, password);
+        // Firebase Auth only knows the email/password pair — the
+        // name/phone shown around the shop still comes from the
+        // RTDB profile record, if one exists.
+        profile = await fetchUserFromCloud(email);
+      } catch (fbErr) {
+        // No Firebase Auth account for this email, or the password
+        // didn't match it — fall back to the traditional check.
+        profile = await fetchUserFromCloud(email);
+        if (!profile || profile.password !== password) {
+          showToast("Incorrect email or password");
+          return;
+        }
+      }
+
+      setUser({
+        name: (profile && profile.name) || "",
+        email,
+        phone: (profile && profile.phone) || "",
+      });
+      showToast("Logged in");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Login failed:", err);
+      showToast("Couldn't reach the server — try again");
+    } finally {
+      loginSubmitBtn.disabled = false;
+      loginSubmitBtn.textContent = "Log in";
+    }
+  });
+
+  document.getElementById("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("signup-name").value.trim();
+    const phone = document.getElementById("signup-phone").value.trim();
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const confirmPassword = document.getElementById("signup-confirm-password").value;
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    signupSubmitBtn.disabled = true;
+    signupSubmitBtn.textContent = "Creating account…";
+    try {
+      const existing = await fetchUserFromCloud(email);
+      if (existing) {
+        showToast("An account with this email already exists");
+        return;
+      }
+
+      // Also create a real Firebase Auth account alongside the
+      // traditional RTDB record. Best-effort: if it fails (e.g. the
+      // email's already registered in Auth from some other route),
+      // the traditional record below still gets written and signup
+      // still succeeds — this is what keeps the old flow working.
+      try {
+        await fbAuthSignUp(email, password);
+      } catch (fbErr) {
+        console.error("Firebase Auth signup failed (continuing with traditional signup):", fbErr);
+      }
+
+      await saveUserToCloud({ name, email, phone, password });
+      setUser({ name, email, phone });
+      showToast("Account created");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Signup failed:", err);
+      showToast("Couldn't create your account — try again");
+    } finally {
+      signupSubmitBtn.disabled = false;
+      signupSubmitBtn.textContent = "Create account";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Google Sign-In — covers both log in and sign up with one button.
+     signInWithPopup() creates the Firebase Auth account the first
+     time a given Google account is used and signs into it every time
+     after that, so there's nothing to branch on up front. What
+     differs is whether we already have the traditional RTDB profile
+     record (name/phone) the rest of the app reads from:
+       - profile exists  -> treat as a login, go straight in.
+       - no profile yet  -> brand-new shopper. We have name + email
+         from Google but not a phone number, so hold onto the Google
+         user and show a short "one more thing" form to collect it
+         before writing the profile record.
+  --------------------------------------------------------------- */
+  const googleAuthBtn = document.getElementById("google-auth-btn");
+  const googleCompleteForm = document.getElementById("google-complete-form");
+  const googleCompleteSubmitBtn = googleCompleteForm.querySelector("button[type=submit]");
+  let pendingGoogleUser = null; // { name, email } — set only while form-google-complete is showing
+
+  function showGoogleCompleteForm() {
+    formLogin.classList.remove("is-active");
+    formSignup.classList.remove("is-active");
+    formGoogleComplete.classList.add("is-active");
+    document.getElementById("auth-tabs-row").style.display = "none";
+    document.getElementById("auth-google-row").style.display = "none";
+    document.getElementById("google-divider").style.display = "none";
+    document.getElementById("guest-divider").style.display = "none";
+    document.getElementById("guest-link").style.display = "none";
+  }
+
+  googleAuthBtn.addEventListener("click", async () => {
+    const originalLabel = googleAuthBtn.innerHTML;
+    googleAuthBtn.disabled = true;
+    googleAuthBtn.textContent = "Connecting…";
+    try {
+      const cred = await fbAuthGoogleSignIn();
+      const email = cred.user.email;
+      const name = cred.user.displayName || "";
+
+      const profile = await fetchUserFromCloud(email);
+      if (profile) {
+        setUser({ name: profile.name || name, email, phone: profile.phone || "" });
+        showToast("Logged in with Google");
+        window.location.href = postLoginDestination();
+        return;
+      }
+
+      pendingGoogleUser = { name, email };
+      showGoogleCompleteForm();
+    } catch (err) {
+      console.error("Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      googleAuthBtn.disabled = false;
+      googleAuthBtn.innerHTML = originalLabel;
+    }
+  });
+
+  googleCompleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pendingGoogleUser) return;
+    const phone = document.getElementById("google-complete-phone").value.trim();
+    const password = document.getElementById("google-complete-password").value;
+    const confirmPassword = document.getElementById("google-complete-confirm-password").value;
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    googleCompleteSubmitBtn.disabled = true;
+    googleCompleteSubmitBtn.textContent = "Saving…";
+    try {
+      // Also save the password the shopper just created here, so the
+      // traditional RTDB-password fallback in the log-in handler works
+      // for this account too — not just Google sign-in.
+      await saveUserToCloud({ name: pendingGoogleUser.name, email: pendingGoogleUser.email, phone, password });
+      setUser({ name: pendingGoogleUser.name, email: pendingGoogleUser.email, phone });
+      showToast("Account created");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Could not save profile:", err);
+      showToast("Couldn't save your info — try again");
+    } finally {
+      googleCompleteSubmitBtn.disabled = false;
+      googleCompleteSubmitBtn.textContent = "Continue";
+    }
+  });
+</script>
+</body>
+</html>
