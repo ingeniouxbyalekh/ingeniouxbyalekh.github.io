@@ -104,14 +104,16 @@
 <section class="hero">
   <canvas id="ember-canvas"></canvas>
 
-  <div class="solar-system" aria-hidden="true">
-    <div class="orbit orbit-1"><div class="planet planet-1"></div></div>
-    <div class="orbit orbit-2"><div class="planet planet-2"></div></div>
-    <div class="orbit orbit-3"><div class="planet planet-3"></div></div>
-    <div class="orbit orbit-4"><div class="planet planet-4"></div></div>
-    <div class="orbit orbit-5"><div class="planet planet-5"></div></div>
-    <div class="sun"></div>
-    <div class="solar-caption"> </div>
+  <div class="chess-hero" id="chessHero" aria-hidden="true">
+    <div class="chess-board chess-board-hero" id="chessBoard"></div>
+    <div class="chess-hero-terminal">
+      <div class="term-dots"><span></span><span></span><span></span></div>
+      <div class="term-line">$ replay --game "scholars-mate"</div>
+      <div class="chess-move-list" id="chessMoveList"></div>
+      <div class="chess-status-line">
+        <span id="chessStatus">white to move</span><span class="term-cursor">▍</span>
+      </div>
+    </div>
   </div>
 
   <div class="wrap hero-inner">
@@ -173,6 +175,7 @@
       <div class="section-note"></div>
     </div>
     <div class="m-list">
+      <div class="m-fill" id="mFill"></div>
       <div class="m-item reveal">
         <span class="y">2015 – 2018</span>
         <h4>Matriculation</h4>

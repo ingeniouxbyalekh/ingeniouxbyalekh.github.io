@@ -121,7 +121,9 @@ section{position:relative;padding:0 48px;}
   display:inline-flex;align-items:center;gap:10px;
   font-family:var(--font-mono);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;font-weight:500;
   padding:14px 26px;border-radius:2px;transition:background .25s, color .25s, border-color .25s, transform .2s;
+  will-change:transform;
 }
+.magnetic{transition:transform .25s cubic-bezier(.2,.8,.2,1);}
 .hero-btn-primary{background:var(--ember);color:#0b0c10;border:1px solid var(--ember);}
 .hero-btn-primary:hover{transform:translateY(-2px);background:#ff8c47;}
 .hero-btn-ghost{border:1px solid var(--text-dim);color:var(--text);}
@@ -148,43 +150,58 @@ section{position:relative;padding:0 48px;}
 .scroll-cue .bar::after{content:'';position:absolute;top:-100%;left:0;width:100%;height:100%;background:var(--ember);animation:cue 1.8s infinite;}
 @keyframes cue{0%{top:-100%;}100%{top:100%;}}
 
-/* ---------- solar system (hero decoration) ---------- */
-.solar-system{
-  position:absolute;top:50%;right:16%;transform:translateY(-50%);
-  width:480px;height:480px;z-index:0;pointer-events:none;
-  opacity:0;animation:solarIn 1.4s cubic-bezier(.2,.7,.2,1) .9s forwards;
+/* ---------- chessboard hero decoration ---------- */
+.chess-hero{
+  --chess-scale:1;
+  position:absolute;top:56%;right:11%;transform:translateY(-50%) scale(var(--chess-scale));
+  transform-origin:top right;
+  display:flex;align-items:flex-start;gap:18px;
+  z-index:0;pointer-events:none;
+  opacity:0;animation:circuitIn 1.4s cubic-bezier(.2,.7,.2,1) .9s forwards;
 }
-@keyframes solarIn{from{opacity:0;transform:translateY(-50%) scale(.92);}to{opacity:.9;transform:translateY(-50%) scale(1);}}
-@media (max-width:1400px){.solar-system{display:none;}}
-.sun{
-  position:absolute;top:50%;left:50%;width:34px;height:34px;border-radius:50%;
-  transform:translate(-50%,-50%);
-  background:radial-gradient(circle at 35% 35%,#fff2df,var(--ember) 60%,#7a3200 100%);
-  box-shadow:0 0 46px 10px var(--ember-soft);
+@keyframes circuitIn{
+  from{opacity:0;transform:translateY(-50%) scale(calc(var(--chess-scale) * .92));}
+  to{opacity:1;transform:translateY(-50%) scale(var(--chess-scale));}
 }
-.orbit{
-  position:absolute;top:50%;left:50%;border:1px dashed var(--line);border-radius:50%;
-  transform:translate(-50%,-50%);animation:solarSpin linear infinite;
+/* scale it down on laptop-size screens instead of hiding it outright */
+@media (max-width:1560px){.chess-hero{--chess-scale:0.8;right:6%;}}
+@media (max-width:1280px){.chess-hero{--chess-scale:0.62;right:4%;}}
+/* below this there just isn't room next to the hero text, so hide it */
+@media (max-width:900px){.chess-hero{display:none;}}
+
+.chess-hero-terminal{
+  width:220px;flex:0 0 auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  padding:14px 16px;font-family:var(--font-mono);font-size:11px;color:var(--text-dim);
+  box-shadow:0 14px 34px rgba(0,0,0,.45);
+  animation:termFloat 5s ease-in-out infinite;
 }
-.orbit-1{width:110px;height:110px;animation-duration:7s;}
-.orbit-2{width:190px;height:190px;animation-duration:13s;}
-.orbit-3{width:280px;height:280px;animation-duration:21s;}
-.orbit-4{width:380px;height:380px;animation-duration:30s;}
-.orbit-5{width:470px;height:470px;animation-duration:44s;}
-@keyframes solarSpin{from{transform:translate(-50%,-50%) rotate(0deg);}to{transform:translate(-50%,-50%) rotate(360deg);}}
-.planet{position:absolute;top:50%;left:100%;border-radius:50%;transform:translate(-50%,-50%);}
-.planet-1{width:15px;height:15px;background:var(--gold);box-shadow:0 0 15px 4px var(--gold-soft);}
-.planet-2{width:19px;height:19px;background:var(--text-dim);}
-.planet-3{width:14px;height:14px;background:var(--ember);box-shadow:0 0 15px 4px var(--ember-soft);}
-.planet-4{width:23px;height:23px;background:var(--surface-2);border:1px solid var(--line);}
-.planet-5{width:12px;height:12px;background:var(--gold);box-shadow:0 0 10px 3px var(--gold-soft);}
-.solar-caption{
-  position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);white-space:nowrap;
-  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);
-}
+.chess-hero-terminal .term-line{color:var(--text-dim);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chess-move-list{height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;}
+.chess-move-list::-webkit-scrollbar{width:4px;}
+.chess-move-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+.chess-move-row{display:flex;gap:8px;opacity:0;animation:moveIn .35s ease forwards;}
+.chess-move-row .mv-num{color:var(--text-faint);width:18px;flex:0 0 auto;}
+.chess-move-row .mv-w{color:var(--text);min-width:48px;}
+.chess-move-row .mv-b{color:var(--text);}
+.chess-move-row.current .mv-w, .chess-move-row.current .mv-b{color:var(--ember);}
+@keyframes moveIn{from{opacity:0;transform:translateX(-6px);}to{opacity:1;transform:translateX(0);}}
+.chess-status-line{margin-top:12px;padding-top:12px;border-top:1px solid var(--line);color:var(--text);}
+.chess-status-line .term-cursor{margin-left:2px;}
+
+.term-dots{display:flex;gap:5px;margin-bottom:9px;}
+.term-dots span{width:6px;height:6px;border-radius:50%;background:var(--line);display:inline-block;}
+.term-dots span:nth-child(1){background:var(--ember);}
+.term-dots span:nth-child(2){background:var(--gold);}
+.term-cursor{display:inline-block;margin-left:2px;color:var(--ember);animation:cursorBlink 1s steps(2) infinite;}
+@keyframes termFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+@keyframes cursorBlink{50%{opacity:0;}}
+
 @media (prefers-reduced-motion: reduce){
-  .orbit{animation:none;}
-  .solar-system{animation:none;opacity:.9;}
+  .chess-hero{animation:none;opacity:1;}
+  .chess-hero-terminal{animation:none;}
+  .term-cursor{animation:none;}
+  .chess-move-row{animation:none;opacity:1;}
 }
 
 /* ---------- section heads ---------- */
@@ -197,7 +214,7 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
 .reveal.in{opacity:1;transform:translateY(0);}
 
 /* ---------- about ---------- */
-.about{padding-top:150px;padding-bottom:130px;border-top:1px solid var(--line);}
+.about{padding-top:90px;padding-bottom:90px;border-top:1px solid var(--line);}
 .about-grid{display:grid;grid-template-columns:280px 1fr;gap:64px;}
 @media (max-width:800px){
   .about-grid{grid-template-columns:1fr;gap:36px;}
@@ -218,7 +235,7 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
 .cv-btn:hover{background:var(--ember);color:#0b0c10;transform:translateY(-2px);}
 
 /* ---------- services ---------- */
-.services{padding-top:130px;padding-bottom:130px;border-top:1px solid var(--line);}
+.services{padding-top:90px;padding-bottom:90px;border-top:1px solid var(--line);}
 .services-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
 @media (max-width:800px){.services-grid{grid-template-columns:1fr 1fr;}}
 @media (max-width:500px){.services-grid{grid-template-columns:1fr;}}
@@ -227,22 +244,24 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
   padding:32px 26px;transition:border-color .25s ease, transform .25s ease, background .25s ease;
 }
 .service-item:hover{border-color:var(--ember);background:var(--surface-2);transform:translateY(-4px);}
-.service-item .s-num{font-family:var(--font-mono);font-size:12px;color:var(--ember);display:block;margin-bottom:14px;}
+.service-item .s-num{font-family:var(--font-mono);font-size:12px;color:var(--ember);display:block;margin-bottom:14px;font-variant-numeric:tabular-nums;}
 .service-item h4{font-family:var(--font-display);font-weight:600;font-size:18px;letter-spacing:-.005em;}
 
 /* ---------- education (milestones) ---------- */
-.milestones{padding-top:130px;padding-bottom:130px;border-top:1px solid var(--line);}
+.milestones{padding-top:90px;padding-bottom:90px;border-top:1px solid var(--line);}
 .m-list{position:relative;padding-left:34px;}
 .m-list::before{content:'';position:absolute;left:5px;top:6px;bottom:6px;width:1px;background:var(--line);}
+.m-fill{position:absolute;left:5px;top:6px;width:1px;height:0;background:linear-gradient(180deg,var(--ember),var(--gold));box-shadow:0 0 8px 1px var(--ember-soft);transition:height .25s linear;z-index:1;}
 .m-item{position:relative;padding-bottom:44px;}
 .m-item:last-child{padding-bottom:0;}
-.m-item::before{content:'';position:absolute;left:-34px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--ember);}
+.m-item::before{content:'';position:absolute;left:-34px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--bg);border:1px solid var(--ember);z-index:2;transition:background .3s ease, box-shadow .3s ease, transform .3s ease;}
+.m-item.lit::before{background:var(--ember);box-shadow:0 0 10px 2px var(--ember-soft);transform:scale(1.15);}
 .m-item .y{font-family:var(--font-mono);font-size:12px;color:var(--ember);margin-bottom:6px;display:block;}
 .m-item h4{font-family:var(--font-display);font-weight:600;font-size:19px;margin-bottom:6px;}
 .m-item p{color:var(--text-dim);font-size:14.5px;line-height:1.6;max-width:600px;}
 
 /* ---------- skills ---------- */
-.skills{padding-top:130px;padding-bottom:130px;border-top:1px solid var(--line);}
+.skills{padding-top:90px;padding-bottom:90px;border-top:1px solid var(--line);}
 .skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:34px 56px;}
 @media (max-width:800px){.skills-grid{grid-template-columns:1fr;gap:26px;}}
 .skill-top{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;}
@@ -257,15 +276,16 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
 }
 
 /* ---------- projects (work) ---------- */
-.work{padding-top:130px;padding-bottom:130px;border-top:1px solid var(--line);}
-.work-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;}
+.work{padding-top:90px;padding-bottom:90px;border-top:1px solid var(--line);}
+.work-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;perspective:1200px;}
 @media (max-width:800px){.work-grid{grid-template-columns:1fr;}}
 .work-card{
   border:1px solid var(--line);border-radius:3px;padding:32px;background:var(--surface);
-  position:relative;overflow:hidden;transition:transform .35s ease, border-color .35s ease;
-  transform-style:preserve-3d;
+  position:relative;overflow:hidden;transition:transform .5s cubic-bezier(.2,.8,.2,1), border-color .35s ease, box-shadow .5s ease;
+  transform-style:preserve-3d;will-change:transform;
 }
-.work-card:hover{border-color:var(--ember);transform:translateY(-4px);}
+.work-card:hover{border-color:var(--ember);box-shadow:0 22px 44px -20px rgba(0,0,0,.55);}
+.work-card h3, .work-card p, .work-card .tag, .work-card .meta{transform:translateZ(28px);}
 .work-card .glow{
   position:absolute;width:260px;height:260px;border-radius:50%;
   background:radial-gradient(circle,var(--ember-soft),transparent 70%);
@@ -273,14 +293,50 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
   opacity:0;transition:opacity .3s;pointer-events:none;
 }
 .work-card:hover .glow{opacity:1;}
-.work-card .tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ember);}
+.work-card .tag{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ember);display:inline-block;}
 .work-card h3{font-family:var(--font-display);font-weight:600;font-size:24px;margin:14px 0 12px;}
 .work-card p{color:var(--text-dim);font-size:14.5px;line-height:1.65;margin-bottom:20px;}
 .work-card .meta{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:11.5px;color:var(--text-faint);border-top:1px solid var(--line);padding-top:16px;}
 .work-card .meta a:hover{color:var(--ember);}
 
+/* ---------- chessboard (used inside hero) ---------- */
+.chess-board{
+  position:relative;border:1px solid var(--line);border-radius:4px;overflow:hidden;
+  box-shadow:0 20px 44px -22px rgba(0,0,0,.6);
+  display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+}
+.chess-board-hero{width:460px;height:460px;flex:0 0 auto;}
+.chess-sq{position:relative;}
+.chess-sq.light{background:var(--surface-2);}
+.chess-sq.dark{background:var(--bg);}
+.chess-sq.highlight::after{
+  content:'';position:absolute;inset:0;background:var(--ember-soft);
+  animation:sqPulse .9s ease-out;
+}
+@keyframes sqPulse{0%{opacity:0;}30%{opacity:1;}100%{opacity:.55;}}
+
+.chess-pieces{position:absolute;inset:0;pointer-events:none;}
+.chess-piece{
+  position:absolute;width:12.5%;height:12.5%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:clamp(22px,3.2vw,36px);line-height:1;
+  transition:left .7s cubic-bezier(.3,.85,.25,1), top .7s cubic-bezier(.3,.85,.25,1), opacity .35s ease, transform .35s ease;
+  user-select:none;will-change:left, top;
+}
+.chess-piece.white{color:var(--text);text-shadow:0 0 6px rgba(0,0,0,.55);}
+.chess-piece.black{color:var(--gold);text-shadow:0 0 8px rgba(0,0,0,.5), 0 0 10px var(--ember-soft);}
+.chess-piece.captured{opacity:0;transform:scale(.35) rotate(12deg);}
+.chess-piece.in-check{animation:kingCheck .55s ease-in-out infinite;}
+@keyframes kingCheck{0%,100%{filter:drop-shadow(0 0 2px var(--ember));}50%{filter:drop-shadow(0 0 10px var(--ember));}}
+
+@media (prefers-reduced-motion: reduce){
+  .chess-piece{transition:none;}
+  .chess-sq.highlight::after{animation:none;opacity:.55;}
+  .chess-piece.in-check{animation:none;filter:drop-shadow(0 0 8px var(--ember));}
+}
+
 /* ---------- contact ---------- */
-.contact{padding-top:130px;padding-bottom:100px;border-top:1px solid var(--line);text-align:center;}
+.contact{padding-top:90px;padding-bottom:80px;border-top:1px solid var(--line);text-align:center;}
 .contact h2{font-family:var(--font-display);font-weight:600;font-size:clamp(34px,6vw,68px);letter-spacing:-.01em;line-height:1.05;max-width:800px;margin:0 auto 30px;}
 .contact h2 em{font-style:normal;color:var(--ember);}
 .contact > .wrap > p{color:var(--text-dim);font-size:16px;max-width:480px;margin:0 auto 40px;}
@@ -322,6 +378,8 @@ footer{
 
 @media (prefers-reduced-motion: reduce){
   *{animation-duration:.001ms !important;animation-iteration-count:1 !important;transition-duration:.001ms !important;scroll-behavior:auto !important;}
+  .work-card{transform:none !important;}
+  .magnetic{transform:none !important;}
 }
 
 /* ---------- custom animated cursor ---------- */
