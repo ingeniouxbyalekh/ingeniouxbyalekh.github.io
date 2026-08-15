@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your study material — PlayLearn Shop</title>
+<meta name="description" content="Your purchased study material — notes, previous year questions, and eBooks — from the PlayLearn shop." />
+<meta name="robots" content="noindex, follow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">PlayLearn</span>
+      <span class="brand-sub">/ Downloads</span>
+    </a>
+    <a class="main-site-link" href="https://outruniversity.github.io/" target="_blank" rel="noopener">↗ main site</a>
+    <div class="header-actions">
+      <a class="account-link" href="store.html">browse store</a>
+      <a class="account-link" id="account-link" href="login.html">log in</a>
+    </div>
+  </div>
+</header>
+
+<main class="dashboard-main">
+  <div class="wrap">
+    <div class="dashboard-heading">
+      <h2 id="dashboard-heading-title">Your study material</h2>
+    </div>
+    
+
+    <p class="purchase-loading" id="dashboard-loading">Loading…</p>
+
+    <!-- Signed-out view -->
+    <div id="dashboard-signed-out" style="display:none">
+      <div class="profile-guest">
+        <h1>You're not logged in</h1>
+        <p>Log in to see your purchased study material.</p>
+        <a class="btn btn-primary btn-block" href="login.html">Log in</a>
+      </div>
+    </div>
+
+    <!-- Signed-in view -->
+    <div id="dashboard-content" style="display:none">
+
+      <!-- E-classroom hero — shown once the shopper's semester has
+           either a Free Batch or a paid Full Course unlocked; see the
+           script block for the logic and link. If both are unlocked,
+           the paid Full Course banner takes priority. -->
+      <a class="dashboard-hero" id="dashboard-hero" href="#" style="display:none">
+        <div class="dashboard-hero-text">
+          <span class="dashboard-hero-eyebrow" id="dashboard-hero-eyebrow">// live classroom</span>
+          <h3 id="dashboard-hero-title">Your E-classroom is ready</h3>
+          <p id="dashboard-hero-sub">Full Course unlocked — Explore your personalized dashboard.</p>
+        </div>
+        <span class="dashboard-hero-cta">Go to your E-classroom <span class="arrow">→</span></span>
+      </a>
+
+      <div id="dashboard-empty" class="empty-state" style="display:none">
+        → No study material available yet. <a href="store.html">Browse the store →</a>
+      </div>
+      <div id="dashboard-semesters"></div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 PlayLearn by Alekh. Digital goods, delivered by email.</p>
+    <div class="footer-links">
+      <a href="executive.html">Executive Login</a>
+      <a href="admin.html">Admin Login</a>
+    </div>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  /**
+   * PlayLearn Shop — dashboard ("your study material")
+   * ---------------------------------------------------------------
+   * This page has no cart/checkout of its own — it only reads two
+   * places in Firebase (same shapes profile.html already reads):
+   *   - /purchases/<emailKey>/<orderId>  → which product ids this
+   *     shopper has actually paid for (each order's `items[].id`).
+   *   - /links/<subjectCode>-<type>      → { url } per subject+type,
+   *     maintained from executive.html's "Product links" table
+   *     (type is "Notes" | "PYQs" | "eBooks").
+   *
+   * The dashboard shows exactly ONE semester's worth of subjects —
+   * whichever semester the shopper picked at signup or set on
+   * profile.html (`user.semester`). Accounts with no semester saved
+   * yet (e.g. created before this field existed) default to
+   * Semester 1. SUBJECTS_BY_SEMESTER is the same fixed subject list
+   * as executive.html (8 + 8 + 2 + 1 subjects across semesters 1-4),
+   * so every subject in that one semester gets its own row here with
+   * its own Notes / PYQ / eBooks download button.
+   *
+   * Unlock rules, for the shopper's semester N (checked against
+   * their purchased *product* ids — those are still semester-wide,
+   * e.g. "pyq-sem1" — not per-subject):
+   *   - buying "cse-semN"   (Full Course) unlocks Notes, PYQ, AND
+   *     eBooks for EVERY subject in semester N — there's no separate
+   *     "notes-semN" product, so Notes can only ever be unlocked
+   *     this way.
+   *   - buying "pyq-semN"   unlocks PYQ only, for every subject in
+   *     semester N.
+   *   - buying "ebook-semN" unlocks eBooks only, for every subject in
+   *     semester N.
+   * If nothing is unlocked for that semester (or the semester has no
+   * subjects defined), the empty state shows instead.
+   * ---------------------------------------------------------------
+   */
+
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  const SUBJECTS_BY_SEMESTER = {
+    1: [
+      { code: "BH6001", name: "ENGLISH FOR RESEARCH PAPER WRITING" },
+      { code: "BH6401", name: "MATHEMATICAL METHODS IN ENGINEERING" },
+      { code: "CS6101", name: "ADVANCED DATA STRUCTURES AND ALGORITHMS" },
+      { code: "CS6103", name: "WIRELESS SENSOR NETWORKS" },
+      { code: "CS6205", name: "DATA MINING" },
+      { code: "CS6501", name: "ADVANCED DATA STRUCTURES AND ALGORITHMS LABORATORY" },
+      { code: "CS6503", name: "COMPUTING LABORATORY-I" },
+      { code: "MS6403", name: "RESEARCH METHODOLOGY AND IPR" },
+    ],
+    2: [
+      { code: "CS6102", name: "HIGH PERFORMANCE COMPUTING" },
+      { code: "CS6104", name: "OBJECT ORIENTED ANALYSIS AND DESIGN" },
+      { code: "CS6202", name: "MACHINE LEARNING APPLICATIONS" },
+      { code: "CS6210", name: "CLOUD COMPUTING" },
+      { code: "CS6502", name: "COMPUTING LABORATORY-II" },
+      { code: "CS6602", name: "PROJECT (SPECIALIZATION RELATED)" },
+      { code: "EI6304", name: "IOT AND ITS APPLICATIONS" },
+      { code: "IP6002", name: "DISASTER MANAGEMENT" },
+    ],
+    3: [
+      { code: "CS7201", name: "SOFTWARE TESTING" },
+      { code: "CS7601", name: "DISSERTATION (PHASE-I)" },
+    ],
+    4: [
+      { code: "CS7602", name: "DISSERTATION (PHASE-II)" },
+    ],
+  };
+
+  // key: matches the "<type>" half of the /links/<subjectCode>-<type>
+  // id executive.html writes. tag: short label shown on the tile.
+  const MATERIAL_TYPES = [
+    { key: "Notes", tag: "Notes" },
+    { key: "PYQs", tag: "PYQ" },
+    { key: "eBooks", tag: "eBooks" },
+  ];
+
+  function materialTileHTML(tag, subject, typeKey, unlocked) {
+    const linkId = `${subject.code}-${typeKey}`;
+    const tileClass = unlocked ? "material-tile" : "material-tile is-locked";
+    const button = unlocked
+      ? `<button class="btn material-download-btn" type="button" data-link-id="${linkId}">⬇ Download</button>`
+      : `<button class="btn" type="button" disabled>Purchase this to download</button>`;
+    return `
+      <div class="${tileClass}">
+        <span class="material-tag">${tag}</span>
+        <span class="material-name">${escapeHTML(subject.name)}</span>
+        ${button}
+      </div>`;
+  }
+
+  function subjectBlockHTML(subject, hasNotes, hasPYQ, hasEbook) {
+    const tiles = MATERIAL_TYPES.map(({ key, tag }) => {
+      const unlocked = key === "Notes" ? hasNotes : key === "PYQs" ? hasPYQ : hasEbook;
+      return materialTileHTML(tag, subject, key, unlocked);
+    }).join("");
+
+    return `
+      <details class="dashboard-subject">
+        <summary class="dashboard-subject-trigger">
+          <span class="dashboard-subject-label">
+            <span class="subject-code">${escapeHTML(subject.code)}</span>
+            <span class="subject-name">${escapeHTML(subject.name)}</span>
+          </span>
+          <span class="icon">+</span>
+        </summary>
+        <div class="dashboard-subject-panel">
+          <div class="material-tile-grid">${tiles}</div>
+        </div>
+      </details>`;
+  }
+
+  function semesterBlockHTML(semesterNumber, subjects, purchasedIds) {
+    const hasCSE = purchasedIds.has(`cse-sem${semesterNumber}`);
+    const hasPYQDirect = purchasedIds.has(`pyq-sem${semesterNumber}`);
+    const hasEbookDirect = purchasedIds.has(`ebook-sem${semesterNumber}`);
+
+    const hasNotes = hasCSE; // Notes only ever comes bundled in the Full Course
+    const hasPYQ = hasPYQDirect || hasCSE;
+    const hasEbook = hasEbookDirect || hasCSE;
+
+    if (!hasNotes && !hasPYQ && !hasEbook) return null; // nothing unlocked for this semester
+
+    const subjectBlocks = subjects.map((s) => subjectBlockHTML(s, hasNotes, hasPYQ, hasEbook)).join("");
+
+    return `
+      <section class="dashboard-semester">
+        <h3 class="dashboard-semester-title">Semester ${semesterNumber}</h3>
+        <div class="dashboard-subject-list">${subjectBlocks}</div>
+      </section>`;
+  }
+
+  const loadingEl = document.getElementById("dashboard-loading");
+  const signedOutEl = document.getElementById("dashboard-signed-out");
+  const contentEl = document.getElementById("dashboard-content");
+  const emptyEl = document.getElementById("dashboard-empty");
+  const semestersEl = document.getElementById("dashboard-semesters");
+  const heroEl = document.getElementById("dashboard-hero");
+  const heroEyebrowEl = document.getElementById("dashboard-hero-eyebrow");
+  const heroTitleEl = document.getElementById("dashboard-hero-title");
+  const heroSubEl = document.getElementById("dashboard-hero-sub");
+
+  // Live-class access rides on either purchase for the shopper's
+  // semester N:
+  //   - "cse-semN"  (paid Full Course) → /Classroom/SemesterN/index.html
+  //   - "free-semN" (Free Batch)       → /Classroom/Free/SemesterN/index.html
+  // If a shopper has both, the paid Full Course banner wins — buying
+  // the paid course is treated as a superset of the free batch.
+  // Neither purchased for that semester → no hero.
+  function renderDashboardHero(semesterNumber, purchasedIds) {
+    const hasCSE = purchasedIds.has(`cse-sem${semesterNumber}`);
+    const hasFree = purchasedIds.has(`free-sem${semesterNumber}`);
+
+    if (!hasCSE && !hasFree) {
+      heroEl.style.display = "none";
+      return;
+    }
+
+    heroEl.classList.toggle("is-free", !hasCSE && hasFree);
+
+    if (hasCSE) {
+      heroEyebrowEl.textContent = "// live classroom";
+      heroTitleEl.textContent = `Your Semester ${semesterNumber} E-classroom is ready`;
+      heroSubEl.textContent = `Full Course unlocked — Explore your personalized dashboard`;
+      heroEl.href = `Classroom/Semester${semesterNumber}/index.html`;
+    } else {
+      heroEyebrowEl.textContent = "// free batch";
+      heroTitleEl.textContent = `Your Semester ${semesterNumber} Free Batch classroom is ready`;
+      heroSubEl.textContent = `Free Batch unlocked — with limited access.`;
+      heroEl.href = `Classroom/Free/Semester${semesterNumber}/index.html`;
+    }
+
+    heroEl.style.display = "flex";
+  }
+
+  let currentLinksMap = {};
+
+  // Download buttons resolve their link at click-time against whatever
+  // was last fetched from /links, same pattern as profile.html.
+  semestersEl.addEventListener("click", (e) => {
+    const btn = e.target.closest(".material-download-btn");
+    if (!btn) return;
+    const linkId = btn.dataset.linkId;
+    const entry = linkId ? currentLinksMap[linkId] : null;
+    const url = entry && entry.url;
+    if (url) {
+      window.location.href = url;
+    } else {
+      showToast("Link not found");
+    }
+  });
+
+  const user = getUser();
+
+  if (user && user.name) {
+    if (db) {
+      Promise.all([
+        db.ref("purchases/" + emailToKey(user.email)).once("value"),
+        db.ref("links").once("value"),
+      ])
+        .then(([purchasesSnap, linksSnap]) => {
+          currentLinksMap = linksSnap.exists() ? linksSnap.val() : {};
+
+          const purchasedIds = new Set();
+          if (purchasesSnap.exists()) {
+            Object.values(purchasesSnap.val()).forEach((order) => {
+              (order.items || []).forEach((item) => purchasedIds.add(item.id));
+            });
+          }
+
+          const semesterNumber = Number(user.semester) || 1;
+          document.getElementById("dashboard-heading-title").textContent = `Your study material — Semester ${semesterNumber}`;
+
+          const subjects = SUBJECTS_BY_SEMESTER[semesterNumber] || [];
+          const block = subjects.length ? semesterBlockHTML(semesterNumber, subjects, purchasedIds) : null;
+
+          renderDashboardHero(semesterNumber, purchasedIds);
+
+          loadingEl.style.display = "none";
+          contentEl.style.display = "block";
+
+          if (!block) {
+            emptyEl.style.display = "block";
+            semestersEl.innerHTML = "";
+          } else {
+            emptyEl.style.display = "none";
+            semestersEl.innerHTML = block;
+          }
+        })
+        .catch((err) => {
+          console.error("Could not load your study material:", err);
+          loadingEl.textContent = "Couldn't load your study material — try refreshing.";
+        });
+    } else {
+      loadingEl.textContent = "Couldn't load your study material — try refreshing.";
+    }
+  } else {
+    loadingEl.style.display = "none";
+    signedOutEl.style.display = "block";
+  }
+</script>
+</body>
+</html>

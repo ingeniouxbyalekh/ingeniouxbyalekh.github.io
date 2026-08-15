@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your account — PlayLearn Shop</title>
+<meta name="description" content="View your PlayLearn shop account details." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">PlayLearn</span>
+      <span class="brand-sub">/ shop</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">↤ back</a>
+    </div>
+  </div>
+</header>
+
+<main class="auth-main">
+  <div class="auth-grid is-wide">
+    <div class="auth-form-side">
+
+      <!-- Signed-in view -->
+      <div id="profile-signed-in" style="display:none">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profile-avatar">?</div>
+          <div>
+            <h1 id="profile-name">—</h1>
+            <p class="sub" id="profile-email-sub">—</p>
+          </div>
+        </div>
+
+        <div class="profile-accordion">
+
+          <details class="profile-accordion-item" open>
+            <summary class="profile-accordion-trigger">
+              <span>Personal info</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="personal-info-form">
+                <div class="field">
+                  <label for="pi-name">Name</label>
+                  <input id="pi-name" type="text" required autocomplete="name" />
+                </div>
+                <div class="field">
+                  <label for="pi-phone">Phone number</label>
+                  <input id="pi-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+                </div>
+                <div class="field">
+                  <label for="pi-semester">Semester</label>
+                  <select id="pi-semester" required>
+                    <option value="">Select semester</option>
+                    <option value="1">Semester 1</option>
+                    <option value="2">Semester 2</option>
+                    <option value="3">Semester 3</option>
+                    <option value="4">Semester 4</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="pi-email">Email</label>
+                  <input id="pi-email" type="email" readonly />
+                </div>
+                <p class="field-note">Email can't be changed.</p>
+                <p class="field-note">Your semester decides which subjects show up on <a href="index.html">your study material</a>.</p>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Security</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="password-form">
+                <div class="field">
+                  <label for="pw-new">New password</label>
+                  <input id="pw-new" type="password" required minlength="4" autocomplete="new-password" placeholder="At least 4 characters" />
+                </div>
+                <div class="field">
+                  <label for="pw-confirm">Confirm new password</label>
+                  <input id="pw-confirm" type="password" required minlength="4" autocomplete="new-password" placeholder="Re-enter password" />
+                </div>
+                <button type="submit" class="btn btn-primary">Update password</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Order details</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <div id="purchases-list"><p class="purchase-loading">Loading…</p></div>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Raise a query</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <form id="query-form">
+                <div class="field">
+                  <label for="query-message">Your message</label>
+                  <textarea id="query-message" required placeholder="Describe your issue or question…" rows="4"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit query</button>
+              </form>
+            </div>
+          </details>
+
+          <details class="profile-accordion-item">
+            <summary class="profile-accordion-trigger">
+              <span>Your queries</span>
+              <span class="icon">+</span>
+            </summary>
+            <div class="profile-accordion-panel">
+              <div id="queries-list"><p class="purchase-loading">Loading…</p></div>
+            </div>
+          </details>
+
+        </div>
+
+        <button type="button" class="btn btn-block btn-danger-outline" id="logout-btn">Log out</button>
+      </div>
+
+      <!-- Signed-out view (only flashes briefly before redirect) -->
+      <div id="profile-signed-out" style="display:none">
+        <div class="profile-guest">
+          <h1>You're not logged in</h1>
+          <p>Log in to see your account details.</p>
+          <a class="btn btn-primary btn-block" href="login.html">Log in</a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  function initials(name) {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "?";
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+
+  const user = getUser();
+
+  if (user && user.name) {
+    document.getElementById("profile-signed-in").style.display = "block";
+
+    function paint(u) {
+      document.getElementById("profile-avatar").textContent = initials(u.name);
+      document.getElementById("profile-name").textContent = u.name;
+      document.getElementById("profile-email-sub").textContent = u.email || "";
+    }
+
+    paint(user);
+
+    // Personal info form — prefilled from the local session, then
+    // refreshed once the cloud copy comes back below.
+    const piNameEl = document.getElementById("pi-name");
+    const piPhoneEl = document.getElementById("pi-phone");
+    const piSemesterEl = document.getElementById("pi-semester");
+    const piEmailEl = document.getElementById("pi-email");
+
+    function paintPersonalInfo(u) {
+      piNameEl.value = u.name || "";
+      piPhoneEl.value = u.phone || "";
+      piSemesterEl.value = u.semester || "";
+      piEmailEl.value = u.email || "";
+    }
+    paintPersonalInfo(user);
+
+    // Pull the latest saved profile from Firebase in case it was
+    // updated from another browser/device, and refresh the view + the
+    // local session if it's different.
+    fetchUserFromCloud(user.email).then((cloudProfile) => {
+      if (!cloudProfile) return;
+      const merged = { name: cloudProfile.name || user.name, email: user.email, phone: cloudProfile.phone || user.phone || "", semester: cloudProfile.semester || user.semester || "" };
+      paint(merged);
+      paintPersonalInfo(merged);
+      try {
+        localStorage.setItem(AUTH_KEY, JSON.stringify(merged));
+      } catch (err) {
+        console.error("Could not refresh session:", err);
+      }
+    }).catch((err) => {
+      console.error("Could not refresh profile from Firebase:", err);
+    });
+
+    // Personal info — Name and Phone are editable; Email stays
+    // read-only (it's the record's key in /users, so it can't change
+    // here). Writes with .update() rather than .set() so the stored
+    // password isn't touched by this form.
+    const personalInfoForm = document.getElementById("personal-info-form");
+    const personalInfoBtn = personalInfoForm.querySelector("button[type=submit]");
+    personalInfoForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+      const name = piNameEl.value.trim();
+      const phone = piPhoneEl.value.trim();
+      const semester = piSemesterEl.value;
+
+      personalInfoBtn.disabled = true;
+      const originalLabel = personalInfoBtn.textContent;
+      personalInfoBtn.textContent = "Saving…";
+      try {
+        await db.ref("users/" + emailToKey(user.email)).update({ name, phone, semester, updatedAt: Date.now() });
+        const merged = { name, email: user.email, phone, semester };
+        setUser(merged);
+        paint(merged);
+        syncAccountLink();
+        showToast("Profile updated");
+      } catch (err) {
+        console.error("Could not update profile:", err);
+        showToast("Couldn't save — try again");
+      } finally {
+        personalInfoBtn.disabled = false;
+        personalInfoBtn.textContent = originalLabel;
+      }
+    });
+
+    // Security — sets a new password on the /users record. No
+    // current-password check, matching the rest of this stub auth
+    // (see auth.js) — swap for real auth before this handles anyone's
+    // actual account.
+    const passwordForm = document.getElementById("password-form");
+    const passwordBtn = passwordForm.querySelector("button[type=submit]");
+    passwordForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById("pw-new").value;
+      const confirmPassword = document.getElementById("pw-confirm").value;
+
+      if (newPassword !== confirmPassword) {
+        showToast("Passwords don't match");
+        return;
+      }
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      passwordBtn.disabled = true;
+      const originalLabel = passwordBtn.textContent;
+      passwordBtn.textContent = "Saving…";
+      try {
+        await db.ref("users/" + emailToKey(user.email)).update({ password: newPassword, updatedAt: Date.now() });
+        passwordForm.reset();
+        showToast("Password updated");
+      } catch (err) {
+        console.error("Could not update password:", err);
+        showToast("Couldn't save — try again");
+      } finally {
+        passwordBtn.disabled = false;
+        passwordBtn.textContent = originalLabel;
+      }
+    });
+
+    // Purchases — one entry per successful order, written to
+    // /purchases/<emailKey>/<orderId> by cart.js right after a
+    // Razorpay payment succeeds. Each item in the summary line gets
+    // an inline "Download" link — clicking it looks the product id
+    // up in /links (fetched once below into purchaseLinksMap) and
+    // either redirects to the saved URL or shows "No link found".
+    let purchaseLinksMap = {};
+
+    function purchaseItemHTML(p) {
+      const itemsSummary = (p.items || [])
+        .map(
+          (i) =>
+            `<div class="purchase-item-line">${i.title} × ${i.qty} <a href="#" class="download-link" data-product-id="${i.id}">Download</a></div>`
+        )
+        .join("");
+      const date = p.date ? new Date(p.date).toLocaleString("en-IN") : "";
+      const total = "₹" + Number(p.total || 0).toLocaleString("en-IN");
+      return `
+        <div class="purchase-item">
+          <div class="purchase-item-head">
+            <span class="purchase-id">${p.id || ""}</span>
+            <span class="purchase-status status-successful">Paid</span>
+          </div>
+          <div class="purchase-item-items">${itemsSummary}</div>
+          <div class="purchase-item-foot">
+            <span class="purchase-date">${date}</span>
+            <span class="price">${total}</span>
+          </div>
+        </div>`;
+    }
+
+    document.addEventListener("click", (e) => {
+      const link = e.target.closest(".download-link");
+      if (!link) return;
+      e.preventDefault();
+      const entry = purchaseLinksMap[link.dataset.productId];
+      const url = entry && entry.url;
+      if (url) {
+        window.location.href = url;
+      } else {
+        showToast("No link found");
+      }
+    });
+
+    const purchasesListEl = document.getElementById("purchases-list");
+    if (db) {
+      Promise.all([
+        db.ref("purchases/" + emailToKey(user.email)).once("value"),
+        db.ref("links").once("value"),
+      ])
+        .then(([purchasesSnap, linksSnap]) => {
+          purchaseLinksMap = linksSnap.exists() ? linksSnap.val() : {};
+          if (!purchasesSnap.exists()) {
+            purchasesListEl.innerHTML = `<p class="purchase-empty">No purchases yet.</p>`;
+            return;
+          }
+          const purchases = Object.values(purchasesSnap.val()).sort((a, b) => new Date(b.date) - new Date(a.date));
+          purchasesListEl.innerHTML = `<div class="purchase-list">${purchases.map(purchaseItemHTML).join("")}</div>`;
+        })
+        .catch((err) => {
+          console.error("Could not load purchases:", err);
+          purchasesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+        });
+    } else {
+      purchasesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your purchases — try refreshing.</p>`;
+    }
+
+    // Queries — threaded support tickets at /queries/<emailKey>/<queryId>.
+    // Each query holds a `messages` map (push-keyed) so either side can
+    // add as many messages as they need; the query itself only carries
+    // status: "open" until an admin marks it "closed". While a query is
+    // open, a small reply box lets the shopper add another message —
+    // once it's closed, the thread becomes read-only here.
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function queryStatusClass(status) {
+      return status === "open" ? "status-open" : "status-closed";
+    }
+
+    function sortedMessages(q) {
+      return q.messages ? Object.values(q.messages).sort((a, b) => (a.date || 0) - (b.date || 0)) : [];
+    }
+
+    function messageBubbleHTML(m) {
+      const date = m.date ? new Date(m.date).toLocaleString("en-IN") : "";
+      const isExecutive = m.sender === "executive";
+      // On this page "you" are the shopper, so your own messages should sit
+      // on the right and the support reply on the left — the opposite of
+      // the sender-user/sender-admin classes' default (right-for-admin)
+      // alignment in style.css. Swap which class each sender gets here
+      // (labels stay tied to the real sender) so executive.html, which wants
+      // the executive's own reply on the right, is unaffected.
+      return `
+        <div class="query-thread-msg sender-${isExecutive ? "user" : "admin"}">
+          <span class="msg-meta">${isExecutive ? "Support" : "You"} · ${date}</span>${escapeHTML(m.text || "")}
+        </div>`;
+    }
+
+    function queryItemHTML(q) {
+      const status = q.status || "open";
+      const messages = sortedMessages(q);
+      const headDate = messages[0] ? new Date(messages[0].date).toLocaleString("en-IN") : "";
+      const thread = messages.map(messageBubbleHTML).join("");
+      const replyForm =
+        status === "open"
+          ? `
+        <form class="query-reply-form" data-query-id="${q.queryId}">
+          <textarea rows="2" placeholder="Add more detail or reply…" required></textarea>
+          <button type="submit" class="btn btn-small">Send</button>
+        </form>`
+          : "";
+      return `
+        <details class="query-item" data-query-id="${q.queryId}">
+          <summary class="query-item-head">
+            <span class="query-date">${headDate}</span>
+            <span class="query-item-head-right">
+              <span class="query-status ${queryStatusClass(status)}">${escapeHTML(status)}</span>
+              <span class="icon query-item-icon">+</span>
+            </span>
+          </summary>
+          <div class="query-item-panel">
+            <div class="query-thread">${thread}</div>
+            ${replyForm}
+          </div>
+        </details>`;
+    }
+
+    const queriesListEl = document.getElementById("queries-list");
+
+    function loadQueries() {
+      if (!db) {
+        queriesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your queries — try refreshing.</p>`;
+        return;
+      }
+      db.ref("queries/" + emailToKey(user.email))
+        .once("value")
+        .then((snap) => {
+          if (!snap.exists()) {
+            queriesListEl.innerHTML = `<p class="purchase-empty">No queries yet.</p>`;
+            return;
+          }
+          const queries = Object.entries(snap.val())
+            .map(([queryId, q]) => ({ ...q, queryId }))
+            .sort((a, b) => (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0));
+          queriesListEl.innerHTML = `<div class="query-list">${queries.map(queryItemHTML).join("")}</div>`;
+        })
+        .catch((err) => {
+          console.error("Could not load queries:", err);
+          queriesListEl.innerHTML = `<p class="purchase-empty">Couldn't load your queries — try refreshing.</p>`;
+        });
+    }
+    loadQueries();
+
+    const queryForm = document.getElementById("query-form");
+    const queryBtn = queryForm.querySelector("button[type=submit]");
+    const queryMessageEl = document.getElementById("query-message");
+    queryForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = queryMessageEl.value.trim();
+      if (!message) return;
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      queryBtn.disabled = true;
+      const originalLabel = queryBtn.textContent;
+      queryBtn.textContent = "Submitting…";
+      try {
+        const now = Date.now();
+        const queryRef = db.ref("queries/" + emailToKey(user.email)).push();
+        const msgKey = queryRef.child("messages").push().key;
+        await queryRef.set({
+          name: piNameEl.value.trim() || user.name || "",
+          email: user.email,
+          status: "open",
+          createdAt: now,
+          updatedAt: now,
+          messages: { [msgKey]: { sender: "user", text: message, date: now } },
+        });
+        queryForm.reset();
+        showToast("Query submitted");
+        loadQueries();
+      } catch (err) {
+        console.error("Could not submit query:", err);
+        showToast("Couldn't submit — try again");
+      } finally {
+        queryBtn.disabled = false;
+        queryBtn.textContent = originalLabel;
+      }
+    });
+
+    // Follow-up messages on an already-open query — one reply form per
+    // query item, wired via delegation since the list re-renders often.
+    queriesListEl.addEventListener("submit", async (e) => {
+      const form = e.target.closest(".query-reply-form");
+      if (!form) return;
+      e.preventDefault();
+
+      const textarea = form.querySelector("textarea");
+      const text = textarea.value.trim();
+      if (!text) return;
+      if (!db) {
+        showToast("Firebase isn't initialized");
+        return;
+      }
+
+      const queryId = form.dataset.queryId;
+      const sendBtn = form.querySelector("button[type=submit]");
+      sendBtn.disabled = true;
+      try {
+        const now = Date.now();
+        const emailKey = emailToKey(user.email);
+        await db.ref(`queries/${emailKey}/${queryId}/messages`).push({ sender: "user", text, date: now });
+        await db.ref(`queries/${emailKey}/${queryId}`).update({ updatedAt: now });
+        showToast("Message sent");
+        loadQueries();
+      } catch (err) {
+        console.error("Could not send message:", err);
+        showToast("Couldn't send — try again");
+        sendBtn.disabled = false;
+      }
+    });
+
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      logoutUser();
+      window.location.href = "store.html";
+    });
+  } else {
+    document.getElementById("profile-signed-out").style.display = "block";
+  }
+</script>
+</body>
+</html>

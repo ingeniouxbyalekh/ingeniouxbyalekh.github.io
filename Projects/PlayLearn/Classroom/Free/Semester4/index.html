@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>
+      // Auth guard: this classroom page is for signed-in users only.
+      // Runs synchronously before anything else parses, so a signed-out
+      // visitor never sees the content flash on screen — they're sent
+      // straight to the main site (that's where login/signup and course
+      // access live). Keep this key in sync with AUTH_KEY in auth.js.
+      (function () {
+        try {
+          var raw = localStorage.getItem("PlayLearn_user_v1");
+          var user = raw ? JSON.parse(raw) : null;
+          if (!user || !user.name) window.location.replace("../../../index.html");
+        } catch (e) {
+          window.location.replace("../../../index.html");
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlayLearn || E-Classroom</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+    <div class="logo-area"> 
+        <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+        <span>PlayLearn <small class="plan-tag">Free</small></span>
+    </div>
+    <ul class="nav-links">
+    <a href="index.html" style="color: inherit; text-decoration: none;">
+    <li class="active"><i class="fas fa-th-large"></i> Dashboard</li></a>
+    <a href="../../store.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-store"></i> Store</li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-folder-open"></i> Notes <i class="fas fa-lock lock-badge"></i></li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-book"></i> Ebooks <i class="fas fa-lock lock-badge"></i></li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-file-alt"></i> PYQs <i class="fas fa-lock lock-badge"></i></li></a>
+    <a href="syllabus.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-scroll"></i> Syllabus</li></a>
+    <a href="timetable.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-clock"></i> Timetable</li></a>
+    <a href="https://outr-erp.cet.edu.in/login" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-calendar-check"></i> Attendance</li></a>
+    <a href="rankers.html" style="color: inherit; text-decoration: none;">
+    <a href="contacts.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-code"></i> Contact Us</li></a>
+</ul>
+    <div class="sidebar-footer">DESIGNED AND DEVELOPED BY #ALEKH</div>
+</nav>
+
+        <main class="main-content">
+            <header>
+                <div class="mobile-branding">PlayLearn <small class="plan-tag">Free</small></div>
+                <h2 class="welcome-text">Welcome User,</h2>
+                <div class="header-right">
+                    <i class="fas fa-bell bell-icon"></i>
+                    
+                    <div class="profile-container" id="profileToggle">
+                        <div class="profile-badge" id="profileBadge"><i class="fas fa-user"></i></div>
+
+                        <div class="branch-dropdown" id="branchMenu">
+
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="search-container">
+    <input type="text" placeholder="ex: cc, pyq, syllabus" id="searchBox" list="searchSuggestions" autocomplete="off">
+    <i class="fas fa-search" id="searchBtn" style="cursor: pointer;"></i>
+
+    
+</div>
+
+            <section class="schedule-section">
+                <h3>Schedule & Classes</h3>
+                <div class="date-scroller" id="dateScroller"></div>
+
+                <div class="loader-track">
+                    <div id="loadingLine" class="loading-bar"></div>
+                </div>
+            </section>
+
+            <div id="fragmentContainer" class="fragment-container">
+                <div class="placeholder-text">Loading, please wait..</div>
+            </div> 
+            
+            <div style="height: 40px;"></div>
+
+            <section class="study-list">
+                <h3>ClassNotes</h3>
+                <div id="classnotes-list">
+                    <div class="material-card">
+                        <div class="mat-icon purple"><i class="fas fa-spinner fa-spin"></i></div>
+                        <div class="mat-details"><h4>Loading…</h4></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-link active"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="javascript:void(0)" class="nav-link locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-folder"></i><span>Notes</span><i class="fas fa-lock lock-badge-sm"></i></a>
+    
+    <div class="nav-link" id="academicsTrigger">
+        <i class="fas fa-th-list"></i> <span>More</span>
+        
+        <div class="utility-menu" id="utilityMenu">
+            <div class="menu-header">Academic Tools</div>
+            <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-book"></i> Ebooks <i class="fas fa-lock lock-badge-sm"></i></a>
+            <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-file-alt"></i> PYQs <i class="fas fa-lock lock-badge-sm"></i></a>
+            <a href="syllabus.html"><i class="fas fa-scroll"></i> Syllabus</a>
+            <a href="timetable.html"><i class="fas fa-clock"></i> Timetable</a>
+            <a href="https://outr-erp.cet.edu.in/login"><i class="fas fa-calendar-check"></i> Attendance</a>
+            <a href="rankers.html"><i class="fas fa-trophy"></i> Rankers</a>
+        </div>
+    </div>
+
+    <a href="contacts.html" class="nav-link"><i class="fas fa-code"></i><span>About Us</span></a>
+</nav>
+
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="subjects.js"></script>
+    <script src="script.js"></script>
+    <script>
+      // ClassNotes preview — one card per this semester's subjects,
+      // Notes-type download links resolved live from Firebase's
+      // /links table (see subjects.js). No hardcoded subjects or
+      // Google Drive URLs here anymore.
+      (async function renderClassNotes() {
+        const listEl = document.getElementById("classnotes-list");
+        if (!listEl) return;
+
+        const linksMap = await loadMaterialLinks();
+
+        if (!SUBJECTS.length) {
+          listEl.innerHTML = `<p style="font-size:13px;color:var(--text-light);">No subjects added for this semester yet.</p>`;
+          return;
+        }
+
+        listEl.innerHTML = SUBJECTS.map((subject) => {
+          // Downloads are a paid feature — always render the locked
+          // state and prompt to purchase instead of resolving a URL.
+          const button = `<button class="dl-btn locked" onclick="showPurchasePrompt()" title="Purchase to unlock"><i class="fas fa-lock"></i></button>`;
+          return `
+                <div class="material-card">
+                    <div class="mat-icon purple"><i class="fas fa-code"></i></div>
+                    <div class="mat-details">
+                        <h4>${escapeHTML(subject.name)}</h4>
+                        <p>PDF • ${subject.code}</p>
+                    </div>
+                    ${button}
+                </div>`;
+        }).join("");
+      })();
+    </script>
+</body>
+</html>

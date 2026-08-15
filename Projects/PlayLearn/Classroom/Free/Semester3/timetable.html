@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>
+      // Auth guard: this classroom page is for signed-in users only.
+      // Runs synchronously before anything else parses, so a signed-out
+      // visitor never sees the content flash on screen — they're sent
+      // straight to the main site (that's where login/signup and course
+      // access live). Keep this key in sync with AUTH_KEY in auth.js.
+      (function () {
+        try {
+          var raw = localStorage.getItem("PlayLearn_user_v1");
+          var user = raw ? JSON.parse(raw) : null;
+          if (!user || !user.name) window.location.replace("../../../index.html");
+        } catch (e) {
+          window.location.replace("../../../index.html");
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Timetable | OUTR MTech CSE</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .timetable-container {
+            width: 100%;
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+
+        .info-card {
+            background: var(--primary-soft);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 30px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .info-item {
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            min-width: 800px;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 15px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 15px 10px;
+            text-align: center;
+            border: 1px solid #eee;
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .day-column {
+            background: #fcfcfc;
+            font-weight: 700;
+            color: var(--primary);
+            width: 100px;
+        }
+
+        .lunch-break {
+            background: #f8f9fe;
+            color: #bbb;
+            font-style: italic;
+            letter-spacing: 2px;
+            vertical-align: middle;
+        }
+
+        .mobile-timetable { display: none; }
+
+        @media (max-width: 768px) {
+            .timetable-container { display: none; }
+            .mobile-timetable { display: flex; flex-direction: column; gap: 20px; }
+            
+            .day-card {
+                background: white;
+                border-radius: 15px;
+                border: 1px solid var(--border);
+                overflow: hidden;
+            }
+
+            .day-title {
+                background: var(--primary);
+                color: white;
+                padding: 12px 15px;
+                font-weight: 600;
+                font-size: 15px;
+            }
+
+            .slot {
+                display: flex;
+                padding: 12px 15px;
+                border-bottom: 1px solid #eee;
+                align-items: center;
+            }
+
+            .slot:last-child { border-bottom: none; }
+
+            .time {
+                width: 95px;
+                font-size: 11px;
+                color: var(--text-light);
+                font-weight: 600;
+            }
+
+            .subject {
+                font-size: 13px;
+                color: var(--text-dark);
+                font-weight: 600;
+            }
+
+            .welcome-text { display: none !important; }
+            header { justify-content: flex-end; }
+            .mobile-branding { display: block; margin-right: auto; }
+            .main-content { padding-bottom: 120px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+            <div class="logo-area"> 
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span>OUTR MTech</span>
+            </div>
+            <ul class="nav-links">
+                <a href="index.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-th-large"></i> Dashboard</li></a>
+                <a href="notes.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-folder-open"></i> Study Material</li></a>
+                <a href="ebooks.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-book"></i> Ebooks</li></a>
+                <a href="pyqs.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-file-alt"></i> PYQs</li></a>
+                <a href="syllabus.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-scroll"></i> Syllabus</li></a>
+                <a href="timetable.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-clock"></i> Timetable</li></a>
+                <a href="https://outr-erp.cet.edu.in/login" style="color: inherit; text-decoration: none;"><li><i class="fas fa-calendar-check"></i> Attendance</li></a>
+                <a href="rankers.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-trophy"></i> Rankers</li></a>
+                <a href="contacts.html" style="color: inherit; text-decoration: none;"><li><i class="fas fa-code"></i> About Us</li></a>
+            </ul>
+            <div class="sidebar-footer">Designed by #ALEKH</div>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <h2 class="welcome-text">Welcome Back</h2>
+                <div class="mobile-branding">OUTR MTech</div>
+                <div class="header-right">
+                    <i class="fas fa-bell bell-icon"></i>
+                    <div class="profile-badge">CSE</div>
+                </div>
+            </header>
+
+            <h1 style="font-size: 22px; color: var(--text-dark); border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 20px;">
+                Class Timetable
+            </h1>
+
+            <div class="info-card">
+                <div class="info-item"><i class="fas fa-calendar-alt"></i> Semester - 2</div>
+                <div class="info-item"><i class="fas fa-door-open"></i> Room: B 409</div>
+                <div class="info-item"><i class="fas fa-clock"></i> W.E.F. 08.02.2026</div>
+            </div>
+
+            <div class="timetable-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Day</th>
+                            <th>9-10 AM</th><th>10-11 AM</th><th>11-12 PM</th><th>12-1 PM</th><th>1-2 PM</th><th>2-3 PM</th><th>3-4 PM</th><th>4-5 PM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="day-column">MON</td>
+                            <td>-</td><td>-</td><td colspan="2" style="background: #f9f9f9;">Disaster Mgmt</td>
+                            <td rowspan="5" class="lunch-break">LUNCH</td>
+                            <td>-</td><td>-</td><td>-</td>
+                        </tr>
+                        <tr>
+                            <td class="day-column">TUE</td>
+                            <td colspan="2" style="background: #f9f9f9;">IoT</td><td>OOAD</td><td>MLA</td><td>-</td><td>-</td><td>-</td>
+                        </tr>
+                        <tr>
+                            <td class="day-column">WED</td>
+                            <td>Project</td><td colspan="2" style="background: #f9f9f9;">Comp Lab-II</td><td>HPC</td>
+                            <td colspan="2" style="background: #f9f9f9;">Comp Lab-II</td><td>CC</td>
+                        </tr>
+                        <tr>
+                            <td class="day-column">THU</td>
+                            <td>-</td><td>OOAD</td><td>HPC</td><td>IoT</td><td>Project</td><td>MLA</td><td>CC</td>
+                        </tr>
+                        <tr>
+                            <td class="day-column">FRI</td>
+                            <td>OOAD</td><td>CC</td><td>HPC</td><td>MLA</td><td>-</td><td>-</td><td>-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mobile-timetable">
+                <h3 style="font-size: 16px; color: var(--primary); margin: 10px 0;">Current Semester (Sem 2)</h3>
+                <div class="day-card">
+                    <div class="day-title">Monday</div>
+                    <div class="slot"><span class="time">11:00 - 01:00</span><span class="subject">Disaster Mgmt</span></div>
+                </div>
+                <div class="day-card">
+                    <div class="day-title">Tuesday</div>
+                    <div class="slot"><span class="time">09:00 - 11:00</span><span class="subject">IoT</span></div>
+                    <div class="slot"><span class="time">11:00 - 12:00</span><span class="subject">OOAD</span></div>
+                    <div class="slot"><span class="time">12:00 - 01:00</span><span class="subject">MLA</span></div>
+                </div>
+                <div class="day-card">
+                    <div class="day-title">Wednesday</div>
+                    <div class="slot"><span class="time">10:00 - 12:00</span><span class="subject">Comp Lab-II</span></div>
+                    <div class="slot"><span class="time">12:00 - 01:00</span><span class="subject">HPC</span></div>
+                    <div class="slot"><span class="time">02:00 - 04:00</span><span class="subject">Comp Lab-II</span></div>
+                    <div class="slot"><span class="time">04:00 - 05:00</span><span class="subject">CC</span></div>
+                </div>
+                <div class="day-card">
+                    <div class="day-title">Thursday</div>
+                    <div class="slot"><span class="time">10:00 - 11:00</span><span class="subject">OOAD</span></div>
+                    <div class="slot"><span class="time">11:00 - 12:00</span><span class="subject">HPC</span></div>
+                    <div class="slot"><span class="time">12:00 - 01:00</span><span class="subject">IoT</span></div>
+                    <div class="slot"><span class="time">03:00 - 04:00</span><span class="subject">MLA</span></div>
+                    <div class="slot"><span class="time">04:00 - 05:00</span><span class="subject">CC</span></div>
+                </div>
+                <div class="day-card">
+                    <div class="day-title">Friday</div>
+                    <div class="slot"><span class="time">09:00 - 10:00</span><span class="subject">OOAD</span></div>
+                    <div class="slot"><span class="time">10:00 - 11:00</span><span class="subject">CC</span></div>
+                    <div class="slot"><span class="time">11:00 - 12:00</span><span class="subject">HPC</span></div>
+                    <div class="slot"><span class="time">12:00 - 01:00</span><span class="subject">MLA</span></div>
+                </div>
+            </div>
+            
+            <p style="font-size: 11px; color: #999; margin: 20px 0;">
+                * Remedial classes and mentoring on odd Saturdays.
+            </p>
+        </main>
+
+<style>
+    /* --- Bottom Nav & More Menu Section --- */
+    .bottom-nav {
+        z-index: 9999 !important;
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background: white;
+    }
+
+    #academicsTrigger {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .utility-menu {
+        position: absolute;
+        bottom: 80px; 
+        left: 50%;
+        transform: translateX(-50%) translateY(15px);
+        width: 180px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        border: 1px solid var(--border, #eee);
+        padding: 10px 0;
+        z-index: 10000;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .utility-menu.show {
+        visibility: visible !important;
+        opacity: 1 !important;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+    }
+
+    .utility-menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 15px;
+        text-decoration: none;
+        color: var(--text-dark, #333);
+        font-size: 13px;
+        transition: 0.2s;
+    }
+
+    .utility-menu a:hover {
+        background: var(--primary-soft, #f8f9fc);
+        color: var(--primary, #4e73df);
+    }
+
+    .menu-header {
+        padding: 5px 15px 10px;
+        font-weight: 700;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--text-light, #888);
+        border-bottom: 1px solid var(--border, #eee);
+        margin-bottom: 5px;
+    }
+</style>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="notes.html" class="nav-link"><i class="fas fa-folder"></i><span>Notes</span></a>
+
+    <div class="nav-link active" id="academicsTrigger">
+        <i class="fas fa-th-list"></i> <span>More</span>
+        <div class="utility-menu" id="utilityMenu">
+            <div class="menu-header">Academic Tools</div>
+            <a href="ebooks.html"><i class="fas fa-book"></i> Ebooks</a>
+            <a href="pyqs.html"><i class="fas fa-file-alt"></i> PYQs</a>
+            <a href="syllabus.html"><i class="fas fa-scroll"></i> Syllabus</a>
+            <a href="timetable.html"><i class="fas fa-clock"></i> Timetable</a>
+            <a href="https://outr-erp.cet.edu.in/login"><i class="fas fa-calendar-check"></i> Attendance</a>
+            <a href="rankers.html"><i class="fas fa-trophy"></i> Rankers</a>
+        </div>
+    </div>
+
+    <a href="contacts.html" class="nav-link"><i class="fas fa-code"></i><span>About Us</span></a>
+</nav>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const trigger = document.getElementById('academicsTrigger');
+        const menu = document.getElementById('utilityMenu');
+
+        if (trigger && menu) {
+            trigger.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                menu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!trigger.contains(e.target)) {
+                    menu.classList.remove('show');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

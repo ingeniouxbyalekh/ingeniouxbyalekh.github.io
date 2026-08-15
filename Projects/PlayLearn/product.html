@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title id="page-title">Product — PlayLearn Shop</title>
+<meta id="page-description" name="description" content="Research papers, books, guides, and templates from PlayLearn." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">PlayLearn</span>
+      <span class="brand-sub">/ shop</span>
+    </a>
+    <a class="main-site-link" href="https://www.PlayLearn.in/" target="_blank" rel="noopener">↗ main site</a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">my downloads</a>
+      <a class="account-link" id="account-link" href="login.html">log in</a>
+      <button class="cart-button" id="open-cart-btn" type="button" aria-haspopup="dialog" aria-controls="cart-drawer">
+        cart
+        <span class="cart-count" id="cart-count-badge" style="display:none">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap breadcrumb" id="breadcrumb">
+  <a href="store.html">Shop</a>
+</div>
+
+<section class="product-hero">
+  <div class="wrap product-hero-grid">
+
+    <!-- Gallery -->
+    <div>
+      <div class="gallery-main">
+        <div class="book-mock" id="item-mock">
+          <div>
+            <div class="book-eyebrow" id="mock-eyebrow">category</div>
+            <div class="book-title" id="mock-title">Title</div>
+          </div>
+          <div class="book-glyph" id="mock-glyph">01001110</div>
+          <div class="book-footer">PlayLearn — A. C. SAHOO</div>
+        </div>
+      </div>
+      <div class="gallery-thumbs">
+        <button class="gallery-thumb" type="button" data-view="cover" aria-pressed="true">cover</button>
+        <button class="gallery-thumb" type="button" data-view="spine" aria-pressed="false">spine</button>
+        <button class="gallery-thumb" type="button" data-view="spread" aria-pressed="false">sample</button>
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="product-info">
+      <div class="eyebrow" id="info-eyebrow">// category</div>
+      <h1 id="info-title">Product title</h1>
+      <p class="lede" id="info-blurb">Description.</p>
+
+      <div class="product-price-row">
+        <span class="price" id="info-price">0</span>
+        <span class="format-tag" id="info-format">FORMAT</span>
+      </div>
+
+      <div class="purchase-row">
+        <button class="btn hero-add-btn" id="hero-add-btn" type="button">Add to cart</button>
+        <button class="btn btn-primary hero-buy-btn" id="hero-buy-btn" type="button">Buy now</button>
+      </div>
+
+      <div class="highlight-row" id="highlight-row"></div>
+    </div>
+
+  </div>
+</section>
+
+<section class="product-section">
+  <div class="wrap">
+    <h2>What you get</h2>
+    <ul class="chapter-list" id="whats-inside-list" style="list-style:none;"></ul>
+  </div>
+</section>
+
+<section class="product-section">
+  <div class="wrap">
+    <h2 id="about-heading">About this item</h2>
+    <div class="excerpt-block" id="about-block"></div>
+  </div>
+</section>
+
+<section class="product-section">
+  <div class="wrap">
+    <h2>You might also like</h2>
+    <div class="related-grid" id="related-grid"></div>
+  </div>
+</section>
+
+<section class="product-section">
+  <div class="wrap">
+    <h2>Questions</h2>
+    <div class="accordion">
+      <div class="accordion-item" data-open="true">
+        <button class="accordion-trigger" type="button">
+          How do I receive this after buying?
+          <span class="icon">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p id="faq-delivery">You'll get a download link by email within 24 hours once checkout is confirmed.</p>
+        </div>
+      </div>
+      <div class="accordion-item" data-open="false">
+        <button class="accordion-trigger" type="button">
+          Is this a one-time purchase?
+          <span class="icon">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>Yes — one payment, and future updates to this edition are included at no extra cost.</p>
+        </div>
+      </div>
+      <div class="accordion-item" data-open="false">
+        <button class="accordion-trigger" type="button">
+          Can I get a refund?
+          <span class="icon">+</span>
+        </button>
+        <div class="accordion-panel">
+          <p>No. After purchase, you'll not get any refund</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 PlayLearn — Alekh Chandra Sahoo. Digital goods, delivered by email.</p>
+    <div class="footer-links">
+      <a href="https://www.PlayLearn.in/" target="_blank" rel="noopener">Main site</a>
+      <a href="mailto:business.PlayLearn@gmail.com">Contact</a>
+    </div>
+  </div>
+</footer>
+
+<div class="mobile-buy-bar">
+  <span class="price" id="mobile-price">0</span>
+  <button class="btn hero-buy-btn" type="button" onclick="document.getElementById('hero-buy-btn').click()">Buy now</button>
+</div>
+
+<!-- Cart drawer -->
+<div class="overlay" id="cart-overlay"></div>
+<aside class="drawer" id="cart-drawer" role="dialog" aria-label="Shopping cart" aria-hidden="true">
+  <div class="drawer-header">
+    <span class="terminal-dot"></span>
+    <span class="terminal-dot"></span>
+    <span class="terminal-dot"></span>
+    <span class="terminal-title">Your cart</span>
+    <button class="drawer-close" id="close-cart-btn" aria-label="Close cart">✕</button>
+  </div>
+  <div class="drawer-log">
+    <div id="cart-empty" class="empty-state" style="display:none">→ cart is empty. add something from the catalog.</div>
+    <div class="cart-items" id="cart-items"></div>
+  </div>
+  <div class="drawer-footer">
+    <div class="drawer-summary-row total">
+      <span>Subtotal</span>
+      <span class="price" id="cart-subtotal">0</span>
+    </div>
+    <button class="btn btn-primary btn-block" id="checkout-btn" disabled>Checkout</button>
+  </div>
+</aside>
+
+<!-- Checkout modal -->
+<div class="modal-overlay" id="checkout-overlay">
+  <div class="modal" role="dialog" aria-label="Checkout">
+    <div class="drawer-header">
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-title">Checkout</span>
+      <button class="drawer-close" id="close-checkout-btn" aria-label="Close checkout">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div id="checkout-step-form">
+        <div class="order-summary" id="checkout-summary"></div>
+        <form id="checkout-form">
+          <div class="field">
+            <label for="checkout-name">Name</label>
+            <input id="checkout-name" type="text" required autocomplete="name" readonly />
+          </div>
+          <div class="field">
+            <label for="checkout-phone">Phone number</label>
+            <input id="checkout-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" readonly />
+          </div>
+          <div class="field">
+            <label for="checkout-email">Email (for delivery)</label>
+            <input id="checkout-email" type="email" required autocomplete="email" readonly />
+          </div>
+          <p class="field-note">Pulled from your account — log in with a different account to change these.</p>
+          <button type="submit" class="btn btn-primary btn-block">Pay with Razorpay</button>
+          <p class="checkout-note">
+            This shop is running Razorpay's test mode — no real money moves.
+          </p>
+        </form>
+      </div>
+
+      <div id="checkout-step-success" style="display:none">
+        <div class="checkout-success">
+          <div class="ok-mark">✓</div>
+          <h3>Order confirmed</h3>
+          <p>Thank you for your testing. If money deducted from your bank contact business.PlayLearn@gmail.com</p>
+          <!-- <p>A copy of your files will be sent to the email you entered once payments go live.</p> -->
+        </div>
+        <button type="button" class="btn btn-block" id="download-receipt-btn">Download receipt (PDF)</button>
+        <button type="button" class="btn btn-primary btn-block" id="checkout-done-btn">Done</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="cart.js"></script>
+<script src="product.js"></script>
+</body>
+</html>
