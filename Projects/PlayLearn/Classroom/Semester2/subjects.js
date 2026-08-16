@@ -22,10 +22,10 @@ const SUBJECTS = [
   { code: "CS6104", name: "OBJECT ORIENTED ANALYSIS AND DESIGN" },
   { code: "CS6202", name: "MACHINE LEARNING APPLICATIONS" },
   { code: "CS6210", name: "CLOUD COMPUTING" },
-  { code: "CS6502", name: "COMPUTING LABORATORY-II" },
-  { code: "CS6602", name: "PROJECT (SPECIALIZATION RELATED)" },
   { code: "EI6304", name: "IOT AND ITS APPLICATIONS" },
   { code: "IP6002", name: "DISASTER MANAGEMENT" },
+  { code: "CS6502", name: "COMPUTING LABORATORY-II" },
+  { code: "CS6602", name: "PROJECT (SPECIALIZATION RELATED)" },
 ];
 
 function escapeHTML(str) {
