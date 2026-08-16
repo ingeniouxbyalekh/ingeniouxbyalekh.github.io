@@ -239,8 +239,10 @@
     loadExecutives();
   }
 
-  document.getElementById("admin-logout-btn").addEventListener("click", () => {
+  document.getElementById("admin-logout-btn").addEventListener("click", async () => {
+    const session = getAdminSession();
     clearAdminSession();
+    if (session && session.email) await releaseDeviceSession("admin", emailToKey(session.email));
     window.location.reload();
   });
 
@@ -287,9 +289,25 @@
     }
   }
 
+  // If another device logs in on this admin account while this tab is
+  // open (or was already open), this device's claim gets invalidated —
+  // see "Single-device login" in auth.js. Both the on-load check and
+  // the live watch land here.
+  function invalidateAdminSession() {
+    if (!getAdminSession()) return;
+    clearAdminSession();
+    bodyEl.style.display = "none";
+    authGateEl.style.display = "block";
+    lockOutSignupIfAdminExists();
+    showToast("Logged out — this account signed in on another device");
+  }
+
   const existingAdminSession = getAdminSession();
   if (existingAdminSession && existingAdminSession.email) {
     unlockAdmin(existingAdminSession);
+    const existingAdminKey = emailToKey(existingAdminSession.email);
+    verifyDeviceSession("admin", existingAdminKey, invalidateAdminSession);
+    watchDeviceSession("admin", existingAdminKey, invalidateAdminSession);
   } else {
     lockOutSignupIfAdminExists();
   }
@@ -331,6 +349,11 @@
         return;
       }
       await clearLoginAttempts("adminLoginAttempts", emailKey);
+      const canProceed = await resolveDeviceLogin("admin", emailKey);
+      if (!canProceed) {
+        showToast("Login cancelled");
+        return;
+      }
       const admin = { name: record.name, email: record.email };
       setAdminSession(admin);
       unlockAdmin(admin);
@@ -369,6 +392,7 @@
         return;
       }
       await db.ref("admin/" + key).set({ name, email, password, createdAt: Date.now() });
+      await claimDeviceSession("admin", key, getDeviceId());
       const admin = { name, email };
       setAdminSession(admin);
       unlockAdmin(admin);
@@ -404,6 +428,12 @@
       const snap = await db.ref("admin/" + key).once("value");
       if (snap.exists()) {
         const record = snap.val();
+        const canProceed = await resolveDeviceLogin("admin", key);
+        if (!canProceed) {
+          showToast("Login cancelled");
+          if (auth) auth.signOut();
+          return;
+        }
         const admin = { name: record.name, email: record.email };
         setAdminSession(admin);
         unlockAdmin(admin);
@@ -415,6 +445,7 @@
         return;
       }
       await db.ref("admin/" + key).set({ name: googleUser.displayName || "", email, createdAt: Date.now() });
+      await claimDeviceSession("admin", key, getDeviceId());
       const admin = { name: googleUser.displayName || "", email };
       setAdminSession(admin);
       unlockAdmin(admin);

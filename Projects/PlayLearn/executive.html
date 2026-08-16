@@ -276,8 +276,10 @@
     loadQueries();
   }
 
-  document.getElementById("executive-logout-btn").addEventListener("click", () => {
+  document.getElementById("executive-logout-btn").addEventListener("click", async () => {
+    const session = getexecutiveSession();
     clearexecutiveSession();
+    if (session && session.email) await releaseDeviceSession("executive", emailToKey(session.email));
     window.location.reload();
   });
 
@@ -358,9 +360,24 @@
 
   // Any number of executives can sign up — unlike /admin, there's no
   // one-account limit here, so the signup tab always stays available.
+  // If another device logs in on this executive account while this tab
+  // is open (or was already open), this device's claim gets
+  // invalidated — see "Single-device login" in auth.js. Both the
+  // on-load check and the live watch land here.
+  function invalidateExecutiveSession() {
+    if (!getexecutiveSession()) return;
+    clearexecutiveSession();
+    bodyEl.style.display = "none";
+    authGateEl.style.display = "block";
+    showToast("Logged out — this account signed in on another device");
+  }
+
   const existingexecutiveSession = getexecutiveSession();
   if (existingexecutiveSession && existingexecutiveSession.email) {
     unlockexecutive(existingexecutiveSession);
+    const existingExecutiveKey = emailToKey(existingexecutiveSession.email);
+    verifyDeviceSession("executive", existingExecutiveKey, invalidateExecutiveSession);
+    watchDeviceSession("executive", existingExecutiveKey, invalidateExecutiveSession);
   }
 
   /* login / signup */
@@ -411,6 +428,11 @@
         return;
       }
       await clearLoginAttempts("executiveLoginAttempts", key);
+      const canProceed = await resolveDeviceLogin("executive", key);
+      if (!canProceed) {
+        showToast("Login cancelled");
+        return;
+      }
       const executive = { name: record.name, email: record.email };
       setexecutiveSession(executive);
       unlockexecutive(executive);
@@ -499,6 +521,12 @@
       ]);
       if (verifiedSnap.exists()) {
         const record = verifiedSnap.val();
+        const canProceed = await resolveDeviceLogin("executive", key);
+        if (!canProceed) {
+          showToast("Login cancelled");
+          if (auth) auth.signOut();
+          return;
+        }
         const executive = { name: record.name, email: record.email };
         setexecutiveSession(executive);
         unlockexecutive(executive);

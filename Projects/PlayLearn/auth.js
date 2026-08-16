@@ -190,6 +190,213 @@ async function fetchUserFromCloud(email) {
 }
 
 /* ---------------------------------------------------------------
+   Single-device login
+   ---------------------------------------------------------------
+   Every account type (shop customer, admin, executive) may only be
+   logged in on one device at a time. "Device" here means one
+   browser: the first time this code runs on a browser it mints a
+   random id and keeps it in localStorage (PlayLearn_device_id),
+   separate from any account.
+
+   Each account type keeps a small "who's currently logged in"
+   record in Firebase at sessions/<type>/<emailKey> = { deviceId,
+   loginAt } — its own tree, so this never touches /users, /admin,
+   or /executive.
+
+   Login flow (see login.html, admin.html, executive.html): after
+   the password (or Google) check succeeds, call
+   resolveDeviceLogin(type, emailKey). It:
+     - claims the session immediately and resolves true if nobody
+       else is logged in, or the existing record already belongs to
+       this device;
+     - otherwise shows a "you're logged in elsewhere — continue
+       here?" modal and only claims the session (which is what signs
+       the other device out) if the person clicks through it,
+       resolving true on confirm / false on cancel. The caller should
+       abort the login attempt on false.
+
+   Ongoing check: every page that has a local session for one of
+   these account types calls verifyDeviceSession() once on load and
+   watchDeviceSession() to keep watching live — if the Firebase
+   record no longer names this device (because another device logged
+   in), the page's own callback clears its local session and updates
+   its UI. See the bottom of this file for the shop session's own
+   use of this.
+--------------------------------------------------------------- */
+const SESSION_ROOT = "sessions"; // sessions/<type>/<emailKey>
+const DEVICE_ID_KEY = "PlayLearn_device_id";
+
+function getDeviceId() {
+  try {
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ("dev-" + Date.now() + "-" + Math.random().toString(16).slice(2));
+      localStorage.setItem(DEVICE_ID_KEY, id);
+    }
+    return id;
+  } catch (err) {
+    console.error("Could not read/create this device's id:", err);
+    return "dev-" + Date.now() + "-" + Math.random().toString(16).slice(2);
+  }
+}
+
+// Reads the current "who's logged in" record for an account, or null
+// if nobody is.
+async function getDeviceSession(type, emailKey) {
+  if (!db) throw new Error("Firebase isn't initialized — check the SDK <script> tags.");
+  const snap = await db.ref(`${SESSION_ROOT}/${type}/${emailKey}`).once("value");
+  return snap.exists() ? snap.val() : null;
+}
+
+// Overwrites the record with this device. This is the "log out
+// there" step — whichever device this deviceId doesn't belong to
+// loses its claim, and the next time it checks (verifyDeviceSession /
+// watchDeviceSession) it gets signed out locally.
+async function claimDeviceSession(type, emailKey, deviceId) {
+  if (!db) throw new Error("Firebase isn't initialized — check the SDK <script> tags.");
+  await db.ref(`${SESSION_ROOT}/${type}/${emailKey}`).set({ deviceId, loginAt: Date.now() });
+}
+
+// Call right after a successful login check, before setting the
+// local session. Resolves true once it's safe to continue (the
+// session is now claimed for this device), or false if the person
+// cancelled at the "logged in elsewhere" modal — callers should abort
+// the login attempt in that case.
+function resolveDeviceLogin(type, emailKey) {
+  return new Promise((resolve) => {
+    const deviceId = getDeviceId();
+    getDeviceSession(type, emailKey)
+      .then((existing) => {
+        if (!existing || existing.deviceId === deviceId) {
+          return claimDeviceSession(type, emailKey, deviceId).then(() => resolve(true));
+        }
+        showDeviceConflictModal({
+          onConfirm: () => claimDeviceSession(type, emailKey, deviceId).then(() => resolve(true)),
+          onCancel: () => resolve(false),
+        });
+      })
+      .catch((err) => {
+        console.error(`Could not check for an existing ${type} session:`, err);
+        // fail open — a transient read error shouldn't block login
+        claimDeviceSession(type, emailKey, deviceId).catch(() => {}).then(() => resolve(true));
+      });
+  });
+}
+
+// Call on page load whenever a local session for this account type
+// exists. Fires onInvalidated() if this device no longer owns the
+// Firebase session record (another device has since logged in).
+async function verifyDeviceSession(type, emailKey, onInvalidated) {
+  if (!db) return; // can't verify without Firebase — fail open
+  try {
+    const existing = await getDeviceSession(type, emailKey);
+    if (!existing || existing.deviceId !== getDeviceId()) {
+      if (onInvalidated) onInvalidated();
+    }
+  } catch (err) {
+    console.error(`Could not verify ${type} session:`, err);
+  }
+}
+
+// Same check, but live — fires onInvalidated() the moment another
+// device claims the session, without needing a reload. Returns an
+// unsubscribe function; safe to call even if Firebase isn't ready
+// (returns a no-op unsubscribe).
+function watchDeviceSession(type, emailKey, onInvalidated) {
+  if (!db) return () => {};
+  const ref = db.ref(`${SESSION_ROOT}/${type}/${emailKey}`);
+  const deviceId = getDeviceId();
+  const handler = (snap) => {
+    const record = snap.exists() ? snap.val() : null;
+    if (!record || record.deviceId !== deviceId) {
+      if (onInvalidated) onInvalidated();
+    }
+  };
+  ref.on("value", handler);
+  return () => ref.off("value", handler);
+}
+
+// Call on manual logout so this device's claim doesn't linger. Only
+// removes the record if it's still this device's — never clobbers a
+// session another device has since claimed (which would incorrectly
+// sign that device out).
+async function releaseDeviceSession(type, emailKey) {
+  if (!db) return;
+  try {
+    const ref = db.ref(`${SESSION_ROOT}/${type}/${emailKey}`);
+    const snap = await ref.once("value");
+    const record = snap.exists() ? snap.val() : null;
+    if (record && record.deviceId === getDeviceId()) {
+      await ref.remove();
+    }
+  } catch (err) {
+    console.error(`Could not release ${type} session:`, err);
+  }
+}
+
+// The "logged in elsewhere" confirm modal — built once, reused for
+// every account type on whichever page needs it (shop login, admin
+// login, executive login). Uses the same .modal-overlay/.modal
+// classes as the checkout modal in cart.js's markup, defined in
+// style.css, which every page already loads.
+function ensureDeviceConflictModal() {
+  let overlay = document.getElementById("device-conflict-modal");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "device-conflict-modal";
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-body">
+        <h3 style="margin:0 0 10px;">Already logged in elsewhere</h3>
+        <p style="margin:0 0 20px; color:var(--text-dim); font-size:13px; line-height:1.6;">
+          This account is already logged in on another device. Continuing here will log that device out.
+        </p>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" class="btn" id="device-conflict-cancel">Cancel</button>
+          <button type="button" class="btn btn-primary" id="device-conflict-ok">Okay, continue here</button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function showDeviceConflictModal({ onConfirm, onCancel } = {}) {
+  const overlay = ensureDeviceConflictModal();
+  const okBtn = overlay.querySelector("#device-conflict-ok");
+  const cancelBtn = overlay.querySelector("#device-conflict-cancel");
+  okBtn.disabled = false;
+  okBtn.textContent = "Okay, continue here";
+  overlay.classList.add("is-open");
+
+  function close() {
+    overlay.classList.remove("is-open");
+  }
+  okBtn.addEventListener(
+    "click",
+    async function handleOk() {
+      okBtn.disabled = true;
+      okBtn.textContent = "Logging in…";
+      try {
+        if (onConfirm) await onConfirm();
+      } finally {
+        close();
+      }
+    },
+    { once: true }
+  );
+  cancelBtn.addEventListener(
+    "click",
+    function handleCancel() {
+      close();
+      if (onCancel) onCancel();
+    },
+    { once: true }
+  );
+}
+
+/* ---------------------------------------------------------------
    Local session (unchanged shape: { name, email, phone })
 --------------------------------------------------------------- */
 function getUser() {
@@ -211,9 +418,11 @@ function setUser(user) {
 }
 
 function logoutUser() {
+  const user = getUser();
   localStorage.removeItem(AUTH_KEY);
   syncAccountLink();
   if (typeof showToast === "function") showToast("logged out");
+  if (user && user.email) releaseDeviceSession("shop", emailToKey(user.email));
 }
 
 function syncAccountLink() {
@@ -233,6 +442,25 @@ function syncAccountLink() {
 }
 
 syncAccountLink();
+
+/* ---------------------------------------------------------------
+   Guard this device's claim on the shop session — see "Single-
+   device login" above. Runs once on load, then keeps watching live
+   for the rest of the page's lifetime.
+--------------------------------------------------------------- */
+(function guardShopSession() {
+  const user = getUser();
+  if (!user || !user.email) return;
+  const emailKey = emailToKey(user.email);
+  function invalidate() {
+    if (!getUser()) return; // already handled
+    localStorage.removeItem(AUTH_KEY);
+    syncAccountLink();
+    if (typeof showToast === "function") showToast("Logged out — this account signed in on another device");
+  }
+  verifyDeviceSession("shop", emailKey, invalidate);
+  watchDeviceSession("shop", emailKey, invalidate);
+})();
 
 // Cross-tab sync: if the user signs in/out in another tab (this page,
 // a Classroom page, anywhere on the same site), the `storage` event
