@@ -229,6 +229,7 @@
         paint(merged);
         syncHeader();
         showToast("Profile updated");
+        setTimeout(() => { window.location.href = "../../index.html"; }, 700);
       } catch (err) {
         console.error("Could not update profile:", err);
         showToast("Couldn't save — try again");

@@ -1752,6 +1752,21 @@ a { color: inherit; }
 }
 
 /* Each semester is its own "subject" tile/card... */
+.dashboard-suggestions-heading {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 18px 0 14px;
+  text-align: center;
+}
+.dashboard-suggestions-grid {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: left;
+}
+@media (max-width: 620px) { .dashboard-suggestions-grid { grid-template-columns: 1fr; } }
+
 .dashboard-semester {
   margin-bottom: 22px;
   padding: 22px 22px 24px;

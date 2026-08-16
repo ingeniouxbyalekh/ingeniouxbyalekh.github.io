@@ -80,6 +80,7 @@
 
       <div id="dashboard-empty" class="empty-state" style="display:none">
         → No study material available yet. <a href="store.html">Browse the store →</a>
+        <div id="dashboard-suggestions"></div>
       </div>
       <div id="dashboard-semesters"></div>
     </div>
@@ -236,10 +237,46 @@
       </section>`;
   }
 
+  // Shown inside the empty state when the shopper's semester has
+  // nothing unlocked yet: one paid "Full Course" card (cse-semN) and
+  // one Free Batch card (free-semN), pulled straight from
+  // PlayLearn_PRODUCTS so pricing/titles stay in sync with the store.
+  // Links go to product.html — this page doesn't load cart.js, so
+  // there's no "add to cart" here, just "View".
+  function suggestionCardHTML(p) {
+    const href = `product.html?id=${p.id}`;
+    return `
+      <article class="card">
+        <a class="card-cover-link" href="${href}" aria-label="View ${escapeHTML(p.title)}">
+          <div class="card-cover" aria-hidden="true">
+            <span class="stamp">${p.category === "free" ? "F" : "C"}</span>
+            <span class="fmt">${p.format}</span>
+          </div>
+        </a>
+        <span class="card-tag">${escapeHTML(p.tag)}</span>
+        <h3><a href="${href}">${escapeHTML(p.title)}</a></h3>
+        <p>${escapeHTML(p.blurb)}</p>
+        <div class="card-footer">
+          <span class="price ${p.price === 0 ? "price-free" : ""}">${p.price === 0 ? "Free" : p.price.toLocaleString("en-IN")}</span>
+          <a class="btn btn-primary" href="${href}">View</a>
+        </div>
+      </article>`;
+  }
+
+  function renderDashboardSuggestions(semesterNumber) {
+    const paid = PlayLearn_PRODUCTS.find((p) => p.id === `cse-sem${semesterNumber}`);
+    const free = PlayLearn_PRODUCTS.find((p) => p.id === `free-sem${semesterNumber}`);
+    const cards = [paid, free].filter(Boolean).map(suggestionCardHTML).join("");
+    suggestionsEl.innerHTML = cards
+      ? `<p class="dashboard-suggestions-heading">Get started with Semester ${semesterNumber}</p><div class="product-grid dashboard-suggestions-grid">${cards}</div>`
+      : "";
+  }
+
   const loadingEl = document.getElementById("dashboard-loading");
   const signedOutEl = document.getElementById("dashboard-signed-out");
   const contentEl = document.getElementById("dashboard-content");
   const emptyEl = document.getElementById("dashboard-empty");
+  const suggestionsEl = document.getElementById("dashboard-suggestions");
   const semestersEl = document.getElementById("dashboard-semesters");
   const heroEl = document.getElementById("dashboard-hero");
   const heroEyebrowEl = document.getElementById("dashboard-hero-eyebrow");
@@ -328,9 +365,11 @@
           if (!block) {
             emptyEl.style.display = "block";
             semestersEl.innerHTML = "";
+            renderDashboardSuggestions(semesterNumber);
           } else {
             emptyEl.style.display = "none";
             semestersEl.innerHTML = block;
+            suggestionsEl.innerHTML = "";
           }
         })
         .catch((err) => {
