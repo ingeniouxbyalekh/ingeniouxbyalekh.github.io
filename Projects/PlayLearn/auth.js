@@ -28,14 +28,14 @@ const AUTH_KEY = "PlayLearn_user_v1"; // shared across the whole site (root + Cl
    Firebase — Realtime Database only (no Auth yet)
 --------------------------------------------------------------- */
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAht34mfVdGRbNk1NxjfpVfzm9ziIPxe2E",
-  authDomain: "outr-83e1b.firebaseapp.com",
-  databaseURL: "https://outr-83e1b-default-rtdb.firebaseio.com",
-  projectId: "outr-83e1b",
-  storageBucket: "outr-83e1b.firebasestorage.app",
-  messagingSenderId: "358057392716",
-  appId: "1:358057392716:web:f67c6b3d05274c7f5712e9",
-  measurementId: "G-9LN68551TX",
+  apiKey: "AIzaSyABB2Tl_3umwwx1eXKsTiakCPJ3L5TP-yQ",
+  authDomain: "playlearn-cb8c1.firebaseapp.com",
+  databaseURL: "https://playlearn-cb8c1-default-rtdb.firebaseio.com",
+  projectId: "playlearn-cb8c1",
+  storageBucket: "playlearn-cb8c1.firebasestorage.app",
+  messagingSenderId: "196791573453",
+  appId: "1:196791573453:web:429ca975f41f2af7a00284",
+  measurementId: "G-YKQH3S3X7S",
 };
 
 let db = null;
@@ -61,8 +61,8 @@ try {
    and Google to be enabled as a sign-in provider in the Firebase
    console (Authentication → Sign-in method) — the OAuth web client
    ID for that provider is 196791573453-7uu1l1rj2i4kjj4s9hplfq58vpaidn4m.apps.googleusercontent.com,
-   already tied to this project, so nothing else needs to reference
-   it here.
+   already tied to this project (playlearn-cb8c1), so nothing else
+   needs to reference it here.
 --------------------------------------------------------------- */
 let auth = null;
 let googleProvider = null;
