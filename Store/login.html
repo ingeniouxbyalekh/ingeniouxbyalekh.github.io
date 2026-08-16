@@ -191,6 +191,12 @@
     loginSubmitBtn.disabled = true;
     loginSubmitBtn.textContent = "Logging in…";
     try {
+      const lock = await checkLoginLock("users", email);
+      if (lock.locked) {
+        showToast(formatLockMessage(lock.remainingMs));
+        return;
+      }
+
       let profile = null;
 
       try {
@@ -204,15 +210,24 @@
         // didn't match it — fall back to the traditional check.
         profile = await fetchUserFromCloud(email);
         if (!profile || profile.password !== password) {
+          await recordFailedLogin("users", email);
           showToast("Incorrect email or password");
           return;
         }
       }
 
+      await clearLoginAttempts("users", email);
+
+      // Only one active session per account — if another device is
+      // already logged in, this prompts to confirm taking over.
+      const sessionToken = await claimSingleSession("users", email);
+      if (!sessionToken) return;
+
       setUser({
         name: (profile && profile.name) || "",
         email,
         phone: (profile && profile.phone) || "",
+        sessionToken,
       });
       showToast("Logged in");
       window.location.href = postLoginDestination();
@@ -259,7 +274,8 @@
       }
 
       await saveUserToCloud({ name, email, phone, password });
-      setUser({ name, email, phone });
+      const sessionToken = await claimSingleSession("users", email);
+      setUser({ name, email, phone, sessionToken });
       showToast("Account created");
       window.location.href = postLoginDestination();
     } catch (err) {
@@ -311,7 +327,9 @@
 
       const profile = await fetchUserFromCloud(email);
       if (profile) {
-        setUser({ name: profile.name || name, email, phone: profile.phone || "" });
+        const sessionToken = await claimSingleSession("users", email);
+        if (!sessionToken) return;
+        setUser({ name: profile.name || name, email, phone: profile.phone || "", sessionToken });
         showToast("Logged in with Google");
         window.location.href = postLoginDestination();
         return;
@@ -347,7 +365,8 @@
       // traditional RTDB-password fallback in the log-in handler works
       // for this account too — not just Google sign-in.
       await saveUserToCloud({ name: pendingGoogleUser.name, email: pendingGoogleUser.email, phone, password });
-      setUser({ name: pendingGoogleUser.name, email: pendingGoogleUser.email, phone });
+      const sessionToken = await claimSingleSession("users", pendingGoogleUser.email);
+      setUser({ name: pendingGoogleUser.name, email: pendingGoogleUser.email, phone, sessionToken });
       showToast("Account created");
       window.location.href = postLoginDestination();
     } catch (err) {
