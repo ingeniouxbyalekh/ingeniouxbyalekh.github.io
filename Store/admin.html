@@ -276,9 +276,7 @@
   }
 
   document.getElementById("admin-logout-btn").addEventListener("click", () => {
-    const admin = getAdminSession();
     clearAdminSession();
-    if (admin && admin.email) releaseSession("admin", admin.email);
     window.location.reload();
   });
 
@@ -325,20 +323,12 @@
     }
   }
 
-  (async () => {
-    const existingAdminSession = getAdminSession();
-    if (existingAdminSession && existingAdminSession.email) {
-      await validateSession("admin", getAdminSession, clearAdminSession, () => {
-        showToast("Logged out — signed in elsewhere");
-      });
-      const stillValid = getAdminSession();
-      if (stillValid && stillValid.email) {
-        unlockAdmin(stillValid);
-        return;
-      }
-    }
+  const existingAdminSession = getAdminSession();
+  if (existingAdminSession && existingAdminSession.email) {
+    unlockAdmin(existingAdminSession);
+  } else {
     lockOutSignupIfAdminExists();
-  })();
+  }
 
   /* login / signup */
   const adminLoginForm = document.getElementById("admin-login-form");
@@ -368,12 +358,6 @@
     adminLoginBtn.disabled = true;
     adminLoginBtn.textContent = "Logging in…";
     try {
-      const lock = await checkLoginLock("admin", email);
-      if (lock.locked) {
-        showToast(formatLockMessage(lock.remainingMs));
-        return;
-      }
-
       let usedFirebaseAuth = false;
       try {
         const cred = await fbAuthLogIn(email, password);
@@ -404,19 +388,11 @@
           return;
         }
       } else if (!record || record.password !== password) {
-        await recordFailedLogin("admin", email);
         showToast("Incorrect email or password");
         return;
       }
 
-      await clearLoginAttempts("admin", email);
-
-      // Only one active admin session at a time — if another device
-      // is already logged in, this prompts to confirm taking over.
-      const sessionToken = await claimSingleSession("admin", email);
-      if (!sessionToken) return;
-
-      const admin = { name: record.name, email: record.email, sessionToken };
+      const admin = { name: record.name, email: record.email };
       setAdminSession(admin);
       unlockAdmin(admin);
     } catch (err) {
@@ -470,8 +446,7 @@
         showAdminTab("login");
       } catch (fbErr) {
         console.error("Firebase Auth signup failed (continuing without email verification):", fbErr);
-        const sessionToken = await claimSingleSession("admin", email);
-        const admin = { name, email, sessionToken };
+        const admin = { name, email };
         setAdminSession(admin);
         unlockAdmin(admin);
       }
@@ -524,9 +499,7 @@
       if (existingSnap.exists()) {
         // Returning admin, logging back in with Google.
         const record = existingSnap.val();
-        const sessionToken = await claimSingleSession("admin", email);
-        if (!sessionToken) return;
-        const admin = { name: record.name, email: record.email, sessionToken };
+        const admin = { name: record.name, email: record.email };
         setAdminSession(admin);
         unlockAdmin(admin);
         return;
@@ -587,8 +560,7 @@
         password,
         createdAt: Date.now(),
       });
-      const sessionToken = await claimSingleSession("admin", pendingGoogleAdmin.email);
-      const admin = { name: pendingGoogleAdmin.name, email: pendingGoogleAdmin.email, sessionToken };
+      const admin = { name: pendingGoogleAdmin.name, email: pendingGoogleAdmin.email };
       pendingGoogleAdmin = null;
       setAdminSession(admin);
       unlockAdmin(admin);

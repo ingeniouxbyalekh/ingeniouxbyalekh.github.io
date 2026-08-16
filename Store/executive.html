@@ -514,9 +514,7 @@
   }
 
   document.getElementById("executive-logout-btn").addEventListener("click", () => {
-    const executive = getexecutiveSession();
     clearexecutiveSession();
-    if (executive && executive.email) releaseSession("executive", executive.email);
     window.location.reload();
   });
 
@@ -597,18 +595,10 @@
 
   // Any number of executives can sign up — unlike /admin, there's no
   // one-account limit here, so the signup tab always stays available.
-  (async () => {
-    const existingexecutiveSession = getexecutiveSession();
-    if (existingexecutiveSession && existingexecutiveSession.email) {
-      await validateSession("executive", getexecutiveSession, clearexecutiveSession, () => {
-        showToast("Logged out — signed in elsewhere");
-      });
-      const stillValid = getexecutiveSession();
-      if (stillValid && stillValid.email) {
-        unlockexecutive(stillValid);
-      }
-    }
-  })();
+  const existingexecutiveSession = getexecutiveSession();
+  if (existingexecutiveSession && existingexecutiveSession.email) {
+    unlockexecutive(existingexecutiveSession);
+  }
 
   /* login / signup */
   const executiveLoginForm = document.getElementById("executive-login-form");
@@ -638,12 +628,6 @@
     executiveLoginBtn.disabled = true;
     executiveLoginBtn.textContent = "Logging in…";
     try {
-      const lock = await checkLoginLock("executive", email);
-      if (lock.locked) {
-        showToast(formatLockMessage(lock.remainingMs));
-        return;
-      }
-
       let usedFirebaseAuth = false;
       try {
         const cred = await fbAuthLogIn(email, password);
@@ -686,20 +670,11 @@
         if (pendingSnap.exists()) {
           showToast("Your account is still awaiting admin verification");
         } else {
-          await recordFailedLogin("executive", email);
           showToast("Incorrect email or password");
         }
         return;
       }
-
-      await clearLoginAttempts("executive", email);
-
-      // Only one active executive session at a time — if another
-      // device is already logged in, this prompts to confirm taking over.
-      const sessionToken = await claimSingleSession("executive", email);
-      if (!sessionToken) return;
-
-      const executive = { name: record.name, email: record.email, role: record.role || "", sessionToken };
+      const executive = { name: record.name, email: record.email, role: record.role || "" };
       setexecutiveSession(executive);
       unlockexecutive(executive);
     } catch (err) {
@@ -829,9 +804,7 @@
       if (verifiedSnap.exists()) {
         // Approved executive, logging back in with Google.
         const record = verifiedSnap.val();
-        const sessionToken = await claimSingleSession("executive", email);
-        if (!sessionToken) return;
-        const executive = { name: record.name, email: record.email, role: record.role || "", sessionToken };
+        const executive = { name: record.name, email: record.email, role: record.role || "" };
         setexecutiveSession(executive);
         unlockexecutive(executive);
         return;

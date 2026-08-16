@@ -224,7 +224,7 @@
     // local session if it's different.
     fetchUserFromCloud(user.email).then((cloudProfile) => {
       if (!cloudProfile) return;
-      const merged = { name: cloudProfile.name || user.name, email: user.email, phone: cloudProfile.phone || user.phone || "", sessionToken: user.sessionToken };
+      const merged = { name: cloudProfile.name || user.name, email: user.email, phone: cloudProfile.phone || user.phone || "" };
       paint(merged);
       paintPersonalInfo(merged);
       try {
@@ -256,7 +256,7 @@
       personalInfoBtn.textContent = "Saving…";
       try {
         await db.ref("users/" + emailToKey(user.email)).update({ name, phone, updatedAt: Date.now() });
-        const merged = { name, email: user.email, phone, sessionToken: user.sessionToken };
+        const merged = { name, email: user.email, phone };
         setUser(merged);
         paint(merged);
         syncAccountLink();

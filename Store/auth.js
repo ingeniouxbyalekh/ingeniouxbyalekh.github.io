@@ -173,169 +173,6 @@ async function fetchUserFromCloud(email) {
 }
 
 /* ---------------------------------------------------------------
-   Login lockout — shared by login.html, admin.html, executive.html
-   ---------------------------------------------------------------
-   After 5 wrong passwords for a given account, that account is
-   locked out for 1 hour; after the hour is up the same 5-strikes
-   cycle starts over. Tracked in Firebase (not localStorage) at
-   /login-attempts/<scope>/<emailKey> so it can't be bypassed by
-   clearing local storage or trying from a different browser/device.
-   `scope` is "users" | "admin" | "executive" — matches the RTDB
-   table each login system already reads its account record from, so
-   a shop shopper's failed attempts never affect an admin/executive
-   account that happens to share an email, and vice versa.
---------------------------------------------------------------- */
-const LOGIN_LOCK_MAX_ATTEMPTS = 5;
-const LOGIN_LOCK_DURATION_MS = 60 * 60 * 1000; // 1 hour
-
-function loginAttemptsRef(scope, email) {
-  if (!db) throw new Error("Firebase isn't initialized — check the SDK <script> tags.");
-  return db.ref("login-attempts/" + scope + "/" + emailToKey(email));
-}
-
-// Call before checking a password. Returns { locked: false } or
-// { locked: true, remainingMs }. Fails open (locked: false) on a DB
-// error rather than locking everyone out over a connectivity hiccup.
-async function checkLoginLock(scope, email) {
-  try {
-    const snap = await loginAttemptsRef(scope, email).once("value");
-    if (!snap.exists()) return { locked: false };
-    const data = snap.val();
-    if (data.lockedUntil && data.lockedUntil > Date.now()) {
-      return { locked: true, remainingMs: data.lockedUntil - Date.now() };
-    }
-    // A past lock has expired — clear it so the 5-strike count restarts clean.
-    if (data.lockedUntil) await loginAttemptsRef(scope, email).remove();
-    return { locked: false };
-  } catch (err) {
-    console.error("Could not check login lock:", err);
-    return { locked: false };
-  }
-}
-
-// Call whenever a login attempt's password check fails. On the 5th
-// consecutive failure, locks the account for LOGIN_LOCK_DURATION_MS
-// and resets the counter to 0, so the same cycle repeats after the
-// lock expires rather than staying locked forever.
-async function recordFailedLogin(scope, email) {
-  try {
-    const ref = loginAttemptsRef(scope, email);
-    const snap = await ref.once("value");
-    const count = (snap.exists() && snap.val().count) || 0;
-    const nextCount = count + 1;
-    if (nextCount >= LOGIN_LOCK_MAX_ATTEMPTS) {
-      await ref.set({ count: 0, lockedUntil: Date.now() + LOGIN_LOCK_DURATION_MS });
-    } else {
-      await ref.set({ count: nextCount, lockedUntil: null });
-    }
-  } catch (err) {
-    console.error("Could not record failed login:", err);
-  }
-}
-
-// Call on a successful login — clears any accumulated failed attempts.
-async function clearLoginAttempts(scope, email) {
-  try {
-    await loginAttemptsRef(scope, email).remove();
-  } catch (err) {
-    console.error("Could not clear login attempts:", err);
-  }
-}
-
-function formatLockMessage(remainingMs) {
-  const mins = Math.max(1, Math.ceil(remainingMs / 60000));
-  return `Too many incorrect attempts — try again in ${mins} minute${mins === 1 ? "" : "s"}`;
-}
-
-/* ---------------------------------------------------------------
-   Single-device sessions — shared by login.html, admin.html,
-   executive.html
-   ---------------------------------------------------------------
-   Only one active session per account at a time, tracked in Firebase
-   at /sessions/<scope>/<emailKey> = { token, createdAt }. Every local
-   session (localStorage) carries the token it was issued at login;
-   validateSession() — called once on every page load by each of the
-   three login systems — compares that saved token against the one
-   currently in Firebase and logs this device out if they no longer
-   match, i.e. because a later login somewhere else overwrote it.
---------------------------------------------------------------- */
-function sessionRef(scope, email) {
-  if (!db) throw new Error("Firebase isn't initialized — check the SDK <script> tags.");
-  return db.ref("sessions/" + scope + "/" + emailToKey(email));
-}
-
-function newSessionToken() {
-  if (window.crypto && typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return "sess-" + Date.now() + "-" + Math.random().toString(36).slice(2);
-}
-
-// Call right after a successful password/verification check, before
-// writing the local session. If a session already exists for this
-// account (i.e. it's logged in elsewhere), prompts to confirm taking
-// over before overwriting it. Resolves to the fresh token to save
-// locally, or null if the person backed out — callers should treat
-// null as "abort the login" and NOT write a local session.
-async function claimSingleSession(scope, email) {
-  const ref = sessionRef(scope, email);
-  let existing = null;
-  try {
-    const snap = await ref.once("value");
-    existing = snap.exists() ? snap.val() : null;
-  } catch (err) {
-    console.error("Could not check existing session:", err);
-  }
-
-  if (existing && existing.token) {
-    const proceed = window.confirm(
-      "Another login was found for this account. Log in here and log out there?"
-    );
-    if (!proceed) return null;
-  }
-
-  const token = newSessionToken();
-  try {
-    await ref.set({ token, createdAt: Date.now() });
-  } catch (err) {
-    console.error("Could not save session:", err);
-  }
-  return token;
-}
-
-// Call once on every page load for a signed-in account. `getLocalSession`
-// reads that page's local session object, `clearLocalSession` wipes it,
-// and `onInvalid` (optional) runs any extra cleanup (redraw the header,
-// re-show a login gate, etc.) — only if the session turned out to be
-// stale. Sessions saved before this feature existed have no
-// `sessionToken` and are grandfathered in rather than force-logged-out.
-async function validateSession(scope, getLocalSession, clearLocalSession, onInvalid) {
-  const session = getLocalSession();
-  if (!session || !session.email) return;
-  if (!session.sessionToken) return;
-
-  try {
-    const snap = await sessionRef(scope, session.email).once("value");
-    const remote = snap.exists() ? snap.val() : null;
-    if (!remote || remote.token !== session.sessionToken) {
-      clearLocalSession();
-      if (typeof onInvalid === "function") onInvalid();
-    }
-  } catch (err) {
-    console.error("Could not validate session:", err);
-    // fail open — a DB hiccup shouldn't log everyone out
-  }
-}
-
-// Call on explicit logout so the account is free to log in elsewhere
-// without hitting the "another login was found" prompt.
-async function releaseSession(scope, email) {
-  try {
-    await sessionRef(scope, email).remove();
-  } catch (err) {
-    console.error("Could not release session:", err);
-  }
-}
-
-/* ---------------------------------------------------------------
    Local session (unchanged shape: { name, email, phone })
 --------------------------------------------------------------- */
 function getUser() {
@@ -357,27 +194,9 @@ function setUser(user) {
 }
 
 function logoutUser() {
-  const user = getUser();
   localStorage.removeItem(AUTH_KEY);
   syncAccountLink();
-  if (user && user.email) releaseSession("users", user.email);
   if (typeof showToast === "function") showToast("logged out");
-}
-
-// Runs once per page load (every hyperlink navigation is a fresh page
-// load in this app) so a shopper who's been logged out elsewhere —
-// or whose session was taken over by a newer login — gets logged out
-// here too, on the very next page they land on.
-async function validateShopSession() {
-  await validateSession(
-    "users",
-    getUser,
-    () => localStorage.removeItem(AUTH_KEY),
-    () => {
-      syncAccountLink();
-      if (typeof showToast === "function") showToast("logged out — signed in elsewhere");
-    }
-  );
 }
 
 function syncAccountLink() {
@@ -397,7 +216,6 @@ function syncAccountLink() {
 }
 
 syncAccountLink();
-validateShopSession();
 
 /* ---------------------------------------------------------------
    Toast fallback — index.html/product.html define their own (richer)
