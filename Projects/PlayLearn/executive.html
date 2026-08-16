@@ -52,6 +52,11 @@
           </div>
           <button type="submit" class="btn btn-primary btn-block">Log in</button>
         </form>
+        <div class="auth-divider">or</div>
+        <button type="button" class="btn-google" id="executive-google-signin-btn">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.85.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.94v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.71A5.4 5.4 0 0 1 3.67 9c0-.6.1-1.18.28-1.71V4.96H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.96l3.01 2.33C4.66 5.16 6.65 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </button>
         <p class="auth-form-foot" id="executive-signup-foot">No executive account yet? <button type="button" id="executive-go-signup">Create one</button></p>
       </div>
 
@@ -208,6 +213,7 @@
 <script src="products.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="auth.js"></script>
 <script>
   /* ---------------------------------------------------------------
@@ -380,19 +386,31 @@
     executiveLoginBtn.textContent = "Logging in…";
     try {
       const key = emailToKey(email);
+      const lockout = await checkLoginLockout("executiveLoginAttempts", key);
+      if (lockout.locked) {
+        showToast(`Too many failed attempts — try again in ${lockout.minutesLeft} minute${lockout.minutesLeft === 1 ? "" : "s"}`);
+        return;
+      }
       const snap = await db.ref("executive/" + key).once("value");
       const record = snap.exists() ? snap.val() : null;
       if (!record || record.password !== password) {
         // Give a more useful message if the account is real but still
-        // sitting in the pending-verification table.
+        // sitting in the pending-verification table — and don't count
+        // that case toward the lockout, since it isn't a wrong password.
         const pendingSnap = await db.ref("executive-temp/" + key).once("value");
         if (pendingSnap.exists()) {
           showToast("Your account is still awaiting admin verification");
         } else {
-          showToast("Incorrect email or password");
+          const result = await recordFailedLogin("executiveLoginAttempts", key);
+          if (result.locked) {
+            showToast("Too many failed attempts — locked out for 1 hour");
+          } else {
+            showToast(`Incorrect email or password (${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? "" : "s"} left)`);
+          }
         }
         return;
       }
+      await clearLoginAttempts("executiveLoginAttempts", key);
       const executive = { name: record.name, email: record.email };
       setexecutiveSession(executive);
       unlockexecutive(executive);
@@ -452,6 +470,51 @@
     } finally {
       executiveSignupBtn.disabled = false;
       executiveSignupBtn.textContent = "Create account";
+    }
+  });
+
+  // Google sign-in — same verified-only rule as the password form
+  // above: only an email already sitting in /executive gets in. A new
+  // email is written to /executive-temp instead (no password, since
+  // this account only ever signs in via Google) and left pending
+  // until an admin verifies it, exactly like the signup form's flow.
+  const executiveGoogleBtn = document.getElementById("executive-google-signin-btn");
+  executiveGoogleBtn.addEventListener("click", async () => {
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+    executiveGoogleBtn.disabled = true;
+    try {
+      const googleUser = await signInWithGoogle();
+      const email = (googleUser.email || "").trim();
+      if (!email) {
+        showToast("That Google account has no email — try a different one");
+        return;
+      }
+      const key = emailToKey(email);
+      const [verifiedSnap, pendingSnap] = await Promise.all([
+        db.ref("executive/" + key).once("value"),
+        db.ref("executive-temp/" + key).once("value"),
+      ]);
+      if (verifiedSnap.exists()) {
+        const record = verifiedSnap.val();
+        const executive = { name: record.name, email: record.email };
+        setexecutiveSession(executive);
+        unlockexecutive(executive);
+        return;
+      }
+      if (pendingSnap.exists()) {
+        showToast("Your account is still awaiting admin verification");
+        return;
+      }
+      await db.ref("executive-temp/" + key).set({ name: googleUser.displayName || "", phone: "", email, createdAt: Date.now() });
+      showToast("Account created — waiting on admin verification before you can log in");
+    } catch (err) {
+      console.error("executive Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      executiveGoogleBtn.disabled = false;
     }
   });
 

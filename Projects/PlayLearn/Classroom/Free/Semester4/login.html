@@ -46,6 +46,10 @@
           <button type="submit" class="btn btn-primary btn-block">Log in</button>
         </form>
         <div class="auth-divider">or</div>
+        <button type="button" class="btn-google" id="google-signin-btn">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.85.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.94v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.71A5.4 5.4 0 0 1 3.67 9c0-.6.1-1.18.28-1.71V4.96H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.96l3.01 2.33C4.66 5.16 6.65 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </button>
         <a class="auth-guest-link" href="index.html">Continue as guest →</a>
         <p class="auth-form-foot">New here? <button type="button" id="go-signup">Create an account</button></p>
       </div>
@@ -101,6 +105,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="auth.js"></script>
 <script>
   const tabLogin = document.getElementById("tab-login");
@@ -148,15 +153,27 @@
     e.preventDefault();
     const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
+    const emailKey = emailToKey(email);
 
     loginSubmitBtn.disabled = true;
     loginSubmitBtn.textContent = "Logging in…";
     try {
-      const profile = await fetchUserFromCloud(email);
-      if (!profile || profile.password !== password) {
-        showToast("Incorrect email or password");
+      const lockout = await checkLoginLockout("loginAttempts", emailKey);
+      if (lockout.locked) {
+        showToast(`Too many failed attempts — try again in ${lockout.minutesLeft} minute${lockout.minutesLeft === 1 ? "" : "s"}`);
         return;
       }
+      const profile = await fetchUserFromCloud(email);
+      if (!profile || profile.password !== password) {
+        const result = await recordFailedLogin("loginAttempts", emailKey);
+        if (result.locked) {
+          showToast("Too many failed attempts — locked out for 1 hour");
+        } else {
+          showToast(`Incorrect email or password (${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? "" : "s"} left)`);
+        }
+        return;
+      }
+      await clearLoginAttempts("loginAttempts", emailKey);
       setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
       showToast("Logged in");
       window.location.href = postLoginDestination();
@@ -202,6 +219,37 @@
     } finally {
       signupSubmitBtn.disabled = false;
       signupSubmitBtn.textContent = "Create account";
+    }
+  });
+
+  // Google sign-in: opens the Firebase Auth popup (see signInWithGoogle()
+  // in auth.js), then reuses the same /users/<emailKey> record as the
+  // password form above — reading it if it already exists, or creating
+  // a bare one (no password, since this account only ever signs in via
+  // Google) the first time someone uses this email.
+  const googleBtn = document.getElementById("google-signin-btn");
+  googleBtn.addEventListener("click", async () => {
+    googleBtn.disabled = true;
+    try {
+      const googleUser = await signInWithGoogle();
+      const email = (googleUser.email || "").trim();
+      if (!email) {
+        showToast("That Google account has no email — try a different one");
+        return;
+      }
+      let profile = await fetchUserFromCloud(email);
+      if (!profile) {
+        profile = { name: googleUser.displayName || "", email, phone: "", regNo: "", semester: "", password: "" };
+        await saveUserToCloud(profile);
+      }
+      setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
+      showToast("Logged in with Google");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      googleBtn.disabled = false;
     }
   });
 </script>

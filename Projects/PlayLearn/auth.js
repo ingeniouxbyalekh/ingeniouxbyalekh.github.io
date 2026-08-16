@@ -50,10 +50,115 @@ try {
   console.error("Firebase init failed:", err);
 }
 
+/* ---------------------------------------------------------------
+   Firebase Auth — Google sign-in
+   ---------------------------------------------------------------
+   Real Firebase Authentication, used only for the "Sign in with
+   Google" button next to the existing email/password form. The
+   password form above still reads/writes /users/<emailKey> in RTDB
+   directly and is untouched by this. Requires the
+   firebase-auth-compat <script> tag to also be loaded on the page,
+   and Google to be enabled as a sign-in provider in the Firebase
+   console (Authentication → Sign-in method) — the OAuth web client
+   ID for that provider is 196791573453-7uu1l1rj2i4kjj4s9hplfq58vpaidn4m.apps.googleusercontent.com,
+   already tied to this project, so nothing else needs to reference
+   it here.
+--------------------------------------------------------------- */
+let auth = null;
+let googleProvider = null;
+try {
+  if (typeof firebase !== "undefined" && firebase.auth) {
+    auth = firebase.auth();
+    googleProvider = new firebase.auth.GoogleAuthProvider();
+  } else {
+    console.error("Firebase Auth SDK not loaded — add the firebase-auth-compat <script> tag before auth.js.");
+  }
+} catch (err) {
+  console.error("Firebase Auth init failed:", err);
+}
+
+// Opens the Google popup and returns the signed-in Firebase user
+// ({ email, displayName, ... }). Throws if Auth isn't set up, or if
+// the popup is closed/blocked — callers should catch and toast.
+async function signInWithGoogle() {
+  if (!auth || !googleProvider) throw new Error("Firebase Auth isn't initialized — check the SDK <script> tags and that Google sign-in is enabled in the Firebase console.");
+  const result = await auth.signInWithPopup(googleProvider);
+  return result.user;
+}
+
 // Realtime Database keys can't contain ".", "#", "$", "[", or "]" —
 // every email has at least one dot, so swap dots for commas.
 function emailToKey(email) {
   return String(email).trim().toLowerCase().replace(/\./g, ",");
+}
+
+/* ---------------------------------------------------------------
+   Login lockout — 5 wrong passwords locks that email out of the
+   password form for 1 hour, then resets for another 5 attempts.
+   ---------------------------------------------------------------
+   Tracked server-side (Firebase, at <attemptsPath>/<emailKey>) so it
+   survives a page reload or clearing localStorage — not bulletproof
+   (no real backend/rules yet, same caveat as the rest of this stub
+   auth), but stronger than a client-only counter. Three independent
+   password forms share these helpers, each with its own path so
+   locking out a shop login doesn't touch admin/executive:
+     - shop / Classroom login → "loginAttempts"
+     - admin.html             → "adminLoginAttempts"
+     - executive.html         → "executiveLoginAttempts"
+   Google sign-in bypasses all of this — there's no "wrong password"
+   case for it, so it isn't rate-limited here.
+--------------------------------------------------------------- */
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_MS = 60 * 60 * 1000; // 1 hour
+
+// Call before checking a password. Returns { locked: false } if the
+// email is free to try, or { locked: true, minutesLeft } if it's
+// currently locked out. A lockout whose hour has already passed is
+// cleared here (count reset to 0), so the next attempt starts a
+// fresh set of 5.
+async function checkLoginLockout(attemptsPath, emailKey) {
+  if (!db) throw new Error("Firebase isn't initialized — check the SDK <script> tags.");
+  const ref = db.ref(attemptsPath + "/" + emailKey);
+  const snap = await ref.once("value");
+  const record = snap.exists() ? snap.val() : null;
+  if (record && record.lockedUntil) {
+    const now = Date.now();
+    if (now < record.lockedUntil) {
+      return { locked: true, minutesLeft: Math.ceil((record.lockedUntil - now) / 60000) };
+    }
+    await ref.set({ count: 0, lockedUntil: null });
+  }
+  return { locked: false };
+}
+
+// Call after a wrong password. Increments the count; on the 5th
+// failure, sets a 1-hour lockout and resets the count to 0 (so the
+// next window, once the lockout clears, also starts at 0/5).
+// Returns { locked: true } if this failure just triggered a lockout,
+// or { locked: false, attemptsLeft } otherwise.
+async function recordFailedLogin(attemptsPath, emailKey) {
+  if (!db) return { locked: false, attemptsLeft: MAX_LOGIN_ATTEMPTS - 1 };
+  const ref = db.ref(attemptsPath + "/" + emailKey);
+  const snap = await ref.once("value");
+  const record = snap.exists() ? snap.val() : null;
+  const count = (record && record.count ? record.count : 0) + 1;
+  if (count >= MAX_LOGIN_ATTEMPTS) {
+    await ref.set({ count: 0, lockedUntil: Date.now() + LOGIN_LOCKOUT_MS });
+    return { locked: true };
+  }
+  await ref.set({ count, lockedUntil: null });
+  return { locked: false, attemptsLeft: MAX_LOGIN_ATTEMPTS - count };
+}
+
+// Call after a successful password login, so a correct password
+// always clears any attempts building up toward a lockout.
+async function clearLoginAttempts(attemptsPath, emailKey) {
+  if (!db) return;
+  try {
+    await db.ref(attemptsPath + "/" + emailKey).remove();
+  } catch (err) {
+    console.error("Could not clear login attempts:", err);
+  }
 }
 
 // Writes a profile to Firebase. Throws on failure so the caller
