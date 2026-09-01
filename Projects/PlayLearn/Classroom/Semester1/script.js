@@ -227,36 +227,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
         switch(day) {
             case 'Monday':
-                return [{ time: '11:00 AM', name: 'Disaster Mgmt', link: links.DM }];
+                return [
+                    { time: '12:00 PM', name: 'ADSA', link: links.DM },
+                    { time: '02:00 PM', name: 'ADSA Lab', link: links.DM },
+                ];
             case 'Tuesday':
                 return [
-                    { time: '09:00 AM', name: 'IoT', link: links.IOT },
-                    { time: '11:00 AM', name: 'OOAD', link: links.OOAD },
-                    { time: '12:00 PM', name: 'MLA', link: links.MLA }
+                    { time: '09:00 AM', name: 'RM & IPR', link: links.IOT },
+                    { time: '12:00 PM', name: 'ADSA', link: links.OOAD },
+                    { time: '02:00 PM', name: 'MME (2)', link: links.MLA }
                 ];
             case 'Wednesday':
                 return [
-                    { time: '09:00 AM', name: 'Project', link: links.PROJECT },
-                    { time: '10:00 AM', name: 'Comp Lab-II', link: links.COMPLAB },
-                    { time: '12:00 PM', name: 'HPC', link: links.HPC },
-                    { time: '02:00 PM', name: 'Comp Lab-II', link: links.COMPLAB },
-                    { time: '04:00 PM', name: 'CC', link: links.CC }
+                    { time: '10:00 AM', name: 'RM & IPR', link: links.IOT },
+                    { time: '11:00 AM', name: 'Comp Lab-I', link: links.COMPLAB },
+                    { time: '02:00 PM', name: 'WSN', link: links.HPC },
+                    { time: '03:00 PM', name: 'DM', link: links.COMPLAB }
                 ];
             case 'Thursday':
                 return [
-                    { time: '10:00 AM', name: 'OOAD', link: links.OOAD },
-                    { time: '11:00 AM', name: 'HPC', link: links.HPC },
-                    { time: '12:00 PM', name: 'IoT', link: links.IOT },
-                    { time: '02:00 PM', name: 'Project', link: links.PROJECT },
-                    { time: '03:00 PM', name: 'MLA', link: links.MLA },
-                    { time: '04:00 PM', name: 'CC', link: links.CC }
+                    { time: '09:00 AM', name: 'MME', link: links.OOAD },
+                    { time: '10:00 AM', name: 'ADSA', link: links.OOAD },
+                    { time: '11:00 AM', name: 'DM', link: links.HPC },
+                    { time: '12:00 PM', name: 'WSN', link: links.IOT },
+                    { time: '02:00 PM', name: 'Comp Lab-I', link: links.PROJECT }
                 ];
             case 'Friday':
                 return [
-                    { time: '09:00 AM', name: 'OOAD', link: links.OOAD },
-                    { time: '10:00 AM', name: 'CC', link: links.CC },
-                    { time: '11:00 AM', name: 'HPC', link: links.HPC },
-                    { time: '12:00 PM', name: 'MLA', link: links.MLA }
+                    { time: '12:00 PM', name: 'WSN', link: links.MLA },
+                    { time: '02:00 PM', name: 'DM', link: links.MLA },
+                    { time: '03:00 PM', name: 'Comp Lab-I', link: links.MLA }
                 ];
             default: return [];
         }
