@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }).format(now);
 
         const year = now.getFullYear();
-        const start = new Date(year, 8, 1);
+        const start = new Date(year, 9, 1);
         const end = new Date(year, 12, 31);
         
         let html = '';
