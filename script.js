@@ -1,3 +1,43 @@
+// ---------- mobile nav toggle ----------
+(function(){
+  const toggle = document.getElementById('navToggle');
+  const menu = document.getElementById('mobileMenu');
+  const closeBtn = document.getElementById('mobileMenuClose');
+  if(!toggle || !menu) return;
+
+  function openMenu(){
+    document.body.classList.add('menu-open');
+    toggle.setAttribute('aria-expanded', 'true');
+    menu.setAttribute('aria-hidden', 'false');
+  }
+  function closeMenu(){
+    document.body.classList.remove('menu-open');
+    toggle.setAttribute('aria-expanded', 'false');
+    menu.setAttribute('aria-hidden', 'true');
+  }
+  toggle.addEventListener('click', ()=>{
+    document.body.classList.contains('menu-open') ? closeMenu() : openMenu();
+  });
+  if(closeBtn) closeBtn.addEventListener('click', closeMenu);
+  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeMenu));
+  window.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeMenu(); });
+
+  // highlight the section currently in view
+  const navLinks = menu.querySelectorAll('.mobile-nav-link[data-target]');
+  const sections = Array.from(navLinks)
+    .map(a=>document.getElementById(a.dataset.target))
+    .filter(Boolean);
+  if(sections.length){
+    const navIO = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(!entry.isIntersecting) return;
+        navLinks.forEach(a=>a.classList.toggle('active', a.dataset.target === entry.target.id));
+      });
+    }, {rootMargin:'-45% 0px -45% 0px'});
+    sections.forEach(sec=>navIO.observe(sec));
+  }
+})();
+
 // ---------- reveal on scroll ----------
 const revealEls = document.querySelectorAll('.reveal');
 const io = new IntersectionObserver((entries)=>{

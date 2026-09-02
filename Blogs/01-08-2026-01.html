@@ -9,7 +9,6 @@
 <meta name="keywords" content="Alekh Chandra Sahoo, INGENIOUX, ingenioux.in, MTech CSE, Computer Science, GATE qualified, higher studies India, tech career, software engineering, OUTR MTech">
 <meta name="author" content="Alekh Chandra Sahoo">
 <meta name="robots" content="index, follow">
-<meta name="google-adsense-account" content="ca-pub-9245798821731922">
 
 <!-- Open Graph Tags (Improves visibility on search and social media sharing) -->
 <meta property="og:title" content="Is MTech CSE still worth it? — INGENIOUX">
@@ -23,8 +22,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://api.fontshare.com/v2/css?f[]=clash-display@500,600,700&display=swap" rel="stylesheet">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9245798821731922"
-     crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#0b0c10; --surface:#14161c; --surface-2:#1b1e26; --line:#2b2f3a;
@@ -96,12 +93,6 @@ a{color:inherit;text-decoration:none;}
   display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;
 }
 .post-image img{width:100%;height:100%;object-fit:cover;display:block;}
-.ad-fallback{
-  display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;
-  background:var(--ember-soft);border:1px dashed var(--ember);border-radius:4px;
-}
-.ad-fallback.show{display:flex;}
-.ad-fallback img{width:100%;height:100%;object-fit:contain;display:block;}
 .abstract-label{
   font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
   margin-bottom:14px;
@@ -160,19 +151,7 @@ a{color:inherit;text-decoration:none;}
 <section class="post-intro">
   <div class="post-intro-grid">
     <div class="post-image reveal">
-      <ins class="adsbygoogle"
-           id="introAd"
-           style="display:block;width:100%;height:100%;"
-           data-ad-client="ca-pub-9245798821731922"
-           data-ad-slot="XXXXXXXXXX"
-           data-ad-format="auto"
-           data-full-width-responsive="true"></ins>
-      <div class="ad-fallback" id="introAdFallback">
-        <img src="Storage/Images/Adsense.jpg" alt="Google AdSense">
-      </div>
-      <script>
-           (adsbygoogle = window.adsbygoogle || []).push({});
-      </script>
+      <img src="Storage/Images/01-08-2026-01.png" alt="Is MTech CSE still worth it? — MTech vs entry-level job crossroads">
     </div>
     <div class="post-intro-text reveal">
       <div class="abstract-label">Abstract</div>
@@ -225,20 +204,6 @@ const io = new IntersectionObserver((entries)=>{
   entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
 },{threshold:.15});
 revealEls.forEach(el=>io.observe(el));
-
-// AdSense fallback: if the slot doesn't fill, show a highlighted placeholder instead
-(function(){
-  const ad = document.getElementById('introAd');
-  const fallback = document.getElementById('introAdFallback');
-  if(!ad || !fallback) return;
-  setTimeout(function(){
-    const status = ad.getAttribute('data-ad-status');
-    if(status !== 'filled'){
-      ad.style.display = 'none';
-      fallback.classList.add('show');
-    }
-  }, 1800);
-})();
 </script>
 </body>
 </html>

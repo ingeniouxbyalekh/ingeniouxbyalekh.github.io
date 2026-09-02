@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>INGENIOUX - Research Platform by Alekh</title>
 
-<meta name="google-adsense-account" content="ca-pub-9245798821731922">
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9245798821731922"
-     crossorigin="anonymous"></script>
-
 <!-- SEO Metadata (not visible in title/tab) -->
 <meta name="description" content="An open-source platform for advanced research and applied engineering. Exploring AI, Cloud Computing, and Algorithms through transparent development. Discover applied projects, published research, and real-time technical insights.">
 <meta name="keywords" content="Alekh Chandra Sahoo, Alekha Chandra Sahoo,  Alekh Sahoo, Alekh, INGENIOUX, Ingenioux, Ingenious, Ingeniux, Alekh Chandra Sahoo Puri Odisha, Alekh Chandra Sahoo MTech, Alekh Chandra Sahoo GCEK, Alekh Chandra Sahoo OUTR">
@@ -97,10 +93,37 @@
     <a href="#contact">Contact Us</a>
   </div>
   <a href="/Portfolio/" class="nav-cta">View Portfolio</a>
+  <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
+<div class="mobile-menu" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu-header">
+    <div class="mobile-menu-title">INGENIOU<span>X</span></div>
+    <button class="mobile-menu-close" id="mobileMenuClose" aria-label="Close menu">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 1L15 15M15 1L1 15" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="mobile-menu-label">Explore</div>
+  <div class="mobile-menu-links">
+    <a href="#home" class="mobile-nav-link" data-target="home">Home</a>
+    <a href="#about" class="mobile-nav-link" data-target="about">About</a>
+    <a href="#blog" class="mobile-nav-link" data-target="blog">Blog</a>
+    <a href="/Projects/" class="mobile-nav-link">Projects</a>
+    <a href="#research" class="mobile-nav-link" data-target="research">Research</a>
+    <a href="/Store/" class="mobile-nav-link">Store</a>
+    <a href="#contact" class="mobile-nav-link" data-target="contact">Contact Us</a>
+  </div>
+
+  <a href="/Portfolio/" class="nav-cta mobile-menu-cta">View Portfolio</a>
+</div>
+
 <!-- ================= HERO ================= -->
-<section class="hero">
+<section class="hero" id="home">
   <canvas id="ember-canvas"></canvas>
 
   <div class="wrap hero-inner">
