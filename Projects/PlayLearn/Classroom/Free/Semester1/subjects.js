@@ -18,6 +18,7 @@
 const SEMESTER_NUMBER = 1;
 
 const SUBJECTS = [
+  { code: "MS6403", name: "RESEARCH METHODOLOGY AND IPR" },
   { code: "BH6001", name: "ENGLISH FOR RESEARCH PAPER WRITING" },
   { code: "BH6401", name: "MATHEMATICAL METHODS IN ENGINEERING" },
   { code: "CS6101", name: "ADVANCED DATA STRUCTURES AND ALGORITHMS" },
@@ -25,7 +26,6 @@ const SUBJECTS = [
   { code: "CS6205", name: "DATA MINING" },
   { code: "CS6501", name: "ADVANCED DATA STRUCTURES AND ALGORITHMS LABORATORY" },
   { code: "CS6503", name: "COMPUTING LABORATORY-I" },
-  { code: "MS6403", name: "RESEARCH METHODOLOGY AND IPR" },
 ];
 
 function escapeHTML(str) {

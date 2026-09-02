@@ -533,6 +533,7 @@ if (typeof window.showToast !== "function") {
   };
 }
 
+
 /* ---------------------------------------------------------------
    Locked / premium features — Notes, Ebooks, PYQs and the per-
    subject download buttons are inactive on the Free plan. Clicking
@@ -546,4 +547,3 @@ if (typeof window.showPurchasePrompt !== "function") {
     }
   };
 }
-

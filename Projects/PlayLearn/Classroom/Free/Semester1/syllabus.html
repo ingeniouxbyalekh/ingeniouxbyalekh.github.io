@@ -142,14 +142,13 @@
     <a href="index.html" style="color: inherit; text-decoration: none;">
         <li><i class="fas fa-th-large"></i> Dashboard</li></a>
     
-    <a href="notes.html" style="color: inherit; text-decoration: none;">
-        <li><i class="fas fa-folder-open"></i> Study Material</li>
-    </a>
-    <a href="ebooks.html" style="color: inherit; text-decoration: none;">
-    <li><i class="fas fa-book"></i> Ebooks</li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-folder-open"></i> Study Material <i class="fas fa-lock lock-badge"></i></li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-book"></i> Ebooks <i class="fas fa-lock lock-badge"></i></li></a>
 
-    <a href="pyqs.html" style="color: inherit; text-decoration: none;">
-    <li><i class="fas fa-file-alt"></i> PYQs</li></a>
+    <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;" style="color: inherit; text-decoration: none;">
+    <li class="locked-item"><i class="fas fa-file-alt"></i> PYQs <i class="fas fa-lock lock-badge"></i></li></a>
     <a href="syllabus.html" style="color: inherit; text-decoration: none;">
     <li><i class="fas fa-scroll"></i> Syllabus</li></a>
      <a href="timetable.html" style="color: inherit; text-decoration: none;">
@@ -185,9 +184,9 @@
                     <div class="syllabus-card">
                         <div class="syllabus-info">
                             <i class="fas fa-file-invoice"></i>
-                            <span>2nd Semester Syllabus</span>
+                            <span>1st Semester Syllabus</span>
                         </div>
-                        <a href="https://outruniversity.github.io/storage/semester1/syllabus.pdf" target="_blank" class="download-btn" rel="noopener noreferrer">
+                        <a href="https://drive.google.com/file/d/1cxE0JnxlHQ8CY5tnCFZ3qAhYJUrBEJTD/view?usp=drive_link" target="_blank" class="download-btn" rel="noopener noreferrer">
                             <i class="fas fa-download"></i> Download
                         </a>
                     </div>
@@ -198,15 +197,15 @@
 
 <nav class="bottom-nav">
     <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
-    <a href="notes.html" class="nav-link"><i class="fas fa-folder"></i><span>Notes</span></a>
+    <a href="javascript:void(0)" class="nav-link locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-folder"></i><span>Notes</span><i class="fas fa-lock lock-badge-sm"></i></a>
     
     <div class="nav-link active" id="academicsTrigger">
         <i class="fas fa-th-list"></i> <span>More</span>
         
         <div class="utility-menu" id="utilityMenu">
             <div class="menu-header">Academic Tools</div>
-            <a href="ebooks.html"><i class="fas fa-book"></i> Ebooks</a>
-            <a href="pyqs.html"><i class="fas fa-file-alt"></i> PYQs</a>
+            <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-book"></i> Ebooks <i class="fas fa-lock lock-badge-sm"></i></a>
+            <a href="javascript:void(0)" class="locked-link" onclick="showPurchasePrompt(); return false;"><i class="fas fa-file-alt"></i> PYQs <i class="fas fa-lock lock-badge-sm"></i></a>
             <a href="syllabus.html"><i class="fas fa-scroll"></i> Syllabus</a>
             <a href="timetable.html"><i class="fas fa-clock"></i> Timetable</a>
             <a href="https://outr-erp.cet.edu.in/login"><i class="fas fa-calendar-check"></i> Attendance</a>
