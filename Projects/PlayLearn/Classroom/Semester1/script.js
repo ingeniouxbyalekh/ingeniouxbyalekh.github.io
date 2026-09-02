@@ -209,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 .stat-card:hover { transform: translateY(-2px); }
                 .stat-card.highlight { background-color: #eef6ff; border-color: #4a90e2; }
+                a.stat-card, a.stat-card:visited, a.stat-card:hover, a.stat-card:active { text-decoration: none; color: inherit; }
                 .lab-time { font-size: 11px; color: #4a90e2; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; display: block; }
                 .lab-name { font-size: 16px; font-weight: 600; color: #333; margin-top: 6px; }
             </style>
