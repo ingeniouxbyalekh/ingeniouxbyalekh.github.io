@@ -30,7 +30,7 @@ const PlayLearn_PRODUCTS = [
     category: "cse",
     title: "CSE Semester 2 — Full Course",
     blurb: "Complete bundle for CSE Semester 2: notes, previous year questions, and eBooks.",
-    price: 99,
+    price: 199,
     format: "ZIP",
     tag: "Full Course",
   },
@@ -39,7 +39,7 @@ const PlayLearn_PRODUCTS = [
     category: "cse",
     title: "CSE Semester 3 — Full Course",
     blurb: "Complete bundle for CSE Semester 3: notes, previous year questions, and eBooks.",
-    price: 49,
+    price: 99,
     format: "ZIP",
     tag: "Full Course",
   },
@@ -48,7 +48,7 @@ const PlayLearn_PRODUCTS = [
     category: "cse",
     title: "CSE Semester 4 — Full Course",
     blurb: "Complete bundle for CSE Semester 3: notes, previous year questions, and eBooks.",
-    price: 49,
+    price: 99,
     format: "ZIP",
     tag: "Full Course",
   },
@@ -81,15 +81,7 @@ const PlayLearn_PRODUCTS = [
     format: "PDF",
     tag: "PYQ",
   },
-  {
-    id: "pyq-sem4",
-    category: "pyq",
-    title: "PYQs — Semester 4",
-    blurb: "Previous year questions only, for Semester 3.",
-    price: 19,
-    format: "PDF",
-    tag: "PYQ",
-  },
+
 
   // ---- Category 3: eBooks (eBooks only) ----
   {
@@ -119,15 +111,7 @@ const PlayLearn_PRODUCTS = [
     format: "PDF",
     tag: "eBook",
   },
-  {
-    id: "ebook-sem4",
-    category: "ebook",
-    title: "eBooks — Semester 4",
-    blurb: "eBooks only, for Semester 3.",
-    price: 19,
-    format: "PDF",
-    tag: "eBook",
-  },
+
 
   // ---- Free batches — price 0, still go through the normal cart /
   // checkout flow (NOT the separate Paid/Free toggle) ----
@@ -137,7 +121,7 @@ const PlayLearn_PRODUCTS = [
     title: "Free Batch — Semester 1",
     blurb: "Free starter resources for Semester 1.",
     price: 0,
-    format: "ZIP",
+    format: "LIVE",
     tag: "Free",
   },
   {
@@ -146,7 +130,7 @@ const PlayLearn_PRODUCTS = [
     title: "Free Batch — Semester 2",
     blurb: "Free starter resources for Semester 2.",
     price: 0,
-    format: "ZIP",
+    format: "LIVE",
     tag: "Free",
   },
   {
@@ -155,7 +139,7 @@ const PlayLearn_PRODUCTS = [
     title: "Free Batch — Semester 3",
     blurb: "Free starter resources for Semester 3.",
     price: 0,
-    format: "ZIP",
+    format: "LIVE",
     tag: "Free",
   },
   {
@@ -164,7 +148,7 @@ const PlayLearn_PRODUCTS = [
     title: "Free Batch — Semester 4",
     blurb: "Free starter resources for Semester 3.",
     price: 0,
-    format: "ZIP",
+    format: "LIVE",
     tag: "Free",
   },
 ];
