@@ -5,6 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileToggle = document.getElementById('profileToggle');
     const branchMenu = document.getElementById('branchMenu');
 
+    // Fetched once (via subjects.js's loadMaterialLinks) and reused for
+    // every date's timetable card, so clicking around the scroller
+    // doesn't re-hit Firebase on each click.
+    let materialLinksCache = null;
+    const getMaterialLinks = async () => {
+        if (!materialLinksCache) {
+            materialLinksCache = await loadMaterialLinks();
+        }
+        return materialLinksCache;
+    };
+
     // --- 1. GENERATE 365 DAYS ---
     const generateCalendar = () => {
         const now = new Date();
@@ -103,9 +114,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(html => {
                 renderContent(html);
             })
-            .catch(() => {
+            .catch(async () => {
                 // Execute fallback grid generator if file is missing
-                const fallbackContent = getTimetableFallback(monthNum, dayNum);
+                const fallbackContent = await getTimetableFallback(monthNum, dayNum);
                 renderContent(fallbackContent);
             });
     };
@@ -125,38 +136,50 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 3.2 DYNAMIC GRID FALLBACK GENERATOR ---
-    function getTimetableFallback(month, day) {
+    // Same weekly Semester 1 timetable applies to every date in the
+    // scroller (Jan 1 - Dec 31) — no date-range gating, only weekday
+    // (weekends stay empty since getSem1Classes returns [] for them).
+    async function getTimetableFallback(month, day) {
         if (month === 0 || day === 0) return getEmptyStateHTML();
 
-        const dateVal = (month * 100) + day;
         const targetYear = new Date().getFullYear();
         const targetDateObj = new Date(targetYear, month - 1, day);
         const dayOfWeek = targetDateObj.toLocaleDateString('en-US', { weekday: 'long' });
 
-        let semesterLabel = "";
-        let classesArray = [];
+        const semesterLabel = "Semester 1";
+        const classesArray = getSem1Classes(dayOfWeek);
 
-        // Semester 2 range mapping (02-02 to 29-05)
-        if (dateVal >= 202 && dateVal <= 529) {
-            semesterLabel = "Semester 2";
-            classesArray = getSem2Classes(dayOfWeek);
-        }
-
-        // Return empty layout if outside active semester operational windows or on weekends
-        if (!semesterLabel || classesArray.length === 0) {
+        // Return empty layout on weekends / days with no classes
+        if (classesArray.length === 0) {
             return getEmptyStateHTML();
         }
+
+        // Resolve each class's notes link from Firebase's /links table
+        // (same "<code>-Notes" keying the ClassNotes section on
+        // index.html already uses).
+        const linksMap = await getMaterialLinks();
 
         // Map array contents to structural fragment string components
         let cardsHTML = '';
         classesArray.forEach((cls, index) => {
             // Automatically make the first class of the day highlighted
             const highlightClass = index === 0 ? 'highlight' : '';
-            cardsHTML += `
-                <div class="stat-card ${highlightClass}">
-                    <div class="stat-text">
+            const entry = linksMap[`${cls.code}-Notes`];
+            const url = entry && entry.url;
+
+            const tileInner = `
                         <span class="lab-time">${cls.time}</span>
-                        <div class="lab-name">${cls.name}</div>
+                        <div class="lab-name">${cls.name}</div>`;
+
+            cardsHTML += url
+                ? `
+                <a class="stat-card ${highlightClass}" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">
+                    <div class="stat-text">${tileInner}
+                    </div>
+                </a>`
+                : `
+                <div class="stat-card ${highlightClass}" style="opacity:.7;cursor:default;">
+                    <div class="stat-text">${tileInner}
                     </div>
                 </div>`;
         });
@@ -212,51 +235,42 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
     }
 
-    // Dataset Parser for Semester 2 Schedules with Shared Drive Resource Targets
-    function getSem2Classes(day) {
-        const links = {
-            CC: "https://drive.google.com/drive/folders/1gviuukHVJqeCgHXWDwRABFPbN8DiXSPg?usp=drive_link",
-            COMPLAB: "https://drive.google.com/drive/folders/1r1gQL-I2axGRAnESTlS3q-QIMM68axRg?usp=drive_link",
-            DM: "https://drive.google.com/drive/folders/1uB3C2N7MoWjID2MY8KWTOaAhgYmT6KyI?usp=drive_link",
-            HPC: "https://drive.google.com/drive/folders/1HUXiKzqD6vsDcijTQbDBaZ97mbBhrjMW?usp=drive_link",
-            IOT: "https://drive.google.com/drive/folders/1-JUR_HLiJWqICuXajGuFaUwTkVGRosvF?usp=drive_link",
-            MLA: "https://drive.google.com/drive/folders/14eoY7GC1ijvCVoyII22XGs1ELLL5n8-0?usp=drive_link",
-            OOAD: "https://drive.google.com/drive/folders/19OhzprnOYEk2IPNNxTgFwzkP_Xov7nZD?usp=drive_link",
-            PROJECT: "#"
-        };
-
+    // Semester 1 weekly timetable. `code` matches SUBJECTS[].code in
+    // subjects.js and is used to resolve that class's notes link from
+    // Firebase ("<code>-Notes" under /links) — no hardcoded URLs here.
+    function getSem1Classes(day) {
         switch(day) {
             case 'Monday':
                 return [
-                    { time: '12:00 PM', name: 'ADSA', link: links.DM },
-                    { time: '02:00 PM', name: 'ADSA Lab', link: links.DM },
+                    { time: '12:00 PM', name: 'ADSA', code: 'CS6101' },
+                    { time: '02:00 PM', name: 'ADSA Lab', code: 'CS6501' },
                 ];
             case 'Tuesday':
                 return [
-                    { time: '09:00 AM', name: 'RM & IPR', link: links.IOT },
-                    { time: '12:00 PM', name: 'ADSA', link: links.OOAD },
-                    { time: '02:00 PM', name: 'MME (2)', link: links.MLA }
+                    { time: '09:00 AM', name: 'RM & IPR', code: 'MS6403' },
+                    { time: '12:00 PM', name: 'ADSA', code: 'CS6101' },
+                    { time: '02:00 PM', name: 'MME (2)', code: 'BH6401' }
                 ];
             case 'Wednesday':
                 return [
-                    { time: '10:00 AM', name: 'RM & IPR', link: links.IOT },
-                    { time: '11:00 AM', name: 'Comp Lab-I', link: links.COMPLAB },
-                    { time: '02:00 PM', name: 'WSN', link: links.HPC },
-                    { time: '03:00 PM', name: 'DM', link: links.COMPLAB }
+                    { time: '10:00 AM', name: 'RM & IPR', code: 'MS6403' },
+                    { time: '11:00 AM', name: 'Comp Lab-I', code: 'CS6503' },
+                    { time: '02:00 PM', name: 'WSN', code: 'CS6103' },
+                    { time: '03:00 PM', name: 'DM', code: 'CS6205' }
                 ];
             case 'Thursday':
                 return [
-                    { time: '09:00 AM', name: 'MME', link: links.OOAD },
-                    { time: '10:00 AM', name: 'ADSA', link: links.OOAD },
-                    { time: '11:00 AM', name: 'DM', link: links.HPC },
-                    { time: '12:00 PM', name: 'WSN', link: links.IOT },
-                    { time: '02:00 PM', name: 'Comp Lab-I', link: links.PROJECT }
+                    { time: '09:00 AM', name: 'MME', code: 'BH6401' },
+                    { time: '10:00 AM', name: 'ADSA', code: 'CS6101' },
+                    { time: '11:00 AM', name: 'DM', code: 'CS6205' },
+                    { time: '12:00 PM', name: 'WSN', code: 'CS6103' },
+                    { time: '02:00 PM', name: 'Comp Lab-I', code: 'CS6503' }
                 ];
             case 'Friday':
                 return [
-                    { time: '12:00 PM', name: 'WSN', link: links.MLA },
-                    { time: '02:00 PM', name: 'DM', link: links.MLA },
-                    { time: '03:00 PM', name: 'Comp Lab-I', link: links.MLA }
+                    { time: '12:00 PM', name: 'WSN', code: 'CS6103' },
+                    { time: '02:00 PM', name: 'DM', code: 'CS6205' },
+                    { time: '03:00 PM', name: 'Comp Lab-I', code: 'CS6503' }
                 ];
             default: return [];
         }
