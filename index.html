@@ -476,7 +476,7 @@ published research, and real-time technical insights.</p>
         </div>
         <div class="field">
           <label for="cf-phone">Phone number</label>
-          <input type="tel" id="cf-phone" name="phone" placeholder="+91 00000 00000">
+          <input type="tel" id="cf-phone" name="phone" placeholder="+91 00000 00000" required>
         </div>
       </div>
       <div class="field field-full">
@@ -558,18 +558,58 @@ published research, and real-time technical insights.</p>
     ]);
   }
 
+  // RFC-5322-lite email check — good enough to catch typos without being overly strict.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Accepts an Indian mobile number, with optional +91 / 0 prefix and optional spaces or dashes.
+  const PHONE_RE = /^(?:\+91[\s-]?|0)?[6-9]\d{9}$/;
+
+  function markField(id, invalid){
+    const input = document.getElementById(id);
+    const wrap = input ? input.closest('.field') : null;
+    if(wrap) wrap.classList.toggle('invalid', !!invalid);
+  }
+
+  function clearFieldErrors(){
+    form.querySelectorAll('.field.invalid').forEach(f => f.classList.remove('invalid'));
+  }
+
+  // Clear a field's error state as soon as the person edits it.
+  ['cf-name','cf-email','cf-phone','cf-subject','cf-message'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.addEventListener('input', () => markField(id, false));
+  });
+
   if(form){
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
 
       const name = form.name.value.trim();
       const email = form.email.value.trim();
-      const phone = form.phone.value.trim();
+      const phone = form.phone.value.trim().replace(/[\s-]/g,'');
       const subject = form.subject.value.trim();
       const message = form.message.value.trim();
 
-      if(!name || !email || !subject || !message){
-        setStatus('Please fill in the required fields.', 'error');
+      clearFieldErrors();
+      const errors = [];
+
+      if(!name) { markField('cf-name', true); errors.push('name'); }
+      if(!subject) { markField('cf-subject', true); errors.push('subject'); }
+      if(!message) { markField('cf-message', true); errors.push('message'); }
+
+      if(!email){
+        markField('cf-email', true); errors.push('email');
+      } else if(!EMAIL_RE.test(email)){
+        markField('cf-email', true); errors.push('a valid email address');
+      }
+
+      if(!phone){
+        markField('cf-phone', true); errors.push('phone number');
+      } else if(!PHONE_RE.test(phone)){
+        markField('cf-phone', true); errors.push('a valid phone number');
+      }
+
+      if(errors.length){
+        setStatus('Please provide ' + errors.join(', ') + '.', 'error');
         return;
       }
 
@@ -588,6 +628,7 @@ published research, and real-time technical insights.</p>
           createdAt: serverTimestamp()
         }), 12000);
         form.reset();
+        clearFieldErrors();
         setStatus('Message sent — thanks for reaching out!', 'success');
       }catch(err){
         console.error('Error adding contact message:', err);

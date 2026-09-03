@@ -422,6 +422,8 @@ h2.section-title{font-family:var(--font-display);font-weight:600;font-size:clamp
 .field input:focus,.field textarea:focus{
   outline:none;border-color:var(--ember);background:var(--surface-2);
 }
+.field.invalid input,.field.invalid textarea{border-color:#ff5c5c;}
+.field.invalid input:focus,.field.invalid textarea:focus{border-color:#ff5c5c;}
 .field-full{width:100%;}
 .form-actions{
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-top:6px;margin-bottom:24px;text-align:center;
