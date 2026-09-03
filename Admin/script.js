@@ -37,9 +37,15 @@ const MESSAGES_PATH = 'contactMessages';
 const VISITORS_PATH = 'visitors';
 const LOGIN_ATTEMPTS_PATH = 'loginAttempts';   // per ip/device: current fail count + block state
 const LOGIN_LOGS_PATH = 'loginAttemptLogs';    // flat history of every failed attempt, for the admin table
+const ACTIVE_SESSION_PATH = 'adminConfig/activeSession'; // single-device login enforcement
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOGIN_BLOCK_MS = 60 * 60 * 1000; // 1 hour
 const SESSION_KEY = 'ingenioux_admin_session';
+const SESSION_ID_KEY = 'ingenioux_admin_session_id';
+
+function genSessionId(){
+  return crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(16) + Math.random().toString(16).slice(2));
+}
 
 // ---------- helpers ----------
 async function sha256(text){
@@ -197,6 +203,7 @@ let allVisitorsCache = [];
 let messagesListenerAttached = false;
 let visitorsListenerAttached = false;
 let loginLogsListenerAttached = false;
+let unsubscribeActiveSession = null;
 
 // ---------- auth flow ----------
 function showDashboard(){
@@ -205,10 +212,79 @@ function showDashboard(){
   startMessagesListener();
   startVisitorsListener();
   startLoginLogsListener();
+  startActiveSessionListener();
 }
 function showLogin(){
   dashboard.style.display = 'none';
   loginScreen.style.display = 'flex';
+}
+
+// ---------- single-device login enforcement ----------
+// Whoever logs in most recently writes their sessionId to ACTIVE_SESSION_PATH.
+// Every logged-in tab listens on that path in realtime; if it ever sees a
+// sessionId that isn't its own, someone else has logged in elsewhere, so this
+// device is signed out immediately with an explanatory message.
+function startActiveSessionListener(){
+  if(unsubscribeActiveSession) return; // already listening
+  unsubscribeActiveSession = onValue(ref(db, ACTIVE_SESSION_PATH), (snapshot)=>{
+    const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    if(!mySessionId) return; // not logged in on this device (yet) — ignore
+    const active = snapshot.val();
+    if(active && active.sessionId && active.sessionId !== mySessionId){
+      handleKickedOut(active);
+    }
+  }, (err)=>{
+    console.warn('Active session listener error:', err);
+  });
+}
+
+function stopActiveSessionListener(){
+  if(unsubscribeActiveSession){
+    unsubscribeActiveSession();
+    unsubscribeActiveSession = null;
+  }
+}
+
+function handleKickedOut(active){
+  stopActiveSessionListener();
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_ID_KEY);
+  showLogin();
+  const device = [active.browser, active.os].filter(Boolean).join(' / ');
+  const loc = [active.city, active.country].filter(Boolean).join(', ');
+  const detail = [device, loc].filter(Boolean).join(' · ');
+  setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+}
+
+// On page load, don't just trust the local sessionStorage flag — check whether
+// a *different* device has since taken over the session (e.g. this tab was
+// left open in the background while someone logged in elsewhere).
+async function checkExistingSession(){
+  if(sessionStorage.getItem(SESSION_KEY) !== 'true'){
+    showLogin();
+    return;
+  }
+  const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  try{
+    const snap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    const active = snap.val();
+    if(active && active.sessionId && active.sessionId !== mySessionId){
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_ID_KEY);
+      showLogin();
+      const device = [active.browser, active.os].filter(Boolean).join(' / ');
+      const loc = [active.city, active.country].filter(Boolean).join(', ');
+      const detail = [device, loc].filter(Boolean).join(' · ');
+      setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+      return;
+    }
+    showDashboard();
+  }catch(err){
+    // Can't verify (offline, etc.) — fall back to trusting the local session
+    // rather than locking the admin out.
+    console.warn('Active session check failed:', err);
+    showDashboard();
+  }
 }
 
 function wireCollapse(btnId){
@@ -224,9 +300,7 @@ function wireCollapse(btnId){
 wireCollapse('visitorPanelToggle');
 wireCollapse('loginLogsPanelToggle');
 
-if(sessionStorage.getItem(SESSION_KEY) === 'true'){
-  showDashboard();
-}
+checkExistingSession();
 
 loginForm.addEventListener('submit', async (e)=>{
   e.preventDefault();
@@ -267,7 +341,25 @@ loginForm.addEventListener('submit', async (e)=>{
 
     if(success){
       await withTimeout(remove(attemptsRef), 10000).catch(()=>{}); // clear any prior fail count on success
+
+      // Claim the single admin session. Writing this immediately trips the
+      // active-session listener on any other device that's currently logged
+      // in, logging it out there.
+      const mySessionId = genSessionId();
       sessionStorage.setItem(SESSION_KEY, 'true');
+      sessionStorage.setItem(SESSION_ID_KEY, mySessionId);
+      await withTimeout(set(ref(db, ACTIVE_SESSION_PATH), {
+        sessionId: mySessionId,
+        ip: info.ip || null,
+        city: info.city || null,
+        region: info.region || null,
+        country: info.country || null,
+        browser: info.browser || null,
+        os: info.os || null,
+        deviceType: info.deviceType || null,
+        loginAt: serverTimestamp()
+      }), 10000).catch(err => console.warn('Failed to record active session:', err));
+
       loginForm.reset();
       setStatus(loginStatus, '', null);
       showDashboard();
@@ -323,9 +415,23 @@ loginForm.addEventListener('submit', async (e)=>{
   }
 });
 
-logoutBtn.addEventListener('click', ()=>{
+logoutBtn.addEventListener('click', async ()=>{
+  const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  stopActiveSessionListener();
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_ID_KEY);
   showLogin();
+  try{
+    // Only clear the shared record if it's still ours — if another device
+    // already took over the session, don't log that device out too.
+    const snap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    const active = snap.val();
+    if(active && active.sessionId === mySessionId){
+      await withTimeout(remove(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    }
+  }catch(err){
+    console.warn('Failed to clear active session on logout:', err);
+  }
 });
 
 // ---------- change password ----------
