@@ -501,10 +501,7 @@ published research, and real-time technical insights.</p>
 <footer>
   <div>© 2026 INGENIOUX — Alekh Chandra Sahoo.</div>
   <div class="socials">
-    <a href="https://www.linkedin.com/in/ingenioux/" target="_blank" rel="noopener">LinkedIn</a>
-    <a href="https://github.com/ingenioux" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://twitter.com/ingenioux_" target="_blank" rel="noopener">Twitter / X</a>
-    <a href="https://www.instagram.com/ingenioux.io/" target="_blank" rel="noopener">Instagram</a>
+    <span id="totalVisitorsCount">Total visitors: —</span>
   </div>
 </footer>
 
@@ -520,10 +517,13 @@ published research, and real-time technical insights.</p>
     getDatabase,
     ref,
     push,
-    serverTimestamp
+    runTransaction,
+    serverTimestamp,
+    onValue
   } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
   // Your web app's Firebase configuration
+  // ---- primary database: contact form messages ----
   const firebaseConfig = {
     apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
     authDomain: "ingenioux-55f27.firebaseapp.com",
@@ -538,6 +538,126 @@ published research, and real-time technical insights.</p>
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // ---- visitor database: visitor logs + total visitor count ----
+  const visitorFirebaseConfig = {
+    apiKey: "AIzaSyBFkN8erxsvRRAwMipQu7xZGLeXsQu9E_w",
+    authDomain: "ingenioux-visitor.firebaseapp.com",
+    databaseURL: "https://ingenioux-visitor-default-rtdb.firebaseio.com",
+    projectId: "ingenioux-visitor",
+    storageBucket: "ingenioux-visitor.firebasestorage.app",
+    messagingSenderId: "426646415346",
+    appId: "1:426646415346:web:38373322949588eb14ed6b"
+  };
+
+  const visitorApp = initializeApp(visitorFirebaseConfig, 'visitor');
+  const dbVisitor = getDatabase(visitorApp);
+
+  // ---------- Total visitors (footer) ----------
+  // Reads the same atomic counter used to assign each visitor's sequential number,
+  // so this always reflects the true all-time total, live, with no extra writes.
+  (function watchTotalVisitors(){
+    const el = document.getElementById('totalVisitorsCount');
+    if(!el) return;
+    onValue(ref(dbVisitor, 'visitorMeta/count'), (snap)=>{
+      const count = snap.val();
+      el.textContent = 'Total visitors: ' + (typeof count === 'number' ? count.toLocaleString() : '0');
+    }, ()=>{
+      el.textContent = 'Total visitors: —';
+    });
+  })();
+
+  // ---------- Visitor logging ----------
+  // Fails a hung request after this long so nothing here can block the page.
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+  }
+
+  // Very small user-agent parser — good enough for admin display, not meant to be exhaustive.
+  function parseUserAgent(ua){
+    let browser = 'Unknown';
+    if(/Edg\//.test(ua)) browser = 'Edge';
+    else if(/OPR\//.test(ua)) browser = 'Opera';
+    else if(/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
+    else if(/Firefox\//.test(ua)) browser = 'Firefox';
+    else if(/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+
+    let os = 'Unknown';
+    if(/Windows NT/.test(ua)) os = 'Windows';
+    else if(/Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua)) os = 'macOS';
+    else if(/Android/.test(ua)) os = 'Android';
+    else if(/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+    else if(/Linux/.test(ua)) os = 'Linux';
+
+    let deviceType = 'Desktop';
+    if(/iPad|Tablet/.test(ua)) deviceType = 'Tablet';
+    else if(/Mobi|Android/.test(ua)) deviceType = 'Mobile';
+
+    return { browser, os, deviceType };
+  }
+
+  (async function logVisitor(){
+    try{
+      // Only log once per browser tab/session — refreshes and in-page nav won't inflate the count.
+      if(sessionStorage.getItem('ingenioux_visit_logged')) return;
+
+      // Best-effort IP + geolocation lookup. Page keeps working even if this fails or is blocked.
+      let geo = {};
+      try{
+        const geoRes = await withTimeout(fetch('https://ipwho.is/'), 6000);
+        const geoData = await geoRes.json();
+        if(geoData && geoData.success !== false){
+          geo = {
+            ip: geoData.ip || null,
+            city: geoData.city || null,
+            region: geoData.region || null,
+            country: geoData.country || null,
+            countryCode: geoData.country_code || null,
+            postal: geoData.postal || null,
+            latitude: geoData.latitude ?? null,
+            longitude: geoData.longitude ?? null,
+            timezone: (geoData.timezone && geoData.timezone.id) || null,
+            isp: (geoData.connection && (geoData.connection.isp || geoData.connection.org)) || null
+          };
+        }
+      }catch(geoErr){
+        console.warn('Visitor geolocation lookup failed:', geoErr);
+      }
+
+      const ua = navigator.userAgent;
+      const device = parseUserAgent(ua);
+
+      // Atomically bump a shared counter so every visitor gets a sequential number.
+      const counterResult = await withTimeout(
+        runTransaction(ref(dbVisitor, 'visitorMeta/count'), (current) => (current || 0) + 1),
+        10000
+      );
+      const visitorNumber = counterResult.committed ? counterResult.snapshot.val() : null;
+
+      await withTimeout(push(ref(dbVisitor, 'visitors'), {
+        visitorNumber,
+        ...geo,
+        userAgent: ua,
+        browser: device.browser,
+        os: device.os,
+        deviceType: device.deviceType,
+        screen: `${screen.width}x${screen.height}`,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        language: navigator.language || null,
+        referrer: document.referrer || 'direct',
+        page: location.pathname + location.search,
+        createdAt: serverTimestamp()
+      }), 10000);
+
+      sessionStorage.setItem('ingenioux_visit_logged', '1');
+    }catch(err){
+      // Never let visitor logging break the page for a real visitor.
+      console.warn('Visitor logging failed:', err);
+    }
+  })();
+
   const form = document.getElementById('contactForm');
   const statusEl = document.getElementById('cfStatus');
   const submitBtn = document.getElementById('cf-submit');
@@ -548,14 +668,6 @@ published research, and real-time technical insights.</p>
     statusEl.textContent = msg;
     statusEl.classList.remove('is-success', 'is-error');
     if(type) statusEl.classList.add(type === 'success' ? 'is-success' : 'is-error');
-  }
-
-  // Fails a hung request after this long so the button never gets stuck forever.
-  function withTimeout(promise, ms){
-    return Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
-    ]);
   }
 
   // RFC-5322-lite email check — good enough to catch typos without being overly strict.
