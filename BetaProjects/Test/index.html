@@ -501,10 +501,7 @@ published research, and real-time technical insights.</p>
 <footer>
   <div>© 2026 INGENIOUX — Alekh Chandra Sahoo.</div>
   <div class="socials">
-    <a href="https://www.linkedin.com/in/ingenioux/" target="_blank" rel="noopener">LinkedIn</a>
-    <a href="https://github.com/ingenioux" target="_blank" rel="noopener">GitHub</a>
-    <a href="https://twitter.com/ingenioux_" target="_blank" rel="noopener">Twitter / X</a>
-    <a href="https://www.instagram.com/ingenioux.io/" target="_blank" rel="noopener">Instagram</a>
+    <span id="totalVisitorsCount">Total visitors: —</span>
   </div>
 </footer>
 
@@ -521,7 +518,8 @@ published research, and real-time technical insights.</p>
     ref,
     push,
     runTransaction,
-    serverTimestamp
+    serverTimestamp,
+    onValue
   } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
   // Your web app's Firebase configuration
@@ -538,6 +536,20 @@ published research, and real-time technical insights.</p>
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
+
+  // ---------- Total visitors (footer) ----------
+  // Reads the same atomic counter used to assign each visitor's sequential number,
+  // so this always reflects the true all-time total, live, with no extra writes.
+  (function watchTotalVisitors(){
+    const el = document.getElementById('totalVisitorsCount');
+    if(!el) return;
+    onValue(ref(db, 'visitorMeta/count'), (snap)=>{
+      const count = snap.val();
+      el.textContent = 'Total visitors: ' + (typeof count === 'number' ? count.toLocaleString() : '0');
+    }, ()=>{
+      el.textContent = 'Total visitors: —';
+    });
+  })();
 
   // ---------- Visitor logging ----------
   // Fails a hung request after this long so nothing here can block the page.
