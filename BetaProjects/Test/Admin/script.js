@@ -167,6 +167,7 @@ const visitorPostalList = document.getElementById('visitorPostalList');
 const visitorDateFrom = document.getElementById('visitorDateFrom');
 const visitorDateTo = document.getElementById('visitorDateTo');
 const visitorDeviceFilter = document.getElementById('visitorDeviceFilter');
+const visitorFilterSearch = document.getElementById('visitorFilterSearch');
 const visitorFilterReset = document.getElementById('visitorFilterReset');
 const visitorFilterCount = document.getElementById('visitorFilterCount');
 
@@ -570,10 +571,18 @@ function renderVisitorTable(list){
   `).join('');
 }
 
-[visitorIpFilter, visitorRegionFilter, visitorCityFilter, visitorPostalFilter, visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
-  el.addEventListener('input', applyVisitorFilters);
+// Typing only drives the native datalist suggestions (browser-built-in, always live).
+// Filtering itself is explicit: click Search, or press Enter in any field.
+[visitorIpFilter, visitorRegionFilter, visitorCityFilter, visitorPostalFilter].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); applyVisitorFilters(); }
+  });
+});
+[visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
   el.addEventListener('change', applyVisitorFilters);
 });
+
+visitorFilterSearch.addEventListener('click', applyVisitorFilters);
 
 visitorFilterReset.addEventListener('click', ()=>{
   visitorIpFilter.value = '';
