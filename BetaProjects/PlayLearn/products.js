@@ -20,7 +20,7 @@ const PlayLearn_PRODUCTS = [
     id: "cse-sem1",
     category: "cse",
     title: "CSE Semester 1 — Full Course",
-    blurb: "Limited time free. offer valid till 30/09/2026.",
+    blurb: "Welcome Gift from our end",
     price: 0,
     format: "ZIP",
     tag: "Full Course",
@@ -115,15 +115,6 @@ const PlayLearn_PRODUCTS = [
 
   // ---- Free batches — price 0, still go through the normal cart /
   // checkout flow (NOT the separate Paid/Free toggle) ----
-  {
-    id: "free-sem1",
-    category: "free",
-    title: "Free Batch — Semester 1",
-    blurb: "Free starter resources for Semester 1.",
-    price: 0,
-    format: "LIVE",
-    tag: "Free",
-  },
   {
     id: "free-sem2",
     category: "free",
