@@ -102,46 +102,32 @@
       </div>
     </div>
     <div class="visitor-filter-bar">
-      <div class="filter-search">
-        <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
-          <path d="M11.5 11.5L15 15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
-        </svg>
-        <input type="text" id="visitorSearch" list="visitorSearchList" placeholder="Search IP, location, browser, referrer…">
-        <datalist id="visitorSearchList"></datalist>
+      <div class="visitor-filter-row">
+        <input type="text" id="visitorIpFilter" list="visitorIpList" placeholder="IP address">
+        <datalist id="visitorIpList"></datalist>
+        <input type="text" id="visitorRegionFilter" list="visitorRegionList" placeholder="State / Region">
+        <datalist id="visitorRegionList"></datalist>
+        <input type="text" id="visitorCityFilter" list="visitorCityList" placeholder="City">
+        <datalist id="visitorCityList"></datalist>
+        <input type="text" id="visitorPostalFilter" list="visitorPostalList" placeholder="Postal code">
+        <datalist id="visitorPostalList"></datalist>
       </div>
-      <input type="text" id="visitorRegionFilter" list="visitorRegionList" placeholder="State / Region">
-      <datalist id="visitorRegionList"></datalist>
-      <input type="text" id="visitorCityFilter" list="visitorCityList" placeholder="City">
-      <datalist id="visitorCityList"></datalist>
-      <input type="date" id="visitorDateFrom" title="From date">
-      <input type="date" id="visitorDateTo" title="To date">
-      <select id="visitorDeviceFilter">
-        <option value="">All devices</option>
-        <option value="Desktop">Desktop</option>
-        <option value="Mobile">Mobile</option>
-        <option value="Tablet">Tablet</option>
-      </select>
-      <button class="btn btn-small" id="visitorFilterReset">Reset</button>
-      <span class="filter-count" id="visitorFilterCount"></span>
+      <div class="visitor-filter-row">
+        <input type="date" id="visitorDateFrom" title="From date">
+        <input type="date" id="visitorDateTo" title="To date">
+        <select id="visitorDeviceFilter">
+          <option value="">All devices</option>
+          <option value="Desktop">Desktop</option>
+          <option value="Mobile">Mobile</option>
+          <option value="Tablet">Tablet</option>
+        </select>
+        <button class="btn btn-small" id="visitorFilterReset">Reset</button>
+        <span class="filter-count" id="visitorFilterCount"></span>
+      </div>
     </div>
     <div class="loading-row" id="visitorsLoading">Loading visitors…</div>
-    <div class="visitor-table-wrap" id="visitorTableWrap" style="display:none;">
-      <table class="visitor-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Time</th>
-            <th>IP address</th>
-            <th>Location</th>
-            <th>Device</th>
-            <th>Browser / OS</th>
-            <th>Referrer</th>
-            <th>Page</th>
-          </tr>
-        </thead>
-        <tbody id="visitorTableBody"></tbody>
-      </table>
+    <div class="visitor-cards-wrap" id="visitorTableWrap" style="display:none;">
+      <div class="visitor-cards" id="visitorTableBody"></div>
     </div>
   </div>
 
