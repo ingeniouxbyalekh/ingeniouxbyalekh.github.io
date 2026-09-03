@@ -523,6 +523,7 @@ published research, and real-time technical insights.</p>
   } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
   // Your web app's Firebase configuration
+  // ---- primary database: contact form messages ----
   const firebaseConfig = {
     apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
     authDomain: "ingenioux-55f27.firebaseapp.com",
@@ -537,13 +538,27 @@ published research, and real-time technical insights.</p>
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
+  // ---- visitor database: visitor logs + total visitor count ----
+  const visitorFirebaseConfig = {
+    apiKey: "AIzaSyBFkN8erxsvRRAwMipQu7xZGLeXsQu9E_w",
+    authDomain: "ingenioux-visitor.firebaseapp.com",
+    databaseURL: "https://ingenioux-visitor-default-rtdb.firebaseio.com",
+    projectId: "ingenioux-visitor",
+    storageBucket: "ingenioux-visitor.firebasestorage.app",
+    messagingSenderId: "426646415346",
+    appId: "1:426646415346:web:38373322949588eb14ed6b"
+  };
+
+  const visitorApp = initializeApp(visitorFirebaseConfig, 'visitor');
+  const dbVisitor = getDatabase(visitorApp);
+
   // ---------- Total visitors (footer) ----------
   // Reads the same atomic counter used to assign each visitor's sequential number,
   // so this always reflects the true all-time total, live, with no extra writes.
   (function watchTotalVisitors(){
     const el = document.getElementById('totalVisitorsCount');
     if(!el) return;
-    onValue(ref(db, 'visitorMeta/count'), (snap)=>{
+    onValue(ref(dbVisitor, 'visitorMeta/count'), (snap)=>{
       const count = snap.val();
       el.textContent = 'Total visitors: ' + (typeof count === 'number' ? count.toLocaleString() : '0');
     }, ()=>{
@@ -616,12 +631,12 @@ published research, and real-time technical insights.</p>
 
       // Atomically bump a shared counter so every visitor gets a sequential number.
       const counterResult = await withTimeout(
-        runTransaction(ref(db, 'visitorMeta/count'), (current) => (current || 0) + 1),
+        runTransaction(ref(dbVisitor, 'visitorMeta/count'), (current) => (current || 0) + 1),
         10000
       );
       const visitorNumber = counterResult.committed ? counterResult.snapshot.val() : null;
 
-      await withTimeout(push(ref(db, 'visitors'), {
+      await withTimeout(push(ref(dbVisitor, 'visitors'), {
         visitorNumber,
         ...geo,
         userAgent: ua,

@@ -4,6 +4,7 @@ import {
   runTransaction, push, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
+// ---- primary database: contact messages, admin password, login rate-limit state ----
 const firebaseConfig = {
   apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
   authDomain: "ingenioux-55f27.firebaseapp.com",
@@ -16,6 +17,20 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+// ---- visitor database: visitor logs, total visitor count, failed-login detail logs ----
+const visitorFirebaseConfig = {
+  apiKey: "AIzaSyBFkN8erxsvRRAwMipQu7xZGLeXsQu9E_w",
+  authDomain: "ingenioux-visitor.firebaseapp.com",
+  databaseURL: "https://ingenioux-visitor-default-rtdb.firebaseio.com",
+  projectId: "ingenioux-visitor",
+  storageBucket: "ingenioux-visitor.firebasestorage.app",
+  messagingSenderId: "426646415346",
+  appId: "1:426646415346:web:38373322949588eb14ed6b"
+};
+
+const visitorApp = initializeApp(visitorFirebaseConfig, 'visitor');
+const dbVisitor = getDatabase(visitorApp);
 
 const ADMIN_PATH = 'adminConfig/passwordHash';
 const MESSAGES_PATH = 'contactMessages';
@@ -278,7 +293,7 @@ loginForm.addEventListener('submit', async (e)=>{
     const gotBlocked = !!updated.blockedUntil;
 
     // Log the attempt with visitor details — never the password itself.
-    withTimeout(push(ref(db, LOGIN_LOGS_PATH), {
+    withTimeout(push(ref(dbVisitor, LOGIN_LOGS_PATH), {
       ip: info.ip || null,
       city: info.city || null,
       region: info.region || null,
@@ -466,7 +481,7 @@ function startVisitorsListener(){
   visitorsLoading.textContent = 'Loading visitors…';
 
   // Cap at the most recent 500 so a busy site doesn't pull the whole table into the browser.
-  const visitorsQuery = query(ref(db, VISITORS_PATH), orderByChild('createdAt'), limitToLast(500));
+  const visitorsQuery = query(ref(dbVisitor, VISITORS_PATH), orderByChild('createdAt'), limitToLast(500));
   onValue(visitorsQuery, (snapshot)=>{
     const val = snapshot.val() || {};
     allVisitorsCache = Object.keys(val)
@@ -599,7 +614,7 @@ clearVisitorsBtn.addEventListener('click', async ()=>{
   if(!confirm('Delete all visitor logs permanently?')) return;
   clearVisitorsBtn.disabled = true;
   try{
-    await withTimeout(remove(ref(db, VISITORS_PATH)), 10000);
+    await withTimeout(remove(ref(dbVisitor, VISITORS_PATH)), 10000);
   }catch(err){
     console.error('Clear visitors error:', err);
     alert(friendlyError(err));
@@ -617,7 +632,7 @@ function startLoginLogsListener(){
   loginLogsLoading.classList.remove('is-error');
   loginLogsLoading.textContent = 'Loading…';
 
-  const logsQuery = query(ref(db, LOGIN_LOGS_PATH), orderByChild('createdAt'), limitToLast(300));
+  const logsQuery = query(ref(dbVisitor, LOGIN_LOGS_PATH), orderByChild('createdAt'), limitToLast(300));
   onValue(logsQuery, (snapshot)=>{
     const val = snapshot.val() || {};
     const logs = Object.keys(val)
@@ -661,7 +676,7 @@ clearLoginLogsBtn.addEventListener('click', async ()=>{
   if(!confirm('Delete all failed-login logs permanently?')) return;
   clearLoginLogsBtn.disabled = true;
   try{
-    await withTimeout(remove(ref(db, LOGIN_LOGS_PATH)), 10000);
+    await withTimeout(remove(ref(dbVisitor, LOGIN_LOGS_PATH)), 10000);
   }catch(err){
     console.error('Clear login logs error:', err);
     alert(friendlyError(err));
