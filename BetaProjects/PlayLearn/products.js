@@ -20,7 +20,7 @@ const PlayLearn_PRODUCTS = [
     id: "cse-sem1",
     category: "cse",
     title: "CSE Semester 1 — Full Course",
-    blurb: "Welcome Gift from our end",
+    blurb: "Welcome Gift from our side.",
     price: 0,
     format: "ZIP",
     tag: "Full Course",
