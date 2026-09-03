@@ -1,11 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {
-  getDatabase, ref, get, set
+  getDatabase, ref, get, set, update, remove, onValue, query, orderByChild
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
-import {
-  getFirestore, collection, query, orderBy, onSnapshot,
-  doc, updateDoc, deleteDoc
-} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
@@ -18,10 +14,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const rtdb = getDatabase(app);
-const db = getFirestore(app);
+const db = getDatabase(app);
 
 const ADMIN_PATH = 'adminConfig/passwordHash';
+const MESSAGES_PATH = 'contactMessages';
 const SESSION_KEY = 'ingenioux_admin_session';
 
 // ---------- helpers ----------
@@ -40,8 +36,7 @@ function withTimeout(promise, ms){
 
 function friendlyError(err){
   if(err && err.message === 'timeout') return 'This is taking too long — check your connection and try again.';
-  if(err && err.code === 'PERMISSION_DENIED') return 'Blocked by database rules — check your Realtime Database rules for adminConfig/passwordHash.';
-  if(err && err.code === 'permission-denied') return 'Blocked by Firestore rules — check your Firestore security rules for contactMessages.';
+  if(err && err.code === 'PERMISSION_DENIED') return 'Blocked by database rules — check your Realtime Database rules.';
   return 'Something went wrong. Please try again.';
 }
 
@@ -53,7 +48,7 @@ function setStatus(el, msg, type){
 
 function formatDate(ts){
   if(!ts) return '—';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const d = new Date(ts);
   return d.toLocaleString(undefined, { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
 
@@ -84,7 +79,7 @@ const filterBtns = document.querySelectorAll('.msg-filter button');
 
 let currentFilter = 'all';
 let allMessages = [];
-let unsubscribeMessages = null;
+let messagesListenerAttached = false;
 
 // ---------- auth flow ----------
 function showDashboard(){
@@ -95,7 +90,6 @@ function showDashboard(){
 function showLogin(){
   dashboard.style.display = 'none';
   loginScreen.style.display = 'flex';
-  if(unsubscribeMessages){ unsubscribeMessages(); unsubscribeMessages = null; }
 }
 
 if(sessionStorage.getItem(SESSION_KEY) === 'true'){
@@ -111,12 +105,12 @@ loginForm.addEventListener('submit', async (e)=>{
   setStatus(loginStatus, 'Checking…', null);
 
   try{
-    const snap = await withTimeout(get(ref(rtdb, ADMIN_PATH)), 10000);
+    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
     const hash = await sha256(pwd);
 
     if(!snap.exists()){
       // first-time setup: whatever is entered becomes the admin password
-      await withTimeout(set(ref(rtdb, ADMIN_PATH), hash), 10000);
+      await withTimeout(set(ref(db, ADMIN_PATH), hash), 10000);
       setStatus(loginStatus, 'Admin password created. Logging in…', 'success');
     }else if(snap.val() !== hash){
       setStatus(loginStatus, 'Incorrect password.', 'error');
@@ -165,7 +159,7 @@ savePasswordBtn.addEventListener('click', async ()=>{
   setStatus(passwordStatus, 'Saving…', null);
 
   try{
-    const snap = await withTimeout(get(ref(rtdb, ADMIN_PATH)), 10000);
+    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
     const currentHash = await sha256(current);
     if(snap.exists() && snap.val() !== currentHash){
       setStatus(passwordStatus, 'Current password is incorrect.', 'error');
@@ -173,7 +167,7 @@ savePasswordBtn.addEventListener('click', async ()=>{
       return;
     }
     const newHash = await sha256(next);
-    await withTimeout(set(ref(rtdb, ADMIN_PATH), newHash), 10000);
+    await withTimeout(set(ref(db, ADMIN_PATH), newHash), 10000);
     setStatus(passwordStatus, 'Password updated.', 'success');
     document.getElementById('currentPassword').value = '';
     document.getElementById('newPassword').value = '';
@@ -188,14 +182,19 @@ savePasswordBtn.addEventListener('click', async ()=>{
 
 // ---------- messages ----------
 function startMessagesListener(){
-  if(unsubscribeMessages) return;
+  if(messagesListenerAttached) return;
+  messagesListenerAttached = true;
+
   msgLoading.style.display = 'block';
   msgLoading.classList.remove('is-error');
   msgLoading.textContent = 'Loading messages…';
 
-  const q = query(collection(db, 'contactMessages'), orderBy('createdAt', 'desc'));
-  unsubscribeMessages = onSnapshot(q, (snapshot)=>{
-    allMessages = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  const messagesQuery = query(ref(db, MESSAGES_PATH), orderByChild('createdAt'));
+  onValue(messagesQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    allMessages = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse(); // orderByChild is ascending; newest first
     msgLoading.style.display = 'none';
     renderMessages();
   }, (err)=>{
@@ -249,7 +248,7 @@ msgList.addEventListener('click', async (e)=>{
   if(e.target.classList.contains('mark-read-btn')){
     e.target.disabled = true;
     try{
-      await withTimeout(updateDoc(doc(db, 'contactMessages', id), { read: true }), 10000);
+      await withTimeout(update(ref(db, `${MESSAGES_PATH}/${id}`), { read: true }), 10000);
     }catch(err){
       console.error('Mark as read error:', err);
       alert(friendlyError(err));
@@ -261,7 +260,7 @@ msgList.addEventListener('click', async (e)=>{
     if(!confirm('Delete this message permanently?')) return;
     e.target.disabled = true;
     try{
-      await withTimeout(deleteDoc(doc(db, 'contactMessages', id)), 10000);
+      await withTimeout(remove(ref(db, `${MESSAGES_PATH}/${id}`)), 10000);
     }catch(err){
       console.error('Delete message error:', err);
       alert(friendlyError(err));

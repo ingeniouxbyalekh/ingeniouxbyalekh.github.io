@@ -458,9 +458,11 @@ published research, and real-time technical insights.</p>
 
 <!-- ================= CONTACT ================= -->
 <section class="contact" id="contact">
-  <div class="wrap reveal">
-    <div class="eyebrow" style="justify-content:center;">Open to conversations</div>
-    <p>For research collaboration, feedback on the work above, or a general conversation — feel free to reach out.</p>
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2 class="section-title">Contact Us</h2>
+      <div class="section-note"> </div>
+    </div>
 
     <form class="contact-form" id="contactForm" novalidate>
       <div class="form-row">
@@ -493,10 +495,6 @@ published research, and real-time technical insights.</p>
         <div class="form-status" id="cfStatus" role="status" aria-live="polite"></div>
       </div>
     </form>
-
-    <div style="margin-top:36px;font-family:var(--font-mono);font-size:12.5px;color:var(--text-faint);">
-      Or write directly to <a href="mailto:info.ingenioux@gmail.com" style="color:var(--text-dim);">info.ingenioux@gmail.com</a> · Puri, Odisha, India
-    </div>
   </div>
 </section>
 
@@ -519,11 +517,11 @@ published research, and real-time technical insights.</p>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
   import {
-    getFirestore,
-    collection,
-    addDoc,
+    getDatabase,
+    ref,
+    push,
     serverTimestamp
-  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
   // Your web app's Firebase configuration
   const firebaseConfig = {
@@ -538,7 +536,7 @@ published research, and real-time technical insights.</p>
 
   // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const db = getDatabase(app);
 
   const form = document.getElementById('contactForm');
   const statusEl = document.getElementById('cfStatus');
@@ -580,7 +578,7 @@ published research, and real-time technical insights.</p>
       setStatus('', null);
 
       try{
-        await withTimeout(addDoc(collection(db, 'contactMessages'), {
+        await withTimeout(push(ref(db, 'contactMessages'), {
           name,
           email,
           phone,
@@ -595,7 +593,7 @@ published research, and real-time technical insights.</p>
         console.error('Error adding contact message:', err);
         if(err && err.message === 'timeout'){
           setStatus('This is taking too long — check your connection and try again.', 'error');
-        }else if(err && err.code === 'permission-denied'){
+        }else if(err && err.code === 'PERMISSION_DENIED'){
           setStatus('Message blocked by server rules. Please email directly.', 'error');
         }else{
           setStatus('Something went wrong. Please try again or email directly.', 'error');
