@@ -397,6 +397,134 @@ function showDeviceConflictModal({ onConfirm, onCancel } = {}) {
 }
 
 /* ---------------------------------------------------------------
+   Finish-signup modal for first-time Google sign-in
+   ---------------------------------------------------------------
+   Google sign-in gives us a name + email but nothing else, and the
+   admin/executive accounts still need a password (there's no
+   Firebase Auth check on the login form — see the file header), so
+   a brand-new account can't just be created straight from the
+   Google popup. Used by admin.html and executive.html: when the
+   signed-in Google email has no existing record, show this modal to
+   collect a password (and, for executive, a phone number) before
+   the caller writes anything to Firebase. Built once, reused by
+   whichever page needs it, same pattern as the device-conflict modal
+   above.
+--------------------------------------------------------------- */
+function ensureGoogleDetailsModal() {
+  let overlay = document.getElementById("google-details-modal");
+  if (overlay) return overlay;
+  overlay = document.createElement("div");
+  overlay.id = "google-details-modal";
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-body">
+        <h3 style="margin:0 0 6px;">Finish creating your account</h3>
+        <p style="margin:0 0 20px; color:var(--text-dim); font-size:13px; line-height:1.6;">
+          Signed in as <strong id="google-details-email"></strong>. A few more details are needed to finish setting up your account.
+        </p>
+        <form id="google-details-form">
+          <div class="field">
+            <label for="google-details-name">Name</label>
+            <input id="google-details-name" type="text" required autocomplete="name" />
+          </div>
+          <div class="field" id="google-details-phone-field" style="display:none">
+            <label for="google-details-phone">Phone number</label>
+            <input id="google-details-phone" type="tel" autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="google-details-password">Password</label>
+            <input id="google-details-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="google-details-confirm-password">Confirm password</label>
+            <input id="google-details-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:6px;">
+            <button type="button" class="btn" id="google-details-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="google-details-submit">Finish sign up</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+// email/name come from the Google account (name is editable, in case
+// the display name isn't what they want on file; email is shown as
+// plain text, not editable, since it's the record's key). requirePhone
+// shows/requires the phone field (executive signup needs one, admin
+// signup doesn't). onSubmit({ name, phone, password }) does the actual
+// Firebase write and session setup — this modal never touches the DB
+// itself, and only closes once onSubmit resolves without throwing.
+// onCancel fires if the person backs out; callers should sign the
+// Firebase Auth popup session back out there so they aren't left
+// half signed-in with no account record.
+function showGoogleDetailsModal({ email, name, requirePhone, onSubmit, onCancel } = {}) {
+  const overlay = ensureGoogleDetailsModal();
+  const form = overlay.querySelector("#google-details-form");
+  const emailEl = overlay.querySelector("#google-details-email");
+  const nameInput = overlay.querySelector("#google-details-name");
+  const phoneField = overlay.querySelector("#google-details-phone-field");
+  const phoneInput = overlay.querySelector("#google-details-phone");
+  const passwordInput = overlay.querySelector("#google-details-password");
+  const confirmInput = overlay.querySelector("#google-details-confirm-password");
+  const cancelBtn = overlay.querySelector("#google-details-cancel");
+  const submitBtn = overlay.querySelector("#google-details-submit");
+
+  emailEl.textContent = email || "";
+  nameInput.value = name || "";
+  phoneField.style.display = requirePhone ? "" : "none";
+  phoneInput.required = !!requirePhone;
+  phoneInput.value = "";
+  passwordInput.value = "";
+  confirmInput.value = "";
+  submitBtn.disabled = false;
+  submitBtn.textContent = "Finish sign up";
+  overlay.classList.add("is-open");
+
+  function close() {
+    overlay.classList.remove("is-open");
+    form.removeEventListener("submit", handleSubmit);
+    cancelBtn.removeEventListener("click", handleCancel);
+  }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (passwordInput.value !== confirmInput.value) {
+      if (typeof showToast === "function") showToast("Passwords don't match");
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating account…";
+    try {
+      if (onSubmit) {
+        await onSubmit({
+          name: nameInput.value.trim(),
+          phone: requirePhone ? phoneInput.value.trim() : "",
+          password: passwordInput.value,
+        });
+      }
+      close();
+    } catch (err) {
+      console.error("Could not finish Google signup:", err);
+      if (typeof showToast === "function") showToast("Couldn't create the account — try again");
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Finish sign up";
+    }
+  }
+
+  function handleCancel() {
+    close();
+    if (onCancel) onCancel();
+  }
+
+  form.addEventListener("submit", handleSubmit);
+  cancelBtn.addEventListener("click", handleCancel);
+}
+
+/* ---------------------------------------------------------------
    Local session (unchanged shape: { name, email, phone })
 --------------------------------------------------------------- */
 function getUser() {

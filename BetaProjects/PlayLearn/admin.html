@@ -408,8 +408,11 @@
   // Google sign-in — same one-admin rule as the password form above:
   // if /admin already has a record, only that exact email is let in;
   // if no admin exists yet, the first person to sign in with Google
-  // becomes the admin (mirrors the "Sign up" tab, just without a
-  // password since this account only ever signs in via Google).
+  // becomes the admin, same as the "Sign up" tab — except the account
+  // still needs a password (the login form has no real Firebase Auth
+  // check, see the file header comment), so a brand-new sign-in opens
+  // the "finish creating your account" modal to collect one before
+  // anything is written to Firebase.
   const adminGoogleBtn = document.getElementById("admin-google-signin-btn");
   adminGoogleBtn.addEventListener("click", async () => {
     if (!db) {
@@ -444,11 +447,21 @@
         if (auth) auth.signOut();
         return;
       }
-      await db.ref("admin/" + key).set({ name: googleUser.displayName || "", email, createdAt: Date.now() });
-      await claimDeviceSession("admin", key, getDeviceId());
-      const admin = { name: googleUser.displayName || "", email };
-      setAdminSession(admin);
-      unlockAdmin(admin);
+      showGoogleDetailsModal({
+        email,
+        name: googleUser.displayName || "",
+        requirePhone: false,
+        onSubmit: async ({ name, password }) => {
+          await db.ref("admin/" + key).set({ name, email, password, createdAt: Date.now() });
+          await claimDeviceSession("admin", key, getDeviceId());
+          const admin = { name, email };
+          setAdminSession(admin);
+          unlockAdmin(admin);
+        },
+        onCancel: () => {
+          if (auth) auth.signOut();
+        },
+      });
     } catch (err) {
       console.error("Admin Google sign-in failed:", err);
       showToast("Google sign-in failed — try again");

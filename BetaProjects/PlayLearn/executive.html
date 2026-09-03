@@ -496,10 +496,13 @@
   });
 
   // Google sign-in — same verified-only rule as the password form
-  // above: only an email already sitting in /executive gets in. A new
-  // email is written to /executive-temp instead (no password, since
-  // this account only ever signs in via Google) and left pending
-  // until an admin verifies it, exactly like the signup form's flow.
+  // above: only an email already sitting in /executive gets in. A
+  // brand-new email still needs a password and phone number (the
+  // login form has no real Firebase Auth check, see the file header
+  // comment) — same details the manual signup form asks for — so it
+  // opens the "finish creating your account" modal to collect them
+  // before anything is written to /executive-temp, instead of filing
+  // a bare pending record straight from the Google popup.
   const executiveGoogleBtn = document.getElementById("executive-google-signin-btn");
   executiveGoogleBtn.addEventListener("click", async () => {
     if (!db) {
@@ -536,8 +539,18 @@
         showToast("Your account is still awaiting admin verification");
         return;
       }
-      await db.ref("executive-temp/" + key).set({ name: googleUser.displayName || "", phone: "", email, createdAt: Date.now() });
-      showToast("Account created — waiting on admin verification before you can log in");
+      showGoogleDetailsModal({
+        email,
+        name: googleUser.displayName || "",
+        requirePhone: true,
+        onSubmit: async ({ name, phone, password }) => {
+          await db.ref("executive-temp/" + key).set({ name, phone, email, password, createdAt: Date.now() });
+          showToast("Account created — waiting on admin verification before you can log in");
+        },
+        onCancel: () => {
+          if (auth) auth.signOut();
+        },
+      });
     } catch (err) {
       console.error("executive Google sign-in failed:", err);
       showToast("Google sign-in failed — try again");
