@@ -102,7 +102,7 @@
            Google account signs in; existing Google accounts skip straight to login) -->
       <div class="auth-form" id="form-google-complete">
         <h1>Almost there</h1>
-        <p class="sub">A few more details to finish setting up your account.</p>
+        <p class="sub">A few more details to finish setting up your account — including a password, so you can also log in without Google later.</p>
         <form id="google-complete-form">
           <div class="field">
             <label for="gc-regno">OUTR Registration No.</label>
@@ -125,6 +125,14 @@
           <div class="field">
             <label for="gc-phone">Phone number</label>
             <input id="gc-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="gc-password">Password</label>
+            <input id="gc-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="gc-confirm-password">Confirm password</label>
+            <input id="gc-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
           </div>
           <button type="submit" class="btn btn-primary btn-block">Finish signing up</button>
         </form>
@@ -286,6 +294,7 @@
     document.querySelector(".auth-tabs").style.display = "";
     showTab("login");
     pendingGoogleEmail = null;
+    googleCompleteForm.reset();
   }
 
   async function finishGoogleLogin(profile) {
@@ -339,11 +348,20 @@
     const semester = document.getElementById("gc-semester").value;
     const name = document.getElementById("gc-name").value.trim();
     const phone = document.getElementById("gc-phone").value.trim();
+    const password = document.getElementById("gc-password").value;
+    const confirmPassword = document.getElementById("gc-confirm-password").value;
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
 
     gcSubmitBtn.disabled = true;
     gcSubmitBtn.textContent = "Finishing up…";
     try {
-      const profile = { name, email: pendingGoogleEmail, phone, regNo, semester, password: "" };
+      // Saving a real password here (instead of "") means this account can
+      // log in with either the password form or the Google button from now on.
+      const profile = { name, email: pendingGoogleEmail, phone, regNo, semester, password };
       await saveUserToCloud(profile);
       pendingGoogleEmail = null;
       await finishGoogleLogin(profile);
