@@ -130,3 +130,20 @@ body{min-height:100vh;}
 .visitor-table tbody tr:hover{background:var(--surface-2);}
 .visitor-table td.v-num{color:var(--ember);font-weight:600;}
 .visitor-table td.v-page{max-width:220px;overflow:hidden;text-overflow:ellipsis;}
+
+/* ---- visitor filter bar ---- */
+.visitor-filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+.visitor-filter-bar input[type="text"],
+.visitor-filter-bar input[type="date"],
+.visitor-filter-bar select{
+  background:var(--surface-2);border:1px solid var(--line);border-radius:3px;
+  padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:12.5px;
+}
+.visitor-filter-bar input[type="text"]{flex:1;min-width:200px;}
+.visitor-filter-bar input:focus,.visitor-filter-bar select:focus{outline:none;border-color:var(--ember);}
+.filter-count{font-family:var(--font-mono);font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
+
+/* ---- collapsible panels ---- */
+.panel-toggle{font-size:15px;line-height:1;padding:7px 12px;}
+.panel.collapsed{padding-bottom:26px;}
+.panel.collapsed > *:not(.msg-toolbar){display:none;}

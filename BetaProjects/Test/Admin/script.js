@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
 import {
-  getDatabase, ref, get, set, update, remove, onValue, query, orderByChild, limitToLast
+  getDatabase, ref, get, set, update, remove, onValue, query, orderByChild, limitToLast,
+  runTransaction, push, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -19,6 +20,10 @@ const db = getDatabase(app);
 const ADMIN_PATH = 'adminConfig/passwordHash';
 const MESSAGES_PATH = 'contactMessages';
 const VISITORS_PATH = 'visitors';
+const LOGIN_ATTEMPTS_PATH = 'loginAttempts';   // per ip/device: current fail count + block state
+const LOGIN_LOGS_PATH = 'loginAttemptLogs';    // flat history of every failed attempt, for the admin table
+const MAX_LOGIN_ATTEMPTS = 3;
+const LOGIN_BLOCK_MS = 60 * 60 * 1000; // 1 hour
 const SESSION_KEY = 'ingenioux_admin_session';
 
 // ---------- helpers ----------
@@ -59,6 +64,73 @@ function escapeHtml(str){
   }[c]));
 }
 
+// ---------- caller identity (for login rate-limiting) ----------
+// Firebase RTDB keys can't contain . # $ [ ] /
+function sanitizeKey(str){
+  return String(str).replace(/[.#$\[\]/]/g, '_');
+}
+
+function getOrCreateDeviceId(){
+  let id = localStorage.getItem('ingenioux_admin_device_id');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(16) + Math.random().toString(16).slice(2)));
+    localStorage.setItem('ingenioux_admin_device_id', id);
+  }
+  return id;
+}
+
+// Very small user-agent parser — good enough for admin display, not meant to be exhaustive.
+function parseUserAgent(ua){
+  let browser = 'Unknown';
+  if(/Edg\//.test(ua)) browser = 'Edge';
+  else if(/OPR\//.test(ua)) browser = 'Opera';
+  else if(/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
+  else if(/Firefox\//.test(ua)) browser = 'Firefox';
+  else if(/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+
+  let os = 'Unknown';
+  if(/Windows NT/.test(ua)) os = 'Windows';
+  else if(/Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua)) os = 'macOS';
+  else if(/Android/.test(ua)) os = 'Android';
+  else if(/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if(/Linux/.test(ua)) os = 'Linux';
+
+  let deviceType = 'Desktop';
+  if(/iPad|Tablet/.test(ua)) deviceType = 'Tablet';
+  else if(/Mobi|Android/.test(ua)) deviceType = 'Mobile';
+
+  return { browser, os, deviceType };
+}
+
+// Resolved once per page load — IP/geo lookup is best-effort; falls back to a
+// per-browser device id (localStorage) so blocking still works if it fails.
+async function resolveVisitorInfo(){
+  const ua = navigator.userAgent;
+  const device = parseUserAgent(ua);
+  let geo = {};
+  try{
+    const res = await withTimeout(fetch('https://ipwho.is/'), 6000);
+    const data = await res.json();
+    if(data && data.success !== false){
+      geo = {
+        ip: data.ip || null,
+        city: data.city || null,
+        region: data.region || null,
+        country: data.country || null,
+        countryCode: data.country_code || null,
+        timezone: (data.timezone && data.timezone.id) || null,
+        isp: (data.connection && (data.connection.isp || data.connection.org)) || null
+      };
+    }
+  }catch(err){
+    console.warn('Admin geo lookup failed:', err);
+  }
+  const key = geo.ip ? ('ip_' + sanitizeKey(geo.ip)) : ('device_' + getOrCreateDeviceId());
+  return { ...geo, userAgent: ua, browser: device.browser, os: device.os, deviceType: device.deviceType, key };
+}
+
+const visitorInfoPromise = resolveVisitorInfo();
+
 // ---------- elements ----------
 const loginScreen = document.getElementById('loginScreen');
 const dashboard = document.getElementById('dashboard');
@@ -84,11 +156,24 @@ const visitorTableBody = document.getElementById('visitorTableBody');
 const statVisitors = document.getElementById('statVisitors');
 const statVisitorsToday = document.getElementById('statVisitorsToday');
 const clearVisitorsBtn = document.getElementById('clearVisitorsBtn');
+const visitorSearch = document.getElementById('visitorSearch');
+const visitorDateFrom = document.getElementById('visitorDateFrom');
+const visitorDateTo = document.getElementById('visitorDateTo');
+const visitorDeviceFilter = document.getElementById('visitorDeviceFilter');
+const visitorFilterReset = document.getElementById('visitorFilterReset');
+const visitorFilterCount = document.getElementById('visitorFilterCount');
+
+const loginLogsLoading = document.getElementById('loginLogsLoading');
+const loginLogsTableWrap = document.getElementById('loginLogsTableWrap');
+const loginLogsTableBody = document.getElementById('loginLogsTableBody');
+const clearLoginLogsBtn = document.getElementById('clearLoginLogsBtn');
 
 let currentFilter = 'all';
 let allMessages = [];
+let allVisitorsCache = [];
 let messagesListenerAttached = false;
 let visitorsListenerAttached = false;
+let loginLogsListenerAttached = false;
 
 // ---------- auth flow ----------
 function showDashboard(){
@@ -96,11 +181,25 @@ function showDashboard(){
   dashboard.style.display = 'block';
   startMessagesListener();
   startVisitorsListener();
+  startLoginLogsListener();
 }
 function showLogin(){
   dashboard.style.display = 'none';
   loginScreen.style.display = 'flex';
 }
+
+function wireCollapse(btnId){
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    const panel = btn.closest('.panel');
+    const collapsed = panel.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '+' : '×';
+    btn.setAttribute('aria-label', (collapsed ? 'Expand' : 'Minimize') + ' list');
+  });
+}
+wireCollapse('visitorPanelToggle');
+wireCollapse('loginLogsPanelToggle');
 
 if(sessionStorage.getItem(SESSION_KEY) === 'true'){
   showDashboard();
@@ -115,23 +214,84 @@ loginForm.addEventListener('submit', async (e)=>{
   setStatus(loginStatus, 'Checking…', null);
 
   try{
-    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
-    const hash = await sha256(pwd);
+    const info = await withTimeout(visitorInfoPromise, 8000)
+      .catch(()=> ({ key: 'device_' + getOrCreateDeviceId() }));
+    const attemptsRef = ref(db, `${LOGIN_ATTEMPTS_PATH}/${info.key}`);
 
-    if(!snap.exists()){
-      // first-time setup: whatever is entered becomes the admin password
-      await withTimeout(set(ref(db, ADMIN_PATH), hash), 10000);
-      setStatus(loginStatus, 'Admin password created. Logging in…', 'success');
-    }else if(snap.val() !== hash){
-      setStatus(loginStatus, 'Incorrect password.', 'error');
+    // Block check happens before anything else — a correct password doesn't bypass a block.
+    const attemptsSnap = await withTimeout(get(attemptsRef), 10000);
+    const attemptsState = attemptsSnap.val() || {};
+    const now = Date.now();
+    if(attemptsState.blockedUntil && attemptsState.blockedUntil > now){
+      const mins = Math.ceil((attemptsState.blockedUntil - now) / 60000);
+      setStatus(loginStatus, `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`, 'error');
       loginBtn.disabled = false;
       return;
     }
 
-    sessionStorage.setItem(SESSION_KEY, 'true');
-    loginForm.reset();
-    setStatus(loginStatus, '', null);
-    showDashboard();
+    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
+    const hash = await sha256(pwd);
+    let success = false;
+
+    if(!snap.exists()){
+      // first-time setup: whatever is entered becomes the admin password
+      await withTimeout(set(ref(db, ADMIN_PATH), hash), 10000);
+      success = true;
+      setStatus(loginStatus, 'Admin password created. Logging in…', 'success');
+    }else if(snap.val() === hash){
+      success = true;
+    }
+
+    if(success){
+      await withTimeout(remove(attemptsRef), 10000).catch(()=>{}); // clear any prior fail count on success
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      loginForm.reset();
+      setStatus(loginStatus, '', null);
+      showDashboard();
+      return;
+    }
+
+    // ---- wrong password: bump the counter and, at 3, block for an hour ----
+    const txResult = await withTimeout(runTransaction(attemptsRef, (current)=>{
+      const c = current || {};
+      const stillBlocked = c.blockedUntil && c.blockedUntil > now;
+      if(stillBlocked) return c;
+      const newCount = (c.failCount || 0) + 1;
+      const blockedUntil = newCount >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_BLOCK_MS : null;
+      return {
+        failCount: blockedUntil ? 0 : newCount,
+        blockedUntil,
+        lastAttempt: now,
+        ip: info.ip || null
+      };
+    }), 10000);
+
+    const updated = txResult.snapshot.val() || {};
+    const gotBlocked = !!updated.blockedUntil;
+
+    // Log the attempt with visitor details — never the password itself.
+    withTimeout(push(ref(db, LOGIN_LOGS_PATH), {
+      ip: info.ip || null,
+      city: info.city || null,
+      region: info.region || null,
+      country: info.country || null,
+      countryCode: info.countryCode || null,
+      timezone: info.timezone || null,
+      isp: info.isp || null,
+      browser: info.browser || null,
+      os: info.os || null,
+      deviceType: info.deviceType || null,
+      userAgent: info.userAgent || null,
+      blocked: gotBlocked,
+      createdAt: serverTimestamp()
+    }), 10000).catch(err => console.warn('Failed to log login attempt:', err));
+
+    if(gotBlocked){
+      setStatus(loginStatus, 'Too many failed attempts. Blocked for 1 hour.', 'error');
+    }else{
+      const remaining = MAX_LOGIN_ATTEMPTS - (updated.failCount || 0);
+      setStatus(loginStatus, `Incorrect password. ${remaining} attempt${remaining === 1 ? '' : 's'} left.`, 'error');
+    }
   }catch(err){
     console.error('Admin login error:', err);
     setStatus(loginStatus, friendlyError(err), 'error');
@@ -301,11 +461,12 @@ function startVisitorsListener(){
   const visitorsQuery = query(ref(db, VISITORS_PATH), orderByChild('createdAt'), limitToLast(500));
   onValue(visitorsQuery, (snapshot)=>{
     const val = snapshot.val() || {};
-    const allVisitors = Object.keys(val)
+    allVisitorsCache = Object.keys(val)
       .map(id => ({ id, ...val[id] }))
       .reverse(); // orderByChild is ascending; newest first
     visitorsLoading.style.display = 'none';
-    renderVisitors(allVisitors);
+    updateVisitorStats();
+    applyVisitorFilters();
   }, (err)=>{
     console.error('Visitors listener error:', err);
     visitorsLoading.style.display = 'block';
@@ -319,25 +480,46 @@ function locationLabel(v){
   return parts.length ? parts.join(', ') : '—';
 }
 
-function renderVisitors(allVisitors){
-  statVisitors.textContent = allVisitors.length;
-
+function updateVisitorStats(){
+  statVisitors.textContent = allVisitorsCache.length;
   const todayStart = new Date();
   todayStart.setHours(0,0,0,0);
-  const todayCount = allVisitors.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
-  statVisitorsToday.textContent = todayCount;
+  statVisitorsToday.textContent = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+}
 
-  if(allVisitors.length === 0){
+function applyVisitorFilters(){
+  const term = visitorSearch.value.trim().toLowerCase();
+  const from = visitorDateFrom.value ? new Date(visitorDateFrom.value + 'T00:00:00').getTime() : null;
+  const to = visitorDateTo.value ? new Date(visitorDateTo.value + 'T23:59:59').getTime() : null;
+  const device = visitorDeviceFilter.value;
+
+  let filtered = allVisitorsCache;
+  if(from) filtered = filtered.filter(v => v.createdAt && v.createdAt >= from);
+  if(to) filtered = filtered.filter(v => v.createdAt && v.createdAt <= to);
+  if(device) filtered = filtered.filter(v => v.deviceType === device);
+  if(term){
+    filtered = filtered.filter(v => [v.ip, v.city, v.region, v.country, v.browser, v.os, v.referrer, v.page]
+      .filter(Boolean).join(' ').toLowerCase().includes(term));
+  }
+
+  const isFiltering = term || from || to || device;
+  visitorFilterCount.textContent = isFiltering ? `Showing ${filtered.length} of ${allVisitorsCache.length}` : '';
+  renderVisitorTable(filtered);
+}
+
+function renderVisitorTable(list){
+  if(list.length === 0){
     visitorTableWrap.style.display = 'none';
     visitorsLoading.style.display = 'block';
     visitorsLoading.classList.remove('is-error');
-    visitorsLoading.textContent = 'No visitors logged yet.';
+    visitorsLoading.textContent = allVisitorsCache.length === 0 ? 'No visitors logged yet.' : 'No visitors match these filters.';
     return;
   }
 
+  visitorsLoading.style.display = 'none';
   visitorTableWrap.style.display = 'block';
 
-  visitorTableBody.innerHTML = allVisitors.map(v => `
+  visitorTableBody.innerHTML = list.map(v => `
     <tr>
       <td class="v-num">${v.visitorNumber ?? '—'}</td>
       <td>${formatDate(v.createdAt)}</td>
@@ -351,6 +533,19 @@ function renderVisitors(allVisitors){
   `).join('');
 }
 
+[visitorSearch, visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
+  el.addEventListener('input', applyVisitorFilters);
+  el.addEventListener('change', applyVisitorFilters);
+});
+
+visitorFilterReset.addEventListener('click', ()=>{
+  visitorSearch.value = '';
+  visitorDateFrom.value = '';
+  visitorDateTo.value = '';
+  visitorDeviceFilter.value = '';
+  applyVisitorFilters();
+});
+
 clearVisitorsBtn.addEventListener('click', async ()=>{
   if(!confirm('Delete all visitor logs permanently?')) return;
   clearVisitorsBtn.disabled = true;
@@ -361,5 +556,67 @@ clearVisitorsBtn.addEventListener('click', async ()=>{
     alert(friendlyError(err));
   }finally{
     clearVisitorsBtn.disabled = false;
+  }
+});
+
+// ---------- failed login attempts ----------
+function startLoginLogsListener(){
+  if(loginLogsListenerAttached) return;
+  loginLogsListenerAttached = true;
+
+  loginLogsLoading.style.display = 'block';
+  loginLogsLoading.classList.remove('is-error');
+  loginLogsLoading.textContent = 'Loading…';
+
+  const logsQuery = query(ref(db, LOGIN_LOGS_PATH), orderByChild('createdAt'), limitToLast(300));
+  onValue(logsQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    const logs = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse();
+    loginLogsLoading.style.display = 'none';
+    renderLoginLogs(logs);
+  }, (err)=>{
+    console.error('Login logs listener error:', err);
+    loginLogsLoading.style.display = 'block';
+    loginLogsLoading.classList.add('is-error');
+    loginLogsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function renderLoginLogs(logs){
+  if(logs.length === 0){
+    loginLogsTableWrap.style.display = 'none';
+    loginLogsLoading.style.display = 'block';
+    loginLogsLoading.classList.remove('is-error');
+    loginLogsLoading.textContent = 'No failed login attempts.';
+    return;
+  }
+
+  loginLogsLoading.style.display = 'none';
+  loginLogsTableWrap.style.display = 'block';
+
+  loginLogsTableBody.innerHTML = logs.map(l => `
+    <tr>
+      <td>${formatDate(l.createdAt)}</td>
+      <td>${escapeHtml(l.ip) || '—'}</td>
+      <td>${escapeHtml(locationLabel(l))}</td>
+      <td>${escapeHtml(l.deviceType) || '—'}</td>
+      <td>${escapeHtml([l.browser, l.os].filter(Boolean).join(' / ')) || '—'}</td>
+      <td>${l.blocked ? '<span style="color:var(--ember);font-weight:600;">Blocked (1h)</span>' : 'Failed'}</td>
+    </tr>
+  `).join('');
+}
+
+clearLoginLogsBtn.addEventListener('click', async ()=>{
+  if(!confirm('Delete all failed-login logs permanently?')) return;
+  clearLoginLogsBtn.disabled = true;
+  try{
+    await withTimeout(remove(ref(db, LOGIN_LOGS_PATH)), 10000);
+  }catch(err){
+    console.error('Clear login logs error:', err);
+    alert(friendlyError(err));
+  }finally{
+    clearLoginLogsBtn.disabled = false;
   }
 });

@@ -96,7 +96,23 @@
   <div class="panel">
     <div class="msg-toolbar">
       <h2>Visitors</h2>
-      <button class="btn btn-small btn-danger" id="clearVisitorsBtn">Clear all</button>
+      <div class="admin-actions">
+        <button class="btn btn-small btn-danger" id="clearVisitorsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="visitorPanelToggle" title="Minimize" aria-label="Minimize visitor list">×</button>
+      </div>
+    </div>
+    <div class="visitor-filter-bar">
+      <input type="text" id="visitorSearch" placeholder="Search IP, location, browser, referrer…">
+      <input type="date" id="visitorDateFrom" title="From date">
+      <input type="date" id="visitorDateTo" title="To date">
+      <select id="visitorDeviceFilter">
+        <option value="">All devices</option>
+        <option value="Desktop">Desktop</option>
+        <option value="Mobile">Mobile</option>
+        <option value="Tablet">Tablet</option>
+      </select>
+      <button class="btn btn-small" id="visitorFilterReset">Reset</button>
+      <span class="filter-count" id="visitorFilterCount"></span>
     </div>
     <div class="loading-row" id="visitorsLoading">Loading visitors…</div>
     <div class="visitor-table-wrap" id="visitorTableWrap" style="display:none;">
@@ -114,6 +130,33 @@
           </tr>
         </thead>
         <tbody id="visitorTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ---- failed login attempts ---- -->
+  <div class="panel">
+    <div class="msg-toolbar">
+      <h2>Failed login attempts</h2>
+      <div class="admin-actions">
+        <button class="btn btn-small btn-danger" id="clearLoginLogsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="loginLogsPanelToggle" title="Minimize" aria-label="Minimize failed login attempts">×</button>
+      </div>
+    </div>
+    <div class="loading-row" id="loginLogsLoading">Loading…</div>
+    <div class="visitor-table-wrap" id="loginLogsTableWrap" style="display:none;">
+      <table class="visitor-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>IP address</th>
+            <th>Location</th>
+            <th>Device</th>
+            <th>Browser / OS</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="loginLogsTableBody"></tbody>
       </table>
     </div>
   </div>
