@@ -458,14 +458,43 @@ published research, and real-time technical insights.</p>
 
 <!-- ================= CONTACT ================= -->
 <section class="contact" id="contact">
-  <div class="wrap reveal">
-    <div class="eyebrow" style="justify-content:center;">Open to conversations</div>
-    <h2>Let's Start a<br><em>Conversation</em>.</h2>
-    <p>For research collaboration, feedback on the work above, or a general conversation — feel free to reach out.</p>
-    <a class="contact-cta" href="mailto:info.ingenioux@gmail.com">info.ingenioux@gmail.com →</a>
-    <div style="margin-top:22px;font-family:var(--font-mono);font-size:12.5px;color:var(--text-faint);">
-      Puri, Odisha, India
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2 class="section-title">Contact Us</h2>
+      <div class="section-note"> </div>
     </div>
+
+    <form class="contact-form" id="contactForm" novalidate>
+      <div class="form-row">
+        <div class="field">
+          <label for="cf-name">Name</label>
+          <input type="text" id="cf-name" name="name" placeholder="Your name" required>
+        </div>
+        <div class="field">
+          <label for="cf-email">Email address</label>
+          <input type="email" id="cf-email" name="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field">
+          <label for="cf-phone">Phone number</label>
+          <input type="tel" id="cf-phone" name="phone" placeholder="+91 00000 00000">
+        </div>
+      </div>
+      <div class="field field-full">
+        <label for="cf-subject">Subject</label>
+        <input type="text" id="cf-subject" name="subject" placeholder="What's this about?" required>
+      </div>
+      <div class="field field-full">
+        <label for="cf-message">Message</label>
+        <textarea id="cf-message" name="message" rows="5" placeholder="Write your message here..." required></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="contact-cta" id="cf-submit">
+          <span class="cf-submit-label">Send message →</span>
+        </button>
+        <div class="form-status" id="cfStatus" role="status" aria-live="polite"></div>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -483,5 +512,98 @@ published research, and real-time technical insights.</p>
 <div class="cursor-ring" id="cursorRing"></div>
 
 <script src="script.js"></script>
+
+<!-- ================= FIREBASE / CONTACT FORM ================= -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import {
+    getDatabase,
+    ref,
+    push,
+    serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
+    authDomain: "ingenioux-55f27.firebaseapp.com",
+    databaseURL: "https://ingenioux-55f27-default-rtdb.firebaseio.com",
+    projectId: "ingenioux-55f27",
+    storageBucket: "ingenioux-55f27.firebasestorage.app",
+    messagingSenderId: "514072384167",
+    appId: "1:514072384167:web:d2e3a4c8c024abed924182"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const form = document.getElementById('contactForm');
+  const statusEl = document.getElementById('cfStatus');
+  const submitBtn = document.getElementById('cf-submit');
+  const submitLabel = submitBtn ? submitBtn.querySelector('.cf-submit-label') : null;
+
+  function setStatus(msg, type){
+    if(!statusEl) return;
+    statusEl.textContent = msg;
+    statusEl.classList.remove('is-success', 'is-error');
+    if(type) statusEl.classList.add(type === 'success' ? 'is-success' : 'is-error');
+  }
+
+  // Fails a hung request after this long so the button never gets stuck forever.
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+  }
+
+  if(form){
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const phone = form.phone.value.trim();
+      const subject = form.subject.value.trim();
+      const message = form.message.value.trim();
+
+      if(!name || !email || !subject || !message){
+        setStatus('Please fill in the required fields.', 'error');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      if(submitLabel) submitLabel.textContent = 'Sending…';
+      setStatus('', null);
+
+      try{
+        await withTimeout(push(ref(db, 'contactMessages'), {
+          name,
+          email,
+          phone,
+          subject,
+          message,
+          read: false,
+          createdAt: serverTimestamp()
+        }), 12000);
+        form.reset();
+        setStatus('Message sent — thanks for reaching out!', 'success');
+      }catch(err){
+        console.error('Error adding contact message:', err);
+        if(err && err.message === 'timeout'){
+          setStatus('This is taking too long — check your connection and try again.', 'error');
+        }else if(err && err.code === 'PERMISSION_DENIED'){
+          setStatus('Message blocked by server rules. Please email directly.', 'error');
+        }else{
+          setStatus('Something went wrong. Please try again or email directly.', 'error');
+        }
+      }finally{
+        submitBtn.disabled = false;
+        if(submitLabel) submitLabel.textContent = 'Send message →';
+      }
+    });
+  }
+</script>
 </body>
 </html>
