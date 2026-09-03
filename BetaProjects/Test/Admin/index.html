@@ -102,7 +102,18 @@
       </div>
     </div>
     <div class="visitor-filter-bar">
-      <input type="text" id="visitorSearch" placeholder="Search IP, location, browser, referrer…">
+      <div class="filter-search">
+        <svg class="filter-search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+          <path d="M11.5 11.5L15 15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <input type="text" id="visitorSearch" list="visitorSearchList" placeholder="Search IP, location, browser, referrer…">
+        <datalist id="visitorSearchList"></datalist>
+      </div>
+      <input type="text" id="visitorRegionFilter" list="visitorRegionList" placeholder="State / Region">
+      <datalist id="visitorRegionList"></datalist>
+      <input type="text" id="visitorCityFilter" list="visitorCityList" placeholder="City">
+      <datalist id="visitorCityList"></datalist>
       <input type="date" id="visitorDateFrom" title="From date">
       <input type="date" id="visitorDateTo" title="To date">
       <select id="visitorDeviceFilter">

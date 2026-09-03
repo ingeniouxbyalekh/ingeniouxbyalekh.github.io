@@ -136,11 +136,16 @@ body{min-height:100vh;}
 .visitor-filter-bar input[type="text"],
 .visitor-filter-bar input[type="date"],
 .visitor-filter-bar select{
-  background:var(--surface-2);border:1px solid var(--line);border-radius:3px;
+  background:#232733;border:1px solid var(--line);border-radius:3px;
   padding:9px 12px;color:var(--text);font-family:var(--font-mono);font-size:12.5px;
+  color-scheme:dark; /* keeps the native date-picker / dropdown popups dark instead of white */
 }
-.visitor-filter-bar input[type="text"]{flex:1;min-width:200px;}
-.visitor-filter-bar input:focus,.visitor-filter-bar select:focus{outline:none;border-color:var(--ember);}
+.filter-search{position:relative;flex:1;min-width:200px;}
+.filter-search input[type="text"]{width:100%;padding-left:32px;}
+.filter-search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text-faint);pointer-events:none;}
+.visitor-filter-bar #visitorRegionFilter,
+.visitor-filter-bar #visitorCityFilter{width:140px;}
+.visitor-filter-bar input:focus,.visitor-filter-bar select:focus{outline:none;border-color:var(--ember);background:#282d3b;}
 .filter-count{font-family:var(--font-mono);font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
 
 /* ---- collapsible panels ---- */

@@ -157,6 +157,11 @@ const statVisitors = document.getElementById('statVisitors');
 const statVisitorsToday = document.getElementById('statVisitorsToday');
 const clearVisitorsBtn = document.getElementById('clearVisitorsBtn');
 const visitorSearch = document.getElementById('visitorSearch');
+const visitorSearchList = document.getElementById('visitorSearchList');
+const visitorRegionFilter = document.getElementById('visitorRegionFilter');
+const visitorRegionList = document.getElementById('visitorRegionList');
+const visitorCityFilter = document.getElementById('visitorCityFilter');
+const visitorCityList = document.getElementById('visitorCityList');
 const visitorDateFrom = document.getElementById('visitorDateFrom');
 const visitorDateTo = document.getElementById('visitorDateTo');
 const visitorDeviceFilter = document.getElementById('visitorDeviceFilter');
@@ -466,6 +471,7 @@ function startVisitorsListener(){
       .reverse(); // orderByChild is ascending; newest first
     visitorsLoading.style.display = 'none';
     updateVisitorStats();
+    populateFilterSuggestions();
     applyVisitorFilters();
   }, (err)=>{
     console.error('Visitors listener error:', err);
@@ -487,8 +493,25 @@ function updateVisitorStats(){
   statVisitorsToday.textContent = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
 }
 
+// Builds <datalist> suggestions straight from what's actually in the Visitors table, A→Z.
+function uniqueSorted(values){
+  return [...new Set(values.filter(Boolean))].sort((a,b) => a.localeCompare(b));
+}
+
+function populateFilterSuggestions(){
+  const regions = uniqueSorted(allVisitorsCache.map(v => v.region));
+  const cities = uniqueSorted(allVisitorsCache.map(v => v.city));
+  const searchTerms = uniqueSorted(allVisitorsCache.flatMap(v => [v.ip, v.city, v.region, v.country, v.browser, v.os]));
+
+  visitorRegionList.innerHTML = regions.map(r => `<option value="${escapeHtml(r)}"></option>`).join('');
+  visitorCityList.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+  visitorSearchList.innerHTML = searchTerms.map(t => `<option value="${escapeHtml(t)}"></option>`).join('');
+}
+
 function applyVisitorFilters(){
   const term = visitorSearch.value.trim().toLowerCase();
+  const region = visitorRegionFilter.value.trim().toLowerCase();
+  const city = visitorCityFilter.value.trim().toLowerCase();
   const from = visitorDateFrom.value ? new Date(visitorDateFrom.value + 'T00:00:00').getTime() : null;
   const to = visitorDateTo.value ? new Date(visitorDateTo.value + 'T23:59:59').getTime() : null;
   const device = visitorDeviceFilter.value;
@@ -497,12 +520,14 @@ function applyVisitorFilters(){
   if(from) filtered = filtered.filter(v => v.createdAt && v.createdAt >= from);
   if(to) filtered = filtered.filter(v => v.createdAt && v.createdAt <= to);
   if(device) filtered = filtered.filter(v => v.deviceType === device);
+  if(region) filtered = filtered.filter(v => (v.region || '').toLowerCase().includes(region));
+  if(city) filtered = filtered.filter(v => (v.city || '').toLowerCase().includes(city));
   if(term){
     filtered = filtered.filter(v => [v.ip, v.city, v.region, v.country, v.browser, v.os, v.referrer, v.page]
       .filter(Boolean).join(' ').toLowerCase().includes(term));
   }
 
-  const isFiltering = term || from || to || device;
+  const isFiltering = term || region || city || from || to || device;
   visitorFilterCount.textContent = isFiltering ? `Showing ${filtered.length} of ${allVisitorsCache.length}` : '';
   renderVisitorTable(filtered);
 }
@@ -533,13 +558,15 @@ function renderVisitorTable(list){
   `).join('');
 }
 
-[visitorSearch, visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
+[visitorSearch, visitorRegionFilter, visitorCityFilter, visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
   el.addEventListener('input', applyVisitorFilters);
   el.addEventListener('change', applyVisitorFilters);
 });
 
 visitorFilterReset.addEventListener('click', ()=>{
   visitorSearch.value = '';
+  visitorRegionFilter.value = '';
+  visitorCityFilter.value = '';
   visitorDateFrom.value = '';
   visitorDateTo.value = '';
   visitorDeviceFilter.value = '';
