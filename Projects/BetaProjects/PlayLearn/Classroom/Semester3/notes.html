@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <script>
+      // Auth guard: this classroom page is for signed-in users only.
+      // Runs synchronously before anything else parses, so a signed-out
+      // visitor never sees the content flash on screen — they're sent
+      // straight to the main site (that's where login/signup and course
+      // access live). Keep this key in sync with AUTH_KEY in auth.js.
+      (function () {
+        try {
+          var raw = localStorage.getItem("PlayLearn_user_v1");
+          var user = raw ? JSON.parse(raw) : null;
+          if (!user || !user.name) window.location.replace("../../index.html");
+        } catch (e) {
+          window.location.replace("../../index.html");
+        }
+      })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Study Material | OUTR MTech CSE</title>
+    
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .syllabus-container {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .category-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(142, 108, 239, 0.2);
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .syllabus-list {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .syllabus-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 22px;
+            background: var(--white);
+            border-radius: 15px;
+            border: 1px solid var(--border);
+            transition: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .syllabus-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-color: var(--primary);
+        }
+
+        .syllabus-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .syllabus-info i {
+            color: var(--primary);
+            font-size: 20px;
+            background: var(--primary-soft);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+
+        .syllabus-info span {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .download-btn {
+            text-decoration: none;
+            background: var(--bg-light);
+            color: var(--text-dark);
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .download-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        @media (max-width: 768px) {
+            .syllabus-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            .download-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .welcome-text { display: none !important; }
+            header { justify-content: flex-end; }
+            .mobile-branding { display: block; margin-right: auto; }
+            .main-content { padding-bottom: 100px !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-wrapper">
+        <nav class="sidebar">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <span>OUTR MTech</span>
+            </div>
+    <ul class="nav-links">
+    <a href="index.html" style="color: inherit; text-decoration: none;">
+        <li><i class="fas fa-th-large"></i> Dashboard</li></a>
+    
+    <a href="notes.html" style="color: inherit; text-decoration: none;">
+        <li><i class="fas fa-folder-open"></i> Study Material</li>
+    </a>
+    <a href="ebooks.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-book"></i> Ebooks</li></a>
+
+    <a href="pyqs.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-file-alt"></i> PYQs</li></a>
+    <a href="syllabus.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-scroll"></i> Syllabus</li></a>
+     <a href="timetable.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-clock"></i> Timetable</li></a>
+    <a href="https://outr-erp.cet.edu.in/login" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-calendar-check"></i> Attendance</li></a>
+    <a href="rankers.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-trophy"></i> Rankers</li></a>
+    <a href="contacts.html" style="color: inherit; text-decoration: none;">
+    <li><i class="fas fa-code"></i> About Us</li></a>
+</ul>
+            <div class="sidebar-footer">Designed and Developed by #ALEKH</div>
+        </nav>
+
+        <main class="main-content">
+            <header>
+                <h2 class="welcome-text">Welcome Back</h2>
+                <div class="mobile-branding">OUTR MTech</div>
+                <div class="header-right">
+                    <i class="fas fa-bell bell-icon"></i>
+                    <div class="profile-badge">CSE</div>
+                </div>
+            </header>
+
+            <h1 style="font-size: 22px; color: var(--text-dark); border-left: 4px solid var(--primary); padding-left: 15px; margin-bottom: 25px;">
+                Study Material
+            </h1>
+
+            <div class="syllabus-container">
+                <div class="category-header" id="notes-semester-header"><i class="fas fa-layer-group"></i> Semester</div>
+
+                <div class="syllabus-list" id="notes-syllabus-list">
+                    <div class="syllabus-card"><div class="syllabus-info"><span>Loading…</span></div></div>
+                </div>
+            </div>
+            <div style="height: 40px;"></div>
+        </main>
+
+<nav class="bottom-nav">
+    <a href="index.html" class="nav-link"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="notes.html" class="nav-link active"><i class="fas fa-folder"></i><span>Notes</span></a>
+    
+    <div class="nav-link" id="academicsTrigger">
+        <i class="fas fa-th-list"></i> <span>More</span>
+        
+        <div class="utility-menu" id="utilityMenu">
+            <div class="menu-header">Academic Tools</div>
+            <a href="ebooks.html"><i class="fas fa-book"></i> Ebooks</a>
+            <a href="pyqs.html"><i class="fas fa-file-alt"></i> PYQs</a>
+            <a href="syllabus.html"><i class="fas fa-scroll"></i> Syllabus</a>
+            <a href="timetable.html"><i class="fas fa-clock"></i> Timetable</a>
+            <a href="https://outr-erp.cet.edu.in/login"><i class="fas fa-calendar-check"></i> Attendance</a>
+            <a href="rankers.html"><i class="fas fa-trophy"></i> Rankers</a>
+        </div>
+    </div>
+
+    <a href="contacts.html" class="nav-link"><i class="fas fa-code"></i><span>About Us</span></a>
+</nav>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+    <script src="auth.js"></script>
+    <script src="subjects.js"></script>
+    <script src="script.js"></script>
+    <script>
+      // Study Material — one row per this semester's subjects,
+      // Notes-type download links resolved live from Firebase's
+      // /links table (see subjects.js).
+      (async function renderNotes() {
+        const headerEl = document.getElementById("notes-semester-header");
+        const listEl = document.getElementById("notes-syllabus-list");
+        if (headerEl) headerEl.innerHTML = `<i class="fas fa-layer-group"></i> Semester ${SEMESTER_NUMBER}`;
+        if (!listEl) return;
+
+        const linksMap = await loadMaterialLinks();
+
+        if (!SUBJECTS.length) {
+          listEl.innerHTML = `<p style="font-size:13px;color:var(--text-light);">No subjects added for this semester yet.</p>`;
+          return;
+        }
+
+        listEl.innerHTML = SUBJECTS.map((subject) => {
+          const entry = linksMap[`${subject.code}-Notes`];
+          const url = entry && entry.url;
+          const action = url
+            ? `<a href="${escapeHTML(url)}" target="_blank" class="download-btn" rel="noopener noreferrer"><i class="fas fa-download"></i> Download</a>`
+            : `<span class="download-btn" style="opacity:.5;cursor:not-allowed;">Not uploaded yet</span>`;
+          return `
+                    <div class="syllabus-card">
+                        <div class="syllabus-info">
+                            <i class="fas fa-file-invoice"></i>
+                            <span>${escapeHTML(subject.name)}</span>
+                        </div>
+                        ${action}
+                    </div>`;
+        }).join("");
+      })();
+    </script>
+</body>
+</html>

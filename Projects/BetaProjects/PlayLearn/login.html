@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Log in — PlayLearn Shop</title>
+<meta name="description" content="Log in or create an account at the PlayLearn shop." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">PlayLearn</span>
+      <span class="brand-sub">/ shop</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="store.html">↤ back to shop</a>
+    </div>
+  </div>
+</header>
+
+<main class="auth-main">
+  <div class="auth-grid">
+    <div class="auth-form-side">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab" id="tab-login" role="tab" aria-selected="true" type="button">Log in</button>
+        <button class="auth-tab" id="tab-signup" role="tab" aria-selected="false" type="button">Sign up</button>
+      </div>
+
+      <!-- Log in -->
+      <div class="auth-form is-active" id="form-login">
+        <h1>Welcome back</h1>
+        <p class="sub">Log in to pick up your cart where you left it.</p>
+        <form id="login-form">
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" required autocomplete="current-password" minlength="4" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+        <div class="auth-divider">or</div>
+        <button type="button" class="btn-google" id="google-signin-btn">
+          <svg viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.71v2.26h2.91c1.7-1.57 2.69-3.88 2.69-6.61z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.91-2.26c-.81.54-1.85.86-3.05.86-2.35 0-4.34-1.58-5.05-3.71H.94v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.71A5.4 5.4 0 0 1 3.67 9c0-.6.1-1.18.28-1.71V4.96H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.04l3.01-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.96l3.01 2.33C4.66 5.16 6.65 3.58 9 3.58z"/></svg>
+          Continue with Google
+        </button>
+        <div class="auth-divider">or</div>
+        <a class="auth-guest-link" href="store.html">Continue as guest →</a>
+        <p class="auth-form-foot">New here? <button type="button" id="go-signup">Create an account</button></p>
+      </div>
+
+      <!-- Sign up -->
+      <div class="auth-form" id="form-signup">
+        <h1>Create your account</h1>
+        <p class="sub">Takes a few seconds — no charge, no spam.</p>
+        <form id="signup-form">
+          <div class="field">
+            <label for="signup-regno">OUTR Registration No.</label>
+            <input id="signup-regno" type="number" required inputmode="numeric" placeholder="e.g. 2201106001" />
+          </div>
+          <div class="field">
+            <label for="signup-semester">Semester</label>
+            <select id="signup-semester" required>
+              <option value="">Select semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="signup-name">Name</label>
+            <input id="signup-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="signup-phone">Phone number</label>
+            <input id="signup-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="signup-confirm-password">Confirm password</label>
+            <input id="signup-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+        <p class="auth-form-foot">Already have an account? <button type="button" id="go-login">Log in</button></p>
+      </div>
+
+      <!-- Google sign-in — finish profile (only shown the first time a brand-new
+           Google account signs in; existing Google accounts skip straight to login) -->
+      <div class="auth-form" id="form-google-complete">
+        <h1>Almost there</h1>
+        <p class="sub">A few more details to finish setting up your account.</p>
+        <form id="google-complete-form">
+          <div class="field">
+            <label for="gc-regno">OUTR Registration No.</label>
+            <input id="gc-regno" type="number" required inputmode="numeric" placeholder="e.g. 2201106001" />
+          </div>
+          <div class="field">
+            <label for="gc-semester">Semester</label>
+            <select id="gc-semester" required>
+              <option value="">Select semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="gc-name">Name</label>
+            <input id="gc-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="gc-phone">Phone number</label>
+            <input id="gc-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Finish signing up</button>
+        </form>
+        <p class="auth-form-foot"><button type="button" id="gc-cancel">Cancel and sign out</button></p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  const tabLogin = document.getElementById("tab-login");
+  const tabSignup = document.getElementById("tab-signup");
+  const formLogin = document.getElementById("form-login");
+  const formSignup = document.getElementById("form-signup");
+
+  function showTab(which) {
+    const isLogin = which === "login";
+    formLogin.classList.toggle("is-active", isLogin);
+    formSignup.classList.toggle("is-active", !isLogin);
+    tabLogin.setAttribute("aria-selected", String(isLogin));
+    tabSignup.setAttribute("aria-selected", String(!isLogin));
+  }
+
+  tabLogin.addEventListener("click", () => showTab("login"));
+  tabSignup.addEventListener("click", () => showTab("signup"));
+  document.getElementById("go-signup").addEventListener("click", () => showTab("signup"));
+  document.getElementById("go-login").addEventListener("click", () => showTab("login"));
+
+  // If we got here via a checkout redirect (openCheckout() in cart.js
+  // sends guests here with ?next=<page they were on>), send them back
+  // there after logging in/signing up instead of always to the dashboard.
+  // With no `next` (e.g. someone opened login.html directly), send them to
+  // index.html — the "your study material" dashboard, now the site home.
+  function postLoginDestination() {
+    const raw = new URLSearchParams(window.location.search).get("next");
+    if (!raw) return "index.html";
+    try {
+      const decoded = decodeURIComponent(raw);
+      // only ever follow a same-site relative path, never an absolute URL
+      if (decoded.startsWith("http") || decoded.startsWith("//")) return "index.html";
+      return decoded;
+    } catch {
+      return "index.html";
+    }
+  }
+
+  // Sign up WRITES the account (name/phone/email/password) to Firebase.
+  // Log in READS that record and checks the password before treating
+  // anyone as signed in — see auth.js for saveUserToCloud/fetchUserFromCloud.
+  const loginSubmitBtn = document.querySelector("#login-form button[type=submit]");
+  const signupSubmitBtn = document.querySelector("#signup-form button[type=submit]");
+
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("login-email").value.trim();
+    const password = document.getElementById("login-password").value;
+    const emailKey = emailToKey(email);
+
+    loginSubmitBtn.disabled = true;
+    loginSubmitBtn.textContent = "Logging in…";
+    try {
+      const lockout = await checkLoginLockout("loginAttempts", emailKey);
+      if (lockout.locked) {
+        showToast(`Too many failed attempts — try again in ${lockout.minutesLeft} minute${lockout.minutesLeft === 1 ? "" : "s"}`);
+        return;
+      }
+      const profile = await fetchUserFromCloud(email);
+      if (!profile || profile.password !== password) {
+        const result = await recordFailedLogin("loginAttempts", emailKey);
+        if (result.locked) {
+          showToast("Too many failed attempts — locked out for 1 hour");
+        } else {
+          showToast(`Incorrect email or password (${result.attemptsLeft} attempt${result.attemptsLeft === 1 ? "" : "s"} left)`);
+        }
+        return;
+      }
+      await clearLoginAttempts("loginAttempts", emailKey);
+      const canProceed = await resolveDeviceLogin("shop", emailKey);
+      if (!canProceed) {
+        showToast("Login cancelled");
+        return;
+      }
+      setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
+      showToast("Logged in");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Login failed:", err);
+      showToast("Couldn't reach the server — try again");
+    } finally {
+      loginSubmitBtn.disabled = false;
+      loginSubmitBtn.textContent = "Log in";
+    }
+  });
+
+  document.getElementById("signup-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const regNo = document.getElementById("signup-regno").value.trim();
+    const semester = document.getElementById("signup-semester").value;
+    const name = document.getElementById("signup-name").value.trim();
+    const phone = document.getElementById("signup-phone").value.trim();
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const confirmPassword = document.getElementById("signup-confirm-password").value;
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    signupSubmitBtn.disabled = true;
+    signupSubmitBtn.textContent = "Creating account…";
+    try {
+      const existing = await fetchUserFromCloud(email);
+      if (existing) {
+        showToast("An account with this email already exists");
+        return;
+      }
+      await saveUserToCloud({ name, email, phone, regNo, semester, password });
+      await claimDeviceSession("shop", emailToKey(email), getDeviceId());
+      setUser({ name, email, phone, regNo, semester });
+      showToast("Account created");
+      window.location.href = postLoginDestination();
+    } catch (err) {
+      console.error("Signup failed:", err);
+      showToast("Couldn't create your account — try again");
+    } finally {
+      signupSubmitBtn.disabled = false;
+      signupSubmitBtn.textContent = "Create account";
+    }
+  });
+
+  // Google sign-in: opens the Firebase Auth popup (see signInWithGoogle()
+  // in auth.js), then reuses the same /users/<emailKey> record as the
+  // password form above. An email that's already in Firebase logs straight
+  // in. A brand-new email doesn't get a bare record — instead we show the
+  // form-google-complete panel (same fields as manual sign-up, minus email/
+  // password) and only write the record once that's submitted.
+  const googleBtn = document.getElementById("google-signin-btn");
+  const formGoogleComplete = document.getElementById("form-google-complete");
+  const googleCompleteForm = document.getElementById("google-complete-form");
+  const gcSubmitBtn = document.querySelector("#google-complete-form button[type=submit]");
+  let pendingGoogleEmail = null; // set once Firebase Auth confirms the email, cleared on cancel/submit
+
+  function showGoogleComplete(googleUser) {
+    formLogin.classList.remove("is-active");
+    formSignup.classList.remove("is-active");
+    formGoogleComplete.classList.add("is-active");
+    document.querySelector(".auth-tabs").style.display = "none";
+    document.getElementById("gc-name").value = googleUser.displayName || "";
+  }
+
+  function hideGoogleComplete() {
+    formGoogleComplete.classList.remove("is-active");
+    document.querySelector(".auth-tabs").style.display = "";
+    showTab("login");
+    pendingGoogleEmail = null;
+  }
+
+  async function finishGoogleLogin(profile) {
+    const canProceed = await resolveDeviceLogin("shop", emailToKey(profile.email));
+    if (!canProceed) {
+      showToast("Login cancelled");
+      if (auth) auth.signOut();
+      return;
+    }
+    setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
+    showToast("Logged in with Google");
+    window.location.href = postLoginDestination();
+  }
+
+  googleBtn.addEventListener("click", async () => {
+    googleBtn.disabled = true;
+    try {
+      const googleUser = await signInWithGoogle();
+      const email = (googleUser.email || "").trim();
+      if (!email) {
+        showToast("That Google account has no email — try a different one");
+        if (auth) auth.signOut();
+        return;
+      }
+      const profile = await fetchUserFromCloud(email);
+      if (!profile) {
+        // New account — collect the same details manual sign-up requires
+        // before writing anything to Firebase.
+        pendingGoogleEmail = email;
+        showGoogleComplete(googleUser);
+        return;
+      }
+      await finishGoogleLogin(profile);
+    } catch (err) {
+      console.error("Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      googleBtn.disabled = false;
+    }
+  });
+
+  document.getElementById("gc-cancel").addEventListener("click", () => {
+    if (auth) auth.signOut();
+    hideGoogleComplete();
+  });
+
+  googleCompleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pendingGoogleEmail) return;
+    const regNo = document.getElementById("gc-regno").value.trim();
+    const semester = document.getElementById("gc-semester").value;
+    const name = document.getElementById("gc-name").value.trim();
+    const phone = document.getElementById("gc-phone").value.trim();
+
+    gcSubmitBtn.disabled = true;
+    gcSubmitBtn.textContent = "Finishing up…";
+    try {
+      const profile = { name, email: pendingGoogleEmail, phone, regNo, semester, password: "" };
+      await saveUserToCloud(profile);
+      pendingGoogleEmail = null;
+      await finishGoogleLogin(profile);
+    } catch (err) {
+      console.error("Couldn't save Google profile:", err);
+      showToast("Couldn't save your details — try again");
+    } finally {
+      gcSubmitBtn.disabled = false;
+      gcSubmitBtn.textContent = "Finish signing up";
+    }
+  });
+</script>
+</body>
+</html>
