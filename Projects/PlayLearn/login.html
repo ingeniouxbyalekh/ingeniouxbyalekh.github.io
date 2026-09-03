@@ -102,6 +102,47 @@
         </form>
         <p class="auth-form-foot">Already have an account? <button type="button" id="go-login">Log in</button></p>
       </div>
+
+      <!-- Google sign-in — finish profile (only shown the first time a brand-new
+           Google account signs in; existing Google accounts skip straight to login) -->
+      <div class="auth-form" id="form-google-complete">
+        <h1>Almost there</h1>
+        <p class="sub">A few more details to finish setting up your account — including a password, so you can also log in without Google later.</p>
+        <form id="google-complete-form">
+          <div class="field">
+            <label for="gc-regno">OUTR Registration No.</label>
+            <input id="gc-regno" type="number" required inputmode="numeric" placeholder="e.g. 2201106001" />
+          </div>
+          <div class="field">
+            <label for="gc-semester">Semester</label>
+            <select id="gc-semester" required>
+              <option value="">Select semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="gc-name">Name</label>
+            <input id="gc-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="gc-phone">Phone number</label>
+            <input id="gc-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+          <div class="field">
+            <label for="gc-password">Password</label>
+            <input id="gc-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="gc-confirm-password">Confirm password</label>
+            <input id="gc-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Finish signing up</button>
+        </form>
+        <p class="auth-form-foot"><button type="button" id="gc-cancel">Cancel and sign out</button></p>
+      </div>
     </div>
   </div>
 </main>
@@ -236,10 +277,44 @@
 
   // Google sign-in: opens the Firebase Auth popup (see signInWithGoogle()
   // in auth.js), then reuses the same /users/<emailKey> record as the
-  // password form above — reading it if it already exists, or creating
-  // a bare one (no password, since this account only ever signs in via
-  // Google) the first time someone uses this email.
+  // password form above. An email that's already in Firebase logs straight
+  // in. A brand-new email doesn't get a bare record — instead we show the
+  // form-google-complete panel (same fields as manual sign-up, minus email/
+  // password) and only write the record once that's submitted.
   const googleBtn = document.getElementById("google-signin-btn");
+  const formGoogleComplete = document.getElementById("form-google-complete");
+  const googleCompleteForm = document.getElementById("google-complete-form");
+  const gcSubmitBtn = document.querySelector("#google-complete-form button[type=submit]");
+  let pendingGoogleEmail = null; // set once Firebase Auth confirms the email, cleared on cancel/submit
+
+  function showGoogleComplete(googleUser) {
+    formLogin.classList.remove("is-active");
+    formSignup.classList.remove("is-active");
+    formGoogleComplete.classList.add("is-active");
+    document.querySelector(".auth-tabs").style.display = "none";
+    document.getElementById("gc-name").value = googleUser.displayName || "";
+  }
+
+  function hideGoogleComplete() {
+    formGoogleComplete.classList.remove("is-active");
+    document.querySelector(".auth-tabs").style.display = "";
+    showTab("login");
+    pendingGoogleEmail = null;
+    googleCompleteForm.reset();
+  }
+
+  async function finishGoogleLogin(profile) {
+    const canProceed = await resolveDeviceLogin("shop", emailToKey(profile.email));
+    if (!canProceed) {
+      showToast("Login cancelled");
+      if (auth) auth.signOut();
+      return;
+    }
+    setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
+    showToast("Logged in with Google");
+    window.location.href = postLoginDestination();
+  }
+
   googleBtn.addEventListener("click", async () => {
     googleBtn.disabled = true;
     try {
@@ -247,27 +322,61 @@
       const email = (googleUser.email || "").trim();
       if (!email) {
         showToast("That Google account has no email — try a different one");
-        return;
-      }
-      let profile = await fetchUserFromCloud(email);
-      if (!profile) {
-        profile = { name: googleUser.displayName || "", email, phone: "", regNo: "", semester: "", password: "" };
-        await saveUserToCloud(profile);
-      }
-      const canProceed = await resolveDeviceLogin("shop", emailToKey(email));
-      if (!canProceed) {
-        showToast("Login cancelled");
         if (auth) auth.signOut();
         return;
       }
-      setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "" });
-      showToast("Logged in with Google");
-      window.location.href = postLoginDestination();
+      const profile = await fetchUserFromCloud(email);
+      if (!profile) {
+        // New account — collect the same details manual sign-up requires
+        // before writing anything to Firebase.
+        pendingGoogleEmail = email;
+        showGoogleComplete(googleUser);
+        return;
+      }
+      await finishGoogleLogin(profile);
     } catch (err) {
       console.error("Google sign-in failed:", err);
       showToast("Google sign-in failed — try again");
     } finally {
       googleBtn.disabled = false;
+    }
+  });
+
+  document.getElementById("gc-cancel").addEventListener("click", () => {
+    if (auth) auth.signOut();
+    hideGoogleComplete();
+  });
+
+  googleCompleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pendingGoogleEmail) return;
+    const regNo = document.getElementById("gc-regno").value.trim();
+    const semester = document.getElementById("gc-semester").value;
+    const name = document.getElementById("gc-name").value.trim();
+    const phone = document.getElementById("gc-phone").value.trim();
+    const password = document.getElementById("gc-password").value;
+    const confirmPassword = document.getElementById("gc-confirm-password").value;
+
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    gcSubmitBtn.disabled = true;
+    gcSubmitBtn.textContent = "Finishing up…";
+    try {
+      // Saving a real password here (instead of "") means this account can
+      // log in with either the password form or the Google button from now on.
+      const profile = { name, email: pendingGoogleEmail, phone, regNo, semester, password };
+      await saveUserToCloud(profile);
+      pendingGoogleEmail = null;
+      await finishGoogleLogin(profile);
+    } catch (err) {
+      console.error("Couldn't save Google profile:", err);
+      showToast("Couldn't save your details — try again");
+    } finally {
+      gcSubmitBtn.disabled = false;
+      gcSubmitBtn.textContent = "Finish signing up";
     }
   });
 </script>
