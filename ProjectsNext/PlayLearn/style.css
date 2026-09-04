@@ -439,6 +439,14 @@ a { color: inherit; }
   color: var(--text-faint);
   font-size: 13px;
 }
+#dashboard-empty {
+  text-align: left;
+  padding: 24px 0 0;
+}
+#dashboard-empty > a {
+  display: inline-block;
+  font-size: 13.5px;
+}
 
 /* =========================================================
    CART DRAWER
@@ -1660,15 +1668,10 @@ a { color: inherit; }
   font-size: 12px;
   color: var(--text-dim);
   margin: 18px 0 14px;
-  text-align: center;
 }
 .dashboard-suggestions-grid {
-  grid-template-columns: repeat(2, 1fr);
-  max-width: 640px;
-  margin: 0 auto;
-  text-align: left;
+  margin: 0;
 }
-@media (max-width: 620px) { .dashboard-suggestions-grid { grid-template-columns: 1fr; } }
 
 .dashboard-semester {
   margin-bottom: 22px;
