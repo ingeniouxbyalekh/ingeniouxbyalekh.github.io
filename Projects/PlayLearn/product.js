@@ -67,7 +67,7 @@ function renderProductPage() {
     <div class="highlight"><span class="dot">●</span> Instant download after checkout</div>
     <div class="highlight"><span class="dot">●</span> Format: ${p.format}</div>
     <div class="highlight"><span class="dot">●</span> ${p.tag}</div>
-    <div class="highlight"><span class="dot">●</span> Delivered by email</div>
+    <div class="highlight"><span class="dot">●</span> Personalized Dashboard</div>
   `;
 
   document.getElementById("whats-inside-list").innerHTML = `
