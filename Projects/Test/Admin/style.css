@@ -91,9 +91,6 @@ body{min-height:100vh;}
 .msg-filter button.active{border-color:var(--ember);color:var(--ember);}
 
 .msg-list{display:flex;flex-direction:column;gap:14px;}
-@media (min-width:1200px){
-  .msg-list{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start;}
-}
 .msg-empty{
   font-family:var(--font-mono);font-size:13px;color:var(--text-faint);
   border:1px dashed var(--line);border-radius:3px;padding:30px;text-align:center;
