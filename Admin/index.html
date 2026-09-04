@@ -79,83 +79,92 @@
   </div>
 
   <!-- ---- messages ---- -->
-  <div class="panel">
+  <div class="panel collapsed">
     <div class="msg-toolbar">
       <h2>Submitted messages</h2>
-      <div class="msg-filter">
-        <button data-filter="all" class="active">All</button>
-        <button data-filter="unread">Unread</button>
-        <button data-filter="read">Read</button>
+      <div class="admin-actions">
+        <div class="msg-filter toolbar-extra">
+          <button data-filter="all" class="active">All</button>
+          <button data-filter="unread">Unread</button>
+          <button data-filter="read">Read</button>
+        </div>
+        <button class="btn btn-small panel-toggle" id="msgPanelToggle" title="Expand" aria-label="Expand submitted messages">+</button>
       </div>
     </div>
-    <div class="loading-row" id="msgLoading">Loading messages…</div>
-    <div class="msg-list" id="msgList"></div>
+    <div class="panel-body">
+      <div class="loading-row" id="msgLoading">Loading messages…</div>
+      <div class="msg-list" id="msgList"></div>
+    </div>
   </div>
 
   <!-- ---- visitors ---- -->
-  <div class="panel">
+  <div class="panel collapsed">
     <div class="msg-toolbar">
       <h2>Visitors</h2>
       <div class="admin-actions">
-        <button class="btn btn-small btn-danger" id="clearVisitorsBtn">Clear all</button>
-        <button class="btn btn-small panel-toggle" id="visitorPanelToggle" title="Minimize" aria-label="Minimize visitor list">×</button>
+        <button class="btn btn-small btn-danger toolbar-extra" id="clearVisitorsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="visitorPanelToggle" title="Expand" aria-label="Expand visitor list">+</button>
       </div>
     </div>
-    <div class="visitor-filter-bar">
-      <div class="visitor-filter-row">
-        <input type="text" id="visitorIpFilter" list="visitorIpList" placeholder="IP address">
-        <datalist id="visitorIpList"></datalist>
-        <input type="text" id="visitorRegionFilter" list="visitorRegionList" placeholder="State / Region">
-        <datalist id="visitorRegionList"></datalist>
-        <input type="text" id="visitorCityFilter" list="visitorCityList" placeholder="City">
-        <datalist id="visitorCityList"></datalist>
-        <input type="text" id="visitorPostalFilter" list="visitorPostalList" placeholder="Postal code">
-        <datalist id="visitorPostalList"></datalist>
+    <div class="panel-body">
+      <div class="visitor-filter-bar">
+        <div class="visitor-filter-row">
+          <input type="text" id="visitorIpFilter" list="visitorIpList" placeholder="IP address">
+          <datalist id="visitorIpList"></datalist>
+          <input type="text" id="visitorRegionFilter" list="visitorRegionList" placeholder="State / Region">
+          <datalist id="visitorRegionList"></datalist>
+          <input type="text" id="visitorCityFilter" list="visitorCityList" placeholder="City">
+          <datalist id="visitorCityList"></datalist>
+          <input type="text" id="visitorPostalFilter" list="visitorPostalList" placeholder="Postal code">
+          <datalist id="visitorPostalList"></datalist>
+        </div>
+        <div class="visitor-filter-row">
+          <input type="date" id="visitorDateFrom" title="From date">
+          <input type="date" id="visitorDateTo" title="To date">
+          <select id="visitorDeviceFilter">
+            <option value="">All devices</option>
+            <option value="Desktop">Desktop</option>
+            <option value="Mobile">Mobile</option>
+            <option value="Tablet">Tablet</option>
+          </select>
+          <button class="btn btn-primary btn-small" id="visitorFilterSearch">Search</button>
+          <button class="btn btn-small" id="visitorFilterReset">Reset</button>
+          <span class="filter-count" id="visitorFilterCount"></span>
+        </div>
       </div>
-      <div class="visitor-filter-row">
-        <input type="date" id="visitorDateFrom" title="From date">
-        <input type="date" id="visitorDateTo" title="To date">
-        <select id="visitorDeviceFilter">
-          <option value="">All devices</option>
-          <option value="Desktop">Desktop</option>
-          <option value="Mobile">Mobile</option>
-          <option value="Tablet">Tablet</option>
-        </select>
-        <button class="btn btn-primary btn-small" id="visitorFilterSearch">Search</button>
-        <button class="btn btn-small" id="visitorFilterReset">Reset</button>
-        <span class="filter-count" id="visitorFilterCount"></span>
+      <div class="loading-row" id="visitorsLoading">Loading visitors…</div>
+      <div class="visitor-cards-wrap" id="visitorTableWrap" style="display:none;">
+        <div class="visitor-cards" id="visitorTableBody"></div>
       </div>
-    </div>
-    <div class="loading-row" id="visitorsLoading">Loading visitors…</div>
-    <div class="visitor-cards-wrap" id="visitorTableWrap" style="display:none;">
-      <div class="visitor-cards" id="visitorTableBody"></div>
     </div>
   </div>
 
   <!-- ---- failed login attempts ---- -->
-  <div class="panel">
+  <div class="panel collapsed">
     <div class="msg-toolbar">
       <h2>Failed login attempts</h2>
       <div class="admin-actions">
-        <button class="btn btn-small btn-danger" id="clearLoginLogsBtn">Clear all</button>
-        <button class="btn btn-small panel-toggle" id="loginLogsPanelToggle" title="Minimize" aria-label="Minimize failed login attempts">×</button>
+        <button class="btn btn-small btn-danger toolbar-extra" id="clearLoginLogsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="loginLogsPanelToggle" title="Expand" aria-label="Expand failed login attempts">+</button>
       </div>
     </div>
-    <div class="loading-row" id="loginLogsLoading">Loading…</div>
-    <div class="visitor-table-wrap" id="loginLogsTableWrap" style="display:none;">
-      <table class="visitor-table">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>IP address</th>
-            <th>Location</th>
-            <th>Device</th>
-            <th>Browser / OS</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="loginLogsTableBody"></tbody>
-      </table>
+    <div class="panel-body">
+      <div class="loading-row" id="loginLogsLoading">Loading…</div>
+      <div class="visitor-table-wrap" id="loginLogsTableWrap" style="display:none;">
+        <table class="visitor-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>IP address</th>
+              <th>Location</th>
+              <th>Device</th>
+              <th>Browser / OS</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="loginLogsTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>

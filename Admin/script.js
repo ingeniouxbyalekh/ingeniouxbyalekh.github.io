@@ -139,6 +139,8 @@ async function resolveVisitorInfo(){
         region: data.region || null,
         country: data.country || null,
         countryCode: data.country_code || null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
         timezone: (data.timezone && data.timezone.id) || null,
         isp: (data.connection && (data.connection.isp || data.connection.org)) || null
       };
@@ -250,10 +252,7 @@ function handleKickedOut(active){
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_ID_KEY);
   showLogin();
-  const device = [active.browser, active.os].filter(Boolean).join(' / ');
-  const loc = [active.city, active.country].filter(Boolean).join(', ');
-  const detail = [device, loc].filter(Boolean).join(' · ');
-  setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+  setStatus(loginStatus, 'You were logged out.', 'error');
 }
 
 // On page load, don't just trust the local sessionStorage flag — check whether
@@ -272,10 +271,7 @@ async function checkExistingSession(){
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(SESSION_ID_KEY);
       showLogin();
-      const device = [active.browser, active.os].filter(Boolean).join(' / ');
-      const loc = [active.city, active.country].filter(Boolean).join(', ');
-      const detail = [device, loc].filter(Boolean).join(' · ');
-      setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+      setStatus(loginStatus, 'You were logged out.', 'error');
       return;
     }
     showDashboard();
@@ -297,6 +293,7 @@ function wireCollapse(btnId){
     btn.setAttribute('aria-label', (collapsed ? 'Expand' : 'Minimize') + ' list');
   });
 }
+wireCollapse('msgPanelToggle');
 wireCollapse('visitorPanelToggle');
 wireCollapse('loginLogsPanelToggle');
 
@@ -340,6 +337,30 @@ loginForm.addEventListener('submit', async (e)=>{
     }
 
     if(success){
+      // ---- another-device check: warn before taking over an active session ----
+      // Fetching this doesn't touch the block/attempt state above — a cancelled
+      // takeover should leave everything exactly as it was.
+      try{
+        const activeSnap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+        const active = activeSnap.exists() ? activeSnap.val() : null;
+        if(active && active.sessionId){
+          const device = [active.browser, active.os].filter(Boolean).join(' / ');
+          const loc = [active.city, active.country].filter(Boolean).join(', ');
+          const detail = [device, loc].filter(Boolean).join(' · ');
+          const proceed = window.confirm(
+            `Another login found${detail ? ' (' + detail + ')' : ''}. Proceed here and log out the other session?`
+          );
+          if(!proceed){
+            setStatus(loginStatus, 'Login cancelled — the other session stays active.', 'error');
+            loginBtn.disabled = false;
+            return;
+          }
+        }
+      }catch(err){
+        // Can't check (offline, etc.) — don't block login over it, just proceed.
+        console.warn('Active session pre-check failed:', err);
+      }
+
       await withTimeout(remove(attemptsRef), 10000).catch(()=>{}); // clear any prior fail count on success
 
       // Claim the single admin session. Writing this immediately trips the
@@ -391,6 +412,8 @@ loginForm.addEventListener('submit', async (e)=>{
       region: info.region || null,
       country: info.country || null,
       countryCode: info.countryCode || null,
+      latitude: info.latitude ?? null,
+      longitude: info.longitude ?? null,
       timezone: info.timezone || null,
       isp: info.isp || null,
       browser: info.browser || null,
@@ -610,6 +633,22 @@ function locationLabel(v){
   return parts.length ? parts.join(', ') : '—';
 }
 
+// Returns a clickable pin icon (opens Google Maps in a new tab at the stored
+// lat/long) when coordinates exist, or an em-dash placeholder when they don't.
+function locationPinIcon(v){
+  const lat = Number(v.latitude);
+  const lng = Number(v.longitude);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+  const url = `https://www.google.com/maps?q=${lat},${lng}`;
+  const title = `Open location on Google Maps (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+  return `<a class="v-pin" href="${url}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" onclick="event.stopPropagation()">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6"/>
+    </svg>
+  </a>`;
+}
+
 function updateVisitorStats(){
   statVisitors.textContent = allVisitorsCache.length;
   const todayStart = new Date();
@@ -680,7 +719,7 @@ function renderVisitorTable(list){
       </div>
       <div class="v-row">
         <span class="v-item"><b>IP</b>${escapeHtml(v.ip) || '—'}</span>
-        <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}</span>
+        <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}${locationPinIcon(v)}</span>
         <span class="v-item"><b>Postal</b>${escapeHtml(v.postal) || '—'}</span>
       </div>
       <div class="v-row">
@@ -770,7 +809,7 @@ function renderLoginLogs(logs){
     <tr>
       <td>${formatDate(l.createdAt)}</td>
       <td>${escapeHtml(l.ip) || '—'}</td>
-      <td>${escapeHtml(locationLabel(l))}</td>
+      <td class="v-location-cell">${escapeHtml(locationLabel(l))}${locationPinIcon(l)}</td>
       <td>${escapeHtml(l.deviceType) || '—'}</td>
       <td>${escapeHtml([l.browser, l.os].filter(Boolean).join(' / ')) || '—'}</td>
       <td>${l.blocked ? '<span style="color:var(--ember);font-weight:600;">Blocked (1h)</span>' : 'Failed'}</td>

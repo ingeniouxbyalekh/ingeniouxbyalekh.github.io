@@ -1,6 +1,7 @@
 /* ---------- admin-only layout (reuses variables from ../style.css) ---------- */
 body{min-height:100vh;}
-.admin-wrap{max-width:920px;margin:0 auto;padding:60px 24px 100px;}
+.admin-wrap{max-width:1440px;margin:0 auto;padding:60px 40px 100px;}
+@media (max-width:1100px){.admin-wrap{padding:50px 24px 100px;}}
 
 .admin-topbar{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -56,7 +57,7 @@ body{min-height:100vh;}
 }
 .stat-chip{
   border:1px solid var(--line);background:var(--surface);border-radius:3px;
-  padding:14px 18px;font-family:var(--font-mono);
+  padding:14px 18px;font-family:var(--font-mono);flex:1 1 200px;
 }
 .stat-chip b{display:block;font-size:22px;font-family:var(--font-display);color:var(--text);font-weight:600;}
 .stat-chip span{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);}
@@ -142,6 +143,17 @@ body{min-height:100vh;}
 .visitor-tile:last-child{border-bottom:none;}
 .visitor-tile:hover{background:var(--surface-2);}
 
+@media (min-width:1200px){
+  .visitor-cards{display:grid;grid-template-columns:repeat(2,1fr);}
+  /* border-bottom draws a full-width strip in a 1-col layout; in the 2-col
+     grid we instead outline each tile so the grid reads as a set of cards. */
+  .visitor-tile{border:1px solid var(--line);border-radius:3px;margin:6px;}
+  .visitor-tile:last-child{border-bottom:1px solid var(--line);}
+}
+@media (min-width:1600px){
+  .visitor-cards{grid-template-columns:repeat(3,1fr);}
+}
+
 .v-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;}
 .v-row-top{font-size:11px;letter-spacing:.04em;}
 .v-num{color:var(--ember);font-weight:600;}
@@ -156,6 +168,16 @@ body{min-height:100vh;}
   letter-spacing:.06em;margin-right:6px;
 }
 .v-item.v-page{flex:1 1 220px;min-width:0;}
+
+/* ---- location pin (opens Google Maps) ---- */
+.v-pin{
+  display:inline-flex;align-items:center;justify-content:center;
+  margin-left:6px;color:var(--ember);vertical-align:-2px;
+  opacity:.85;transition:opacity .15s,transform .15s;
+}
+.v-pin:hover{opacity:1;transform:scale(1.12);}
+.v-pin svg{display:block;}
+.v-location-cell{white-space:nowrap;}
 
 /* ---- visitor filter bar ---- */
 .visitor-filter-bar{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
@@ -176,4 +198,5 @@ body{min-height:100vh;}
 /* ---- collapsible panels ---- */
 .panel-toggle{font-size:15px;line-height:1;padding:7px 12px;}
 .panel.collapsed{padding-bottom:26px;}
-.panel.collapsed > *:not(.msg-toolbar){display:none;}
+.panel.collapsed .panel-body{display:none;}
+.panel.collapsed .toolbar-extra{display:none;}
