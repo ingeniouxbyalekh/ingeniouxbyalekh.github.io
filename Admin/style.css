@@ -200,3 +200,41 @@ body{min-height:100vh;}
 .panel.collapsed{padding-bottom:26px;}
 .panel.collapsed .panel-body{display:none;}
 .panel.collapsed .toolbar-extra{display:none;}
+
+/* ---- login sessions ---- */
+.session-list{display:flex;flex-direction:column;gap:10px;}
+.session-tile{
+  border:1px solid var(--line);border-radius:3px;background:var(--surface-2);
+  transition:border-color .15s;
+}
+.session-tile.expanded{border-color:var(--ember);}
+.session-head{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;}
+.session-toggle{flex:0 0 auto;}
+.session-summary{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:6px;}
+.session-row{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;
+  font-family:var(--font-mono);font-size:12.5px;color:var(--text-dim);
+}
+.session-row-top{font-size:11px;letter-spacing:.04em;}
+.s-time{color:var(--text-faint);}
+.s-status{
+  text-transform:uppercase;font-size:10px;letter-spacing:.08em;
+  border:1px solid var(--line);border-radius:20px;padding:2px 9px;color:var(--text-faint);
+}
+.s-status.is-active{border-color:var(--gold);color:var(--gold);}
+.s-count{margin-left:auto;color:var(--text-faint);font-size:11px;}
+.session-activities{
+  border-top:1px solid var(--line);padding:12px 16px 14px 48px;
+  display:flex;flex-direction:column;gap:8px;
+}
+.activity-row{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;
+  font-family:var(--font-mono);font-size:12px;color:var(--text-dim);
+}
+.a-time{color:var(--text-faint);min-width:150px;}
+.a-action{color:var(--text);}
+.a-detail{color:var(--text-faint);}
+.activity-empty{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-faint);
+  padding:4px 0;
+}

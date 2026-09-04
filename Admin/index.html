@@ -167,6 +167,21 @@
       </div>
     </div>
   </div>
+
+  <!-- ---- login sessions ---- -->
+  <div class="panel collapsed">
+    <div class="msg-toolbar">
+      <h2>Login sessions</h2>
+      <div class="admin-actions">
+        <button class="btn btn-small btn-danger toolbar-extra" id="clearSessionsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="sessionsPanelToggle" title="Expand" aria-label="Expand login sessions">+</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="loading-row" id="sessionsLoading">Loading sessions…</div>
+      <div class="session-list" id="sessionList"></div>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="script.js"></script>
