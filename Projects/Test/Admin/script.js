@@ -343,6 +343,30 @@ loginForm.addEventListener('submit', async (e)=>{
     }
 
     if(success){
+      // ---- another-device check: warn before taking over an active session ----
+      // Fetching this doesn't touch the block/attempt state above — a cancelled
+      // takeover should leave everything exactly as it was.
+      try{
+        const activeSnap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+        const active = activeSnap.exists() ? activeSnap.val() : null;
+        if(active && active.sessionId){
+          const device = [active.browser, active.os].filter(Boolean).join(' / ');
+          const loc = [active.city, active.country].filter(Boolean).join(', ');
+          const detail = [device, loc].filter(Boolean).join(' · ');
+          const proceed = window.confirm(
+            `Another login found${detail ? ' (' + detail + ')' : ''}. Proceed here and log out the other session?`
+          );
+          if(!proceed){
+            setStatus(loginStatus, 'Login cancelled — the other session stays active.', 'error');
+            loginBtn.disabled = false;
+            return;
+          }
+        }
+      }catch(err){
+        // Can't check (offline, etc.) — don't block login over it, just proceed.
+        console.warn('Active session pre-check failed:', err);
+      }
+
       await withTimeout(remove(attemptsRef), 10000).catch(()=>{}); // clear any prior fail count on success
 
       // Claim the single admin session. Writing this immediately trips the
