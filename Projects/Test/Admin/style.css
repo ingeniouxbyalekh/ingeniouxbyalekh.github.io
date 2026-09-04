@@ -198,4 +198,4 @@ body{min-height:100vh;}
 /* ---- collapsible panels ---- */
 .panel-toggle{font-size:15px;line-height:1;padding:7px 12px;}
 .panel.collapsed{padding-bottom:26px;}
-.panel.collapsed > *:not(.msg-toolbar){display:none;}
+.panel.collapsed .panel-body{display:none;}
