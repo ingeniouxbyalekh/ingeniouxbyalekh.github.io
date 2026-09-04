@@ -199,3 +199,4 @@ body{min-height:100vh;}
 .panel-toggle{font-size:15px;line-height:1;padding:7px 12px;}
 .panel.collapsed{padding-bottom:26px;}
 .panel.collapsed .panel-body{display:none;}
+.panel.collapsed .toolbar-extra{display:none;}
