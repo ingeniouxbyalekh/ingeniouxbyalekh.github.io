@@ -83,7 +83,7 @@ function renderProductPage() {
   `;
 
   document.getElementById("faq-delivery").textContent =
-    `You'll get a download link by email once checkout is confirmed — this item ships as ${p.format}.`;
+    "You can get everything in your dashboard instantly once checkout is confirmed.";
 
   renderRelated(p);
 }
