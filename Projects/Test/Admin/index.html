@@ -82,10 +82,13 @@
   <div class="panel">
     <div class="msg-toolbar">
       <h2>Submitted messages</h2>
-      <div class="msg-filter">
-        <button data-filter="all" class="active">All</button>
-        <button data-filter="unread">Unread</button>
-        <button data-filter="read">Read</button>
+      <div class="admin-actions">
+        <div class="msg-filter">
+          <button data-filter="all" class="active">All</button>
+          <button data-filter="unread">Unread</button>
+          <button data-filter="read">Read</button>
+        </div>
+        <button class="btn btn-small panel-toggle" id="msgPanelToggle" title="Minimize" aria-label="Minimize submitted messages">×</button>
       </div>
     </div>
     <div class="loading-row" id="msgLoading">Loading messages…</div>

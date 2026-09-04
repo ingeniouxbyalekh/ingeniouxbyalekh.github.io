@@ -299,6 +299,7 @@ function wireCollapse(btnId){
     btn.setAttribute('aria-label', (collapsed ? 'Expand' : 'Minimize') + ' list');
   });
 }
+wireCollapse('msgPanelToggle');
 wireCollapse('visitorPanelToggle');
 wireCollapse('loginLogsPanelToggle');
 
