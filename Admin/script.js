@@ -907,11 +907,9 @@ function startSessionsListener(){
   const sessionsQuery = query(ref(db, SESSIONS_PATH), orderByChild('loginAt'), limitToLast(100));
   onValue(sessionsQuery, (snapshot)=>{
     const val = snapshot.val() || {};
-    // Session ids are UUIDs, not chronologically-sortable push keys, so sort
-    // explicitly by loginAt rather than trusting object key order.
     allSessionsCache = Object.keys(val)
       .map(id => ({ id, ...val[id] }))
-      .sort((a, b) => (b.loginAt || 0) - (a.loginAt || 0)); // newest first
+      .reverse(); // orderByChild is ascending; newest first
     sessionsLoading.style.display = 'none';
     renderSessions();
   }, (err)=>{
