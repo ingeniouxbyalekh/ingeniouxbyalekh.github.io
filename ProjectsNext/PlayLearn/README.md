@@ -26,7 +26,8 @@ pill buttons.
     whose product id isn't in `/links` (or has no `url`) shows a
     "Link not found" toast instead of downloading.
 - `store.html` — the catalog page (this used to be `index.html`):
-  header, hero, product grid, cart drawer, checkout modal.
+  header, hero, category filters, product grid, cart drawer, checkout
+  modal.
 - `login.html` — log in / sign up page. No backend yet — it just
   remembers a name + email in `localStorage` (see `auth.js`) so the
   header can greet you. Swap in real auth whenever a backend exists.
@@ -49,8 +50,8 @@ pill buttons.
   before any page-specific script. Not loaded on `index.html`.
 - `auth.js` — the lightweight client-side session used by the header's
   account link. Shared by every page, including `index.html`.
-- `catalog.js` — catalog-page-only logic (grid rendering, hero
-  animation). Only used by `store.html`.
+- `catalog.js` — catalog-page-only logic (category filtering, grid
+  rendering, hero animation). Only used by `store.html`.
 - `product.js` — product-page-only logic (populating the template from
   `?id=`, gallery thumbnails, quantity stepper, FAQ accordion, related
   items). Only used by `product.html`.

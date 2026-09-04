@@ -80,12 +80,6 @@
   </div>
 </header>
 
-<nav class="category-bar" aria-label="Filter by category">
-  <div class="wrap category-bar-wrap">
-    <div class="chip-row" id="category-bar"></div>
-  </div>
-</nav>
-
 <main class="catalog">
   <div class="wrap">
     <div class="catalog-heading">
@@ -154,12 +148,12 @@
             <input id="checkout-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" readonly />
           </div>
           <div class="field">
-            <label for="checkout-email">Email (for delivery)</label>
+            <label for="checkout-email">Email</label>
             <input id="checkout-email" type="email" required autocomplete="email" readonly />
           </div>
+          <p class="field-note">Pulled from your account — log in with a different account to change these.</p>
           <button type="submit" class="btn btn-primary btn-block">Pay with Razorpay</button>
           <p class="checkout-note">
-            Download the invoice after payment. 
           </p>
         </form>
       </div>
@@ -168,7 +162,7 @@
         <div class="checkout-success">
           <div class="ok-mark">✓</div>
           <h3>Order confirmed</h3>
-          <p>Go to your profile page to download your purchased item.</p>
+          <p>Thank you for your purchase. Kindly download the receipt for future use.</p>
         </div>
         <button type="button" class="btn btn-block" id="download-receipt-btn">Download receipt (PDF)</button>
         <button type="button" class="btn btn-primary btn-block" id="checkout-done-btn">Done</button>

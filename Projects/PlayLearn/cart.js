@@ -107,7 +107,6 @@ function renderCart() {
   // keep any on-page product buttons ("Add to cart" -> "In cart · N") in sync;
   // these functions only exist on pages that define them (catalog.js, product.js)
   if (typeof renderCatalog === "function") renderCatalog();
-  if (typeof renderCategoryChips === "function") renderCategoryChips();
   if (typeof syncProductPageButtons === "function") syncProductPageButtons();
 }
 

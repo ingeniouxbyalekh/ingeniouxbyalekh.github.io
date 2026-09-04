@@ -3,15 +3,42 @@
  * ---------------------------------------------------------------
  * Only used on store.html. Cart state and the drawer/checkout are
  * handled by cart.js, loaded before this file.
+ *
+ * There used to be a separate Paid/Free mode toggle with its own
+ * direct-download catalog (PlayLearn_FREE_PRODUCTS, now removed from
+ * products.js). Free batches now live in PlayLearn_PRODUCTS as ₹0 items that go through the normal
+ * cart/checkout flow instead, filterable via the "Free" category chip
+ * like everything else — so that toggle and its separate render path
+ * are gone.
  * ---------------------------------------------------------------
  */
 
+let activeCategory = "all";
+
 const catalogEl = document.getElementById("catalog-grid");
 const catalogCountEl = document.getElementById("catalog-count");
+const categoryBarEl = document.getElementById("category-bar");
 
 function categoryLabel(id) {
   const match = PlayLearn_CATEGORIES.find((c) => c.id === id);
   return match ? match.label : id;
+}
+
+function renderCategoryChips() {
+  categoryBarEl.innerHTML = "";
+  PlayLearn_CATEGORIES.forEach((cat) => {
+    const btn = document.createElement("button");
+    btn.className = "chip";
+    btn.type = "button";
+    btn.textContent = cat.label;
+    btn.setAttribute("aria-pressed", String(cat.id === activeCategory));
+    btn.addEventListener("click", () => {
+      activeCategory = cat.id;
+      renderCategoryChips();
+      renderCatalog();
+    });
+    categoryBarEl.appendChild(btn);
+  });
 }
 
 function productCardHTML(p) {
@@ -43,12 +70,15 @@ function productCardHTML(p) {
 }
 
 function renderCatalog() {
-  const items = PlayLearn_PRODUCTS;
+  const items =
+    activeCategory === "all"
+      ? PlayLearn_PRODUCTS
+      : PlayLearn_PRODUCTS.filter((p) => p.category === activeCategory);
 
   catalogCountEl.textContent = `${items.length} item${items.length === 1 ? "" : "s"}`;
 
   if (items.length === 0) {
-    catalogEl.innerHTML = `<div class="empty-state">→ No items in the catalog yet.</div>`;
+    catalogEl.innerHTML = `<div class="empty-state">→ No items in this category yet.</div>`;
     return;
   }
 
@@ -58,4 +88,5 @@ function renderCatalog() {
 /* ---------------------------------------------------------------
    Init
 --------------------------------------------------------------- */
+renderCategoryChips();
 renderCatalog();
