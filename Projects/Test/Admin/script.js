@@ -252,10 +252,7 @@ function handleKickedOut(active){
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_ID_KEY);
   showLogin();
-  const device = [active.browser, active.os].filter(Boolean).join(' / ');
-  const loc = [active.city, active.country].filter(Boolean).join(', ');
-  const detail = [device, loc].filter(Boolean).join(' · ');
-  setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+  setStatus(loginStatus, 'You were logged out.', 'error');
 }
 
 // On page load, don't just trust the local sessionStorage flag — check whether
@@ -274,10 +271,7 @@ async function checkExistingSession(){
       sessionStorage.removeItem(SESSION_KEY);
       sessionStorage.removeItem(SESSION_ID_KEY);
       showLogin();
-      const device = [active.browser, active.os].filter(Boolean).join(' / ');
-      const loc = [active.city, active.country].filter(Boolean).join(', ');
-      const detail = [device, loc].filter(Boolean).join(' · ');
-      setStatus(loginStatus, `You were logged out — this admin account signed in on another device${detail ? ' (' + detail + ')' : ''}.`, 'error');
+      setStatus(loginStatus, 'You were logged out.', 'error');
       return;
     }
     showDashboard();
