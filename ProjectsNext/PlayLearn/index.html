@@ -65,10 +65,9 @@
     <!-- Signed-in view -->
     <div id="dashboard-content" style="display:none">
 
-      <!-- E-classroom hero — shown once the shopper's semester has
-           either a Free Batch or a paid Full Course unlocked; see the
-           script block for the logic and link. If both are unlocked,
-           the paid Full Course banner takes priority. -->
+      <!-- E-classroom hero — shown once the shopper's semester has a
+           paid Full Course unlocked; see the script block for the
+           logic and link. -->
       <a class="dashboard-hero" id="dashboard-hero" href="#" style="display:none">
         <div class="dashboard-hero-text">
           <span class="dashboard-hero-eyebrow" id="dashboard-hero-eyebrow">// live classroom</span>
@@ -238,18 +237,17 @@
   }
 
   // Shown inside the empty state when the shopper's semester has
-  // nothing unlocked yet: one paid "Full Course" card (cse-semN) and
-  // one Free Batch card (free-semN), pulled straight from
-  // PlayLearn_PRODUCTS so pricing/titles stay in sync with the store.
-  // Links go to product.html — this page doesn't load cart.js, so
-  // there's no "add to cart" here, just "View".
+  // nothing unlocked yet: the paid "Full Course" card (cse-semN),
+  // pulled straight from PlayLearn_PRODUCTS so pricing/title stays in
+  // sync with the store. Links to product.html — this page doesn't
+  // load cart.js, so there's no "add to cart" here, just "View".
   function suggestionCardHTML(p) {
     const href = `product.html?id=${p.id}`;
     return `
       <article class="card">
         <a class="card-cover-link" href="${href}" aria-label="View ${escapeHTML(p.title)}">
           <div class="card-cover" aria-hidden="true">
-            <span class="stamp">${p.category === "free" ? "F" : "C"}</span>
+            <span class="stamp">C</span>
             <span class="fmt">${p.format}</span>
           </div>
         </a>
@@ -265,8 +263,7 @@
 
   function renderDashboardSuggestions(semesterNumber) {
     const paid = PlayLearn_PRODUCTS.find((p) => p.id === `cse-sem${semesterNumber}`);
-    const free = PlayLearn_PRODUCTS.find((p) => p.id === `free-sem${semesterNumber}`);
-    const cards = [paid, free].filter(Boolean).map(suggestionCardHTML).join("");
+    const cards = [paid].filter(Boolean).map(suggestionCardHTML).join("");
     suggestionsEl.innerHTML = cards
       ? `<p class="dashboard-suggestions-heading">Get started with Semester ${semesterNumber}</p><div class="product-grid dashboard-suggestions-grid">${cards}</div>`
       : "";
@@ -283,35 +280,21 @@
   const heroTitleEl = document.getElementById("dashboard-hero-title");
   const heroSubEl = document.getElementById("dashboard-hero-sub");
 
-  // Live-class access rides on either purchase for the shopper's
-  // semester N:
-  //   - "cse-semN"  (paid Full Course) → /Classroom/SemesterN/index.html
-  //   - "free-semN" (Free Batch)       → /Classroom/Free/SemesterN/index.html
-  // If a shopper has both, the paid Full Course banner wins — buying
-  // the paid course is treated as a superset of the free batch.
-  // Neither purchased for that semester → no hero.
+  // Live-class access rides on the shopper's semester N purchase:
+  //   - "cse-semN" (paid Full Course) → /Classroom/SemesterN/index.html
+  // Not purchased for that semester → no hero.
   function renderDashboardHero(semesterNumber, purchasedIds) {
     const hasCSE = purchasedIds.has(`cse-sem${semesterNumber}`);
-    const hasFree = purchasedIds.has(`free-sem${semesterNumber}`);
 
-    if (!hasCSE && !hasFree) {
+    if (!hasCSE) {
       heroEl.style.display = "none";
       return;
     }
 
-    heroEl.classList.toggle("is-free", !hasCSE && hasFree);
-
-    if (hasCSE) {
-      heroEyebrowEl.textContent = "// live classroom";
-      heroTitleEl.textContent = `Your Semester ${semesterNumber} E-classroom is ready`;
-      heroSubEl.textContent = `Full Course unlocked — Explore your personalized dashboard`;
-      heroEl.href = `Classroom/Semester${semesterNumber}/index.html`;
-    } else {
-      heroEyebrowEl.textContent = "// free batch";
-      heroTitleEl.textContent = `Your Semester ${semesterNumber} Free Batch classroom is ready`;
-      heroSubEl.textContent = `Free Batch unlocked — with limited access.`;
-      heroEl.href = `Classroom/Free/Semester${semesterNumber}/index.html`;
-    }
+    heroEyebrowEl.textContent = "// live classroom";
+    heroTitleEl.textContent = `Your Semester ${semesterNumber} E-classroom is ready`;
+    heroSubEl.textContent = `Full Course unlocked — Explore your personalized dashboard`;
+    heroEl.href = `Classroom/Semester${semesterNumber}/index.html`;
 
     heroEl.style.display = "flex";
   }

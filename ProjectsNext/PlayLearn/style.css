@@ -274,96 +274,6 @@ a { color: inherit; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* =========================================================
-   CATEGORY TABS
-   ========================================================= */
-.category-bar {
-  position: sticky;
-  top: 68px;
-  z-index: 30;
-  background: rgba(246, 246, 242, 0.94);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-}
-.category-bar .wrap {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 14px;
-  padding-bottom: 14px;
-}
-.chip-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  flex: 1 1 auto;
-  min-width: 0;
-  min-height: 34px;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* old Edge/IE */
-}
-.chip-row::-webkit-scrollbar {
-  display: none; /* Chrome/Safari/new Edge */
-}
-
-.mode-toggle {
-  flex: 0 0 auto;
-  display: flex;
-  gap: 3px;
-  background: var(--bg-sunken);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
-}
-.mode-btn {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  padding: 7px 15px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: all var(--dur) var(--ease);
-  white-space: nowrap;
-}
-.mode-btn:hover { color: var(--text); }
-.mode-btn[aria-pressed="true"] {
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
-}
-@media (max-width: 620px) {
-  .category-bar .wrap { flex-wrap: wrap; }
-  .mode-toggle { order: -1; width: 100%; justify-content: center; }
-  .chip-row { width: 100%; }
-  .chip-row:empty {
-    display: none; /* Free mode clears this — on mobile it wraps to its own row, so collapse it instead of leaving a blank strip below the toggle */
-    min-height: 0;
-  }
-}
-.chip {
-  flex: 0 0 auto;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-dim);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  padding: 8px 15px;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: all var(--dur) var(--ease);
-  white-space: nowrap;
-}
-.chip:hover { color: var(--text); border-color: var(--text-dim); }
-.chip[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  font-weight: 600;
-}
-
-/* =========================================================
    PRODUCT GRID
    ========================================================= */
 .catalog { padding: 44px 0 80px; }
@@ -1738,13 +1648,6 @@ a { color: inherit; }
 }
 .dashboard-hero-cta .arrow { transition: transform var(--dur) var(--ease); }
 .dashboard-hero:hover .dashboard-hero-cta .arrow { transform: translateX(3px); }
-
-/* Free Batch variant — shown instead of the paid (green) banner when
-   a shopper only has the free batch unlocked for their semester. */
-.dashboard-hero.is-free {
-  background: var(--price);
-}
-.dashboard-hero.is-free .dashboard-hero-cta { color: var(--price); }
 
 @media (max-width: 620px) {
   .dashboard-hero { flex-direction: column; align-items: flex-start; }
