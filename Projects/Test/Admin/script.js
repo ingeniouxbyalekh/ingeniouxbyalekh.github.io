@@ -38,6 +38,7 @@ const VISITORS_PATH = 'visitors';
 const LOGIN_ATTEMPTS_PATH = 'loginAttempts';   // per ip/device: current fail count + block state
 const LOGIN_LOGS_PATH = 'loginAttemptLogs';    // flat history of every failed attempt, for the admin table
 const ACTIVE_SESSION_PATH = 'adminConfig/activeSession'; // single-device login enforcement
+const SESSIONS_PATH = 'adminSessions'; // login session history + per-session activity log
 const MAX_LOGIN_ATTEMPTS = 3;
 const LOGIN_BLOCK_MS = 60 * 60 * 1000; // 1 hour
 const SESSION_KEY = 'ingenioux_admin_session';
@@ -199,12 +200,19 @@ const loginLogsTableWrap = document.getElementById('loginLogsTableWrap');
 const loginLogsTableBody = document.getElementById('loginLogsTableBody');
 const clearLoginLogsBtn = document.getElementById('clearLoginLogsBtn');
 
+const sessionsLoading = document.getElementById('sessionsLoading');
+const sessionList = document.getElementById('sessionList');
+const clearSessionsBtn = document.getElementById('clearSessionsBtn');
+
 let currentFilter = 'all';
 let allMessages = [];
 let allVisitorsCache = [];
+let allSessionsCache = [];
+let expandedSessionIds = new Set();
 let messagesListenerAttached = false;
 let visitorsListenerAttached = false;
 let loginLogsListenerAttached = false;
+let sessionsListenerAttached = false;
 let unsubscribeActiveSession = null;
 
 // ---------- auth flow ----------
@@ -214,6 +222,7 @@ function showDashboard(){
   startMessagesListener();
   startVisitorsListener();
   startLoginLogsListener();
+  startSessionsListener();
   startActiveSessionListener();
 }
 function showLogin(){
@@ -245,6 +254,20 @@ function stopActiveSessionListener(){
     unsubscribeActiveSession();
     unsubscribeActiveSession = null;
   }
+}
+
+// ---------- per-session activity log ----------
+// Every meaningful thing an admin does while logged in gets appended here,
+// scoped to their current session, so the "Login sessions" panel can show
+// exactly what happened during any past visit.
+function logActivity(action, detail){
+  const sid = sessionStorage.getItem(SESSION_ID_KEY);
+  if(!sid) return; // not logged in — nothing to attach this to
+  push(ref(db, `${SESSIONS_PATH}/${sid}/activities`), {
+    action,
+    detail: detail || null,
+    at: serverTimestamp()
+  }).catch(err => console.warn('Failed to log activity:', err));
 }
 
 function handleKickedOut(active){
@@ -296,6 +319,7 @@ function wireCollapse(btnId){
 wireCollapse('msgPanelToggle');
 wireCollapse('visitorPanelToggle');
 wireCollapse('loginLogsPanelToggle');
+wireCollapse('sessionsPanelToggle');
 
 checkExistingSession();
 
@@ -326,6 +350,7 @@ loginForm.addEventListener('submit', async (e)=>{
     const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
     const hash = await sha256(pwd);
     let success = false;
+    let previousSessionId = null;
 
     if(!snap.exists()){
       // first-time setup: whatever is entered becomes the admin password
@@ -355,6 +380,7 @@ loginForm.addEventListener('submit', async (e)=>{
             loginBtn.disabled = false;
             return;
           }
+          previousSessionId = active.sessionId;
         }
       }catch(err){
         // Can't check (offline, etc.) — don't block login over it, just proceed.
@@ -380,6 +406,34 @@ loginForm.addEventListener('submit', async (e)=>{
         deviceType: info.deviceType || null,
         loginAt: serverTimestamp()
       }), 10000).catch(err => console.warn('Failed to record active session:', err));
+
+      // Start this session's own history record — this is what the
+      // "Login sessions" panel reads from.
+      await withTimeout(set(ref(db, `${SESSIONS_PATH}/${mySessionId}`), {
+        sessionId: mySessionId,
+        ip: info.ip || null,
+        city: info.city || null,
+        region: info.region || null,
+        country: info.country || null,
+        browser: info.browser || null,
+        os: info.os || null,
+        deviceType: info.deviceType || null,
+        loginAt: serverTimestamp(),
+        logoutAt: null
+      }), 10000).catch(err => console.warn('Failed to record session history:', err));
+      logActivity('Logged in');
+
+      // Close out the session we just took over, so its history shows when
+      // (and that) it ended, rather than looking like it's still active.
+      if(previousSessionId){
+        update(ref(db, `${SESSIONS_PATH}/${previousSessionId}`), { logoutAt: serverTimestamp() })
+          .catch(()=>{});
+        push(ref(db, `${SESSIONS_PATH}/${previousSessionId}/activities`), {
+          action: 'Logged out',
+          detail: 'Signed in on another device',
+          at: serverTimestamp()
+        }).catch(()=>{});
+      }
 
       loginForm.reset();
       setStatus(loginStatus, '', null);
@@ -440,6 +494,7 @@ loginForm.addEventListener('submit', async (e)=>{
 
 logoutBtn.addEventListener('click', async ()=>{
   const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  logActivity('Logged out');
   stopActiveSessionListener();
   sessionStorage.removeItem(SESSION_KEY);
   sessionStorage.removeItem(SESSION_ID_KEY);
@@ -451,6 +506,9 @@ logoutBtn.addEventListener('click', async ()=>{
     const active = snap.val();
     if(active && active.sessionId === mySessionId){
       await withTimeout(remove(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    }
+    if(mySessionId){
+      await withTimeout(update(ref(db, `${SESSIONS_PATH}/${mySessionId}`), { logoutAt: serverTimestamp() }), 8000);
     }
   }catch(err){
     console.warn('Failed to clear active session on logout:', err);
@@ -490,6 +548,7 @@ savePasswordBtn.addEventListener('click', async ()=>{
     }
     const newHash = await sha256(next);
     await withTimeout(set(ref(db, ADMIN_PATH), newHash), 10000);
+    logActivity('Changed admin password');
     setStatus(passwordStatus, 'Password updated.', 'success');
     document.getElementById('currentPassword').value = '';
     document.getElementById('newPassword').value = '';
@@ -571,6 +630,8 @@ msgList.addEventListener('click', async (e)=>{
     e.target.disabled = true;
     try{
       await withTimeout(update(ref(db, `${MESSAGES_PATH}/${id}`), { read: true }), 10000);
+      const m = allMessages.find(x => x.id === id);
+      logActivity('Marked message as read', m ? `From ${m.name || 'Unknown'}` : null);
     }catch(err){
       console.error('Mark as read error:', err);
       alert(friendlyError(err));
@@ -582,7 +643,9 @@ msgList.addEventListener('click', async (e)=>{
     if(!confirm('Delete this message permanently?')) return;
     e.target.disabled = true;
     try{
+      const m = allMessages.find(x => x.id === id);
       await withTimeout(remove(ref(db, `${MESSAGES_PATH}/${id}`)), 10000);
+      logActivity('Deleted a message', m ? `From ${m.name || 'Unknown'}` : null);
     }catch(err){
       console.error('Delete message error:', err);
       alert(friendlyError(err));
@@ -760,6 +823,7 @@ clearVisitorsBtn.addEventListener('click', async ()=>{
   clearVisitorsBtn.disabled = true;
   try{
     await withTimeout(remove(ref(dbVisitor, VISITORS_PATH)), 10000);
+    logActivity('Cleared all visitor logs');
   }catch(err){
     console.error('Clear visitors error:', err);
     alert(friendlyError(err));
@@ -822,10 +886,127 @@ clearLoginLogsBtn.addEventListener('click', async ()=>{
   clearLoginLogsBtn.disabled = true;
   try{
     await withTimeout(remove(ref(dbVisitor, LOGIN_LOGS_PATH)), 10000);
+    logActivity('Cleared all failed-login logs');
   }catch(err){
     console.error('Clear login logs error:', err);
     alert(friendlyError(err));
   }finally{
     clearLoginLogsBtn.disabled = false;
+  }
+});
+
+// ---------- login sessions ----------
+function startSessionsListener(){
+  if(sessionsListenerAttached) return;
+  sessionsListenerAttached = true;
+
+  sessionsLoading.style.display = 'block';
+  sessionsLoading.classList.remove('is-error');
+  sessionsLoading.textContent = 'Loading sessions…';
+
+  const sessionsQuery = query(ref(db, SESSIONS_PATH), orderByChild('loginAt'), limitToLast(100));
+  onValue(sessionsQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    allSessionsCache = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse(); // orderByChild is ascending; newest first
+    sessionsLoading.style.display = 'none';
+    renderSessions();
+  }, (err)=>{
+    console.error('Sessions listener error:', err);
+    sessionsLoading.style.display = 'block';
+    sessionsLoading.classList.add('is-error');
+    sessionsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function sessionActivities(s){
+  const val = s.activities || {};
+  return Object.keys(val)
+    .map(id => ({ id, ...val[id] }))
+    .sort((a, b) => (a.at || 0) - (b.at || 0));
+}
+
+function renderSessions(){
+  if(allSessionsCache.length === 0){
+    sessionList.innerHTML = '';
+    sessionsLoading.style.display = 'block';
+    sessionsLoading.classList.remove('is-error');
+    sessionsLoading.textContent = 'No login sessions recorded yet.';
+    return;
+  }
+
+  sessionsLoading.style.display = 'none';
+
+  sessionList.innerHTML = allSessionsCache.map(s => {
+    const activities = sessionActivities(s);
+    const isOpen = expandedSessionIds.has(s.id);
+    const isActive = !s.logoutAt;
+    const device = [s.deviceType, [s.browser, s.os].filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+    const loc = locationLabel(s);
+
+    return `
+    <div class="session-tile ${isOpen ? 'expanded' : ''}" data-session-id="${s.id}">
+      <div class="session-head">
+        <button class="btn btn-small panel-toggle session-toggle" title="${isOpen ? 'Minimize' : 'Expand'}" aria-label="${isOpen ? 'Minimize' : 'Expand'} activity log">${isOpen ? '×' : '+'}</button>
+        <div class="session-summary">
+          <div class="session-row session-row-top">
+            <span class="s-time">${formatDate(s.loginAt)}</span>
+            <span class="s-status ${isActive ? 'is-active' : ''}">${isActive ? 'Active' : 'Ended ' + formatDate(s.logoutAt)}</span>
+            <span class="s-count">${activities.length} action${activities.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="session-row">
+            <span class="v-item"><b>IP</b>${escapeHtml(s.ip) || '—'}</span>
+            <span class="v-item"><b>Location</b>${escapeHtml(loc)}</span>
+            <span class="v-item"><b>Device</b>${escapeHtml(device) || '—'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-activities" ${isOpen ? '' : 'style="display:none;"'}>
+        ${activities.length === 0
+          ? '<div class="activity-empty">No activity recorded for this session.</div>'
+          : activities.map(a => `
+            <div class="activity-row">
+              <span class="a-time">${formatDate(a.at)}</span>
+              <span class="a-action">${escapeHtml(a.action)}</span>
+              ${a.detail ? `<span class="a-detail">${escapeHtml(a.detail)}</span>` : ''}
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Delegated so it keeps working across re-renders triggered by the realtime
+// listener (e.g. a new activity arriving while a session is expanded).
+sessionList.addEventListener('click', (e)=>{
+  const toggle = e.target.closest('.session-toggle');
+  if(!toggle) return;
+  const tile = toggle.closest('.session-tile');
+  const id = tile.dataset.sessionId;
+  if(expandedSessionIds.has(id)) expandedSessionIds.delete(id);
+  else expandedSessionIds.add(id);
+  renderSessions();
+});
+
+clearSessionsBtn.addEventListener('click', async ()=>{
+  if(!confirm('Delete all login session history permanently? (Your current session will be kept.)')) return;
+  clearSessionsBtn.disabled = true;
+  try{
+    // Keep the current session's own record so activity logging (including
+    // this "Cleared session history" entry) still has somewhere to write to.
+    const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    const updates = {};
+    allSessionsCache.forEach(s => {
+      if(s.id !== mySessionId) updates[s.id] = null;
+    });
+    await withTimeout(update(ref(db, SESSIONS_PATH), updates), 10000);
+    logActivity('Cleared login session history');
+  }catch(err){
+    console.error('Clear sessions error:', err);
+    alert(friendlyError(err));
+  }finally{
+    clearSessionsBtn.disabled = false;
   }
 });
