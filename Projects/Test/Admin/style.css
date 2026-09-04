@@ -1,6 +1,7 @@
 /* ---------- admin-only layout (reuses variables from ../style.css) ---------- */
 body{min-height:100vh;}
-.admin-wrap{max-width:920px;margin:0 auto;padding:60px 24px 100px;}
+.admin-wrap{max-width:1440px;margin:0 auto;padding:60px 40px 100px;}
+@media (max-width:1100px){.admin-wrap{padding:50px 24px 100px;}}
 
 .admin-topbar{
   display:flex;align-items:center;justify-content:space-between;gap:16px;
@@ -56,7 +57,7 @@ body{min-height:100vh;}
 }
 .stat-chip{
   border:1px solid var(--line);background:var(--surface);border-radius:3px;
-  padding:14px 18px;font-family:var(--font-mono);
+  padding:14px 18px;font-family:var(--font-mono);flex:1 1 200px;
 }
 .stat-chip b{display:block;font-size:22px;font-family:var(--font-display);color:var(--text);font-weight:600;}
 .stat-chip span{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);}
@@ -90,6 +91,9 @@ body{min-height:100vh;}
 .msg-filter button.active{border-color:var(--ember);color:var(--ember);}
 
 .msg-list{display:flex;flex-direction:column;gap:14px;}
+@media (min-width:1200px){
+  .msg-list{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;align-items:start;}
+}
 .msg-empty{
   font-family:var(--font-mono);font-size:13px;color:var(--text-faint);
   border:1px dashed var(--line);border-radius:3px;padding:30px;text-align:center;
@@ -141,6 +145,17 @@ body{min-height:100vh;}
 }
 .visitor-tile:last-child{border-bottom:none;}
 .visitor-tile:hover{background:var(--surface-2);}
+
+@media (min-width:1200px){
+  .visitor-cards{display:grid;grid-template-columns:repeat(2,1fr);}
+  /* border-bottom draws a full-width strip in a 1-col layout; in the 2-col
+     grid we instead outline each tile so the grid reads as a set of cards. */
+  .visitor-tile{border:1px solid var(--line);border-radius:3px;margin:6px;}
+  .visitor-tile:last-child{border-bottom:1px solid var(--line);}
+}
+@media (min-width:1600px){
+  .visitor-cards{grid-template-columns:repeat(3,1fr);}
+}
 
 .v-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px;}
 .v-row-top{font-size:11px;letter-spacing:.04em;}
