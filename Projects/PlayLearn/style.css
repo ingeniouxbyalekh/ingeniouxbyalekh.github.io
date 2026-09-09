@@ -609,6 +609,25 @@ a { color: inherit; }
    details) where the default 480px cap truncates long rows of data. */
 .modal.modal-wide { width: min(960px, 96vw); }
 
+/* Device details modal header — sticky so Close/Clear stay reachable
+   at the top-right without needing to scroll the modal down past the
+   summary tiles and history table to find them. */
+.device-info-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--bg-elevated);
+  margin: -22px -24px 14px;
+  padding: 22px 24px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.device-info-modal-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+
 .field { margin-bottom: 14px; }
 .field label {
   display: block;
@@ -1671,21 +1690,6 @@ a { color: inherit; }
 .admin-mono, .executive-mono { font-family: var(--font-mono); color: var(--text-dim); font-size: 12px; }
 .admin-empty, .executive-empty { text-align: center; color: var(--text-faint); padding: 34px 14px; }
 .admin-table td:last-child, .executive-table td:last-child { white-space: nowrap; }
-
-/* Devices table — small tag marking a row as an executive's device
-   history vs an ordinary shop customer's. */
-.device-type-tag {
-  display: inline-block;
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-  padding: 2px 7px;
-  border-radius: 999px;
-  white-space: nowrap;
-}
-.device-type-tag.is-executive { color: var(--accent-strong); background: var(--accent-soft); }
-.device-type-tag.is-user { color: var(--text-dim); background: var(--bg-sunken); }
 
 /* Device details modal — "at a glance" visual summary above the raw
    per-login history table. */

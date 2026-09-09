@@ -230,6 +230,7 @@
     <details class="admin-section is-collapsible">
       <summary><h2>Devices</h2><span class="icon">+</span></summary>
 
+
       <div class="admin-table-wrap">
         <table class="admin-table" id="device-info-table">
           <thead>
@@ -258,13 +259,17 @@
 <div class="modal-overlay" id="device-info-modal">
   <div class="modal modal-wide">
     <div class="modal-body">
-      <h3 style="margin:0 0 4px;" id="device-info-modal-title">Device details</h3>
+      <div class="device-info-modal-header">
+        <div>
+          <h3 style="margin:0 0 4px;" id="device-info-modal-title">Device details</h3>
+        </div>
+        <div class="device-info-modal-actions">
+          <button type="button" class="btn btn-small btn-danger-outline" id="device-info-modal-clear">Clear</button>
+          <button type="button" class="btn btn-small" id="device-info-modal-close">Close</button>
+        </div>
+      </div>
       <div id="device-info-modal-summary" style="margin-bottom:20px;"></div>
       <div id="device-info-modal-entries" style="max-height:46vh; overflow:auto;"></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
-        <button type="button" class="btn btn-danger-outline" id="device-info-modal-clear">Clear</button>
-        <button type="button" class="btn" id="device-info-modal-close">Close</button>
-      </div>
     </div>
   </div>
 </div>
@@ -1179,10 +1184,6 @@
   function deviceInfoRowHTML(emailKey, entries) {
     const d = latestDeviceInfoEntry(entries);
     const count = Object.keys(entries).length;
-    const isExecutive = deviceInfoTypeByUser[emailKey] === "executive";
-    const tag = isExecutive
-      ? `<span class="device-type-tag is-executive">Executive</span>`
-      : `<span class="device-type-tag is-user">User</span>`;
     const label = escapeHTML(d.name || d.email || emailKey);
     const device = escapeHTML(d.deviceModel || "—");
     const os = escapeHTML([d.os, d.osVersion].filter(Boolean).join(" "));
@@ -1193,7 +1194,7 @@
     const lastSeen = d.updatedAt ? new Date(d.updatedAt).toLocaleString() : "—";
     return `
       <tr data-key="${emailKey}">
-        <td>${tag} ${label}<br><span class="admin-mono" style="font-size:11px;">${count} record${count === 1 ? "" : "s"}</span></td>
+        <td>${label}<br><span class="admin-mono" style="font-size:11px;">${count} record${count === 1 ? "" : "s"}</span></td>
         <td>${device}</td>
         <td>${os || "—"}</td>
         <td>${browser || "—"}</td>
