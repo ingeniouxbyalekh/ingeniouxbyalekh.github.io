@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Print desk — NextPrint</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- visitor stat tiles, scoped to this page ---- */
+  .stat-tiles {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0 6px;
+  }
+  .stat-tile {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .stat-value {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--ink);
+  }
+  @media (max-width: 480px) {
+    .stat-tiles { gap: 6px; }
+    .stat-tile { padding: 8px 4px; }
+    .stat-label { font-size: 0.6rem; }
+    .stat-value { font-size: 1.05rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" class="gate">
+  <div class="gate-card" id="gateCard">
+    <div class="logo" style="justify-content:center;margin-bottom:6px;">Next<span class="dot">Print</span></div>
+    <p style="font-size:0.9rem;" id="gateIntro">Print desk — staff only</p>
+    <p class="hint" id="gateError" style="color:var(--red);margin-top:6px;"></p>
+  </div>
+</div>
+
+<div id="dashboard" style="display:none;">
+  <header class="site-header">
+    <div class="wrap">
+      <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+      <nav>
+        <button type="button" class="link-btn" id="showChangePw" style="border:none;background:none;font-family:inherit;font-size:0.95rem;cursor:pointer;color:var(--ink);">Change password</button>
+        <a href="index.html">Home page</a>
+      </nav>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="change-pw-panel" id="changePwPanel" style="display:none;">
+      <h3 style="font-size:1rem;margin-bottom:12px;">Change password</h3>
+      <input type="password" id="cpCurrent" placeholder="Current password">
+      <input type="password" id="cpNew" placeholder="New password">
+      <input type="password" id="cpConfirm" placeholder="Confirm new password">
+      <p class="hint" id="cpError" style="color:var(--red);"></p>
+      <p class="hint" id="cpSuccess" style="color:var(--ok);"></p>
+      <div style="display:flex;gap:10px;">
+        <button type="button" class="btn-sm" id="cpSave">Save new password</button>
+        <button type="button" class="btn-sm" id="cpCancel">Cancel</button>
+      </div>
+    </div>
+
+    <div class="dash-header">
+      <h1 style="font-size:1.6rem;margin:0;">Print desk</h1>
+      <div class="tabs">
+        <button class="tab active" data-filter="pending">Pending</button>
+        <button class="tab" data-filter="printed">Printed</button>
+        <button class="tab" data-filter="all">All</button>
+      </div>
+    </div>
+
+    <div class="stat-tiles">
+      <div class="stat-tile">
+        <div class="stat-label">Total visitors</div>
+        <div class="stat-value" id="statTotalVisits">–</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Visitor page: index</div>
+        <div class="stat-value" id="statIndexVisits">–</div>
+      </div>
+      <div class="stat-tile">
+        <div class="stat-label">Visitor page: printrequest</div>
+        <div class="stat-value" id="statPrintrequestVisits">–</div>
+      </div>
+    </div>
+
+    <div class="dash-body" id="requestList">
+      <p style="text-align:center;color:var(--ink-soft);padding:60px 0;">Loading requests…</p>
+    </div>
+  </div>
+</div>
+
+<iframe id="print-frame"></iframe>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="config.js"></script>
+<script>
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+
+// ---- password hashing (SHA-256, stored in Firebase — never plaintext) ----
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const gate = document.getElementById('gate');
+const gateCard = document.getElementById('gateCard');
+const gateIntro = document.getElementById('gateIntro');
+const gateError = document.getElementById('gateError');
+const dashboard = document.getElementById('dashboard');
+
+// ---- render either "create password" (first run) or "enter password" ----
+function renderCreatePasswordForm() {
+  gateIntro.textContent = 'Set up the print desk password — this is your first time here.';
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <input type="password" id="newPw" placeholder="Create a password">
+    <input type="password" id="confirmPw" placeholder="Confirm password">
+    <button class="btn btn-primary" id="createBtn" style="width:100%;justify-content:center;">Create password &amp; unlock</button>
+  `;
+  gateCard.appendChild(wrap);
+
+  document.getElementById('createBtn').addEventListener('click', async () => {
+    const pw = document.getElementById('newPw').value;
+    const confirm = document.getElementById('confirmPw').value;
+    gateError.textContent = '';
+    if (!pw || pw.length < 4) {
+      gateError.textContent = 'Password must be at least 4 characters.';
+      return;
+    }
+    if (pw !== confirm) {
+      gateError.textContent = 'Passwords do not match.';
+      return;
+    }
+    const hash = await sha256Hex(pw);
+    db.ref('adminAuth/passwordHash').set(hash)
+      .then(() => unlock())
+      .catch(() => { gateError.textContent = 'Could not save password. Try again.'; });
+  });
+}
+
+function renderLoginForm() {
+  gateIntro.textContent = 'Print desk — staff only';
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <input type="password" id="passcodeInput" placeholder="Password" autofocus>
+    <button class="btn btn-primary" id="unlockBtn" style="width:100%;justify-content:center;">Unlock</button>
+  `;
+  gateCard.appendChild(wrap);
+
+  const passcodeInput = document.getElementById('passcodeInput');
+
+  async function tryUnlock() {
+    gateError.textContent = '';
+    try {
+      const entered = passcodeInput.value;
+      const hash = await sha256Hex(entered);
+      const snap = await db.ref('adminAuth/passwordHash').once('value');
+      if (hash === snap.val()) {
+        unlock();
+      } else {
+        gateError.textContent = 'Incorrect password.';
+      }
+    } catch (err) {
+      gateError.textContent = 'Could not reach the database (' + (err.message || err) + '). Check your Firebase rules.';
+    }
+  }
+  document.getElementById('unlockBtn').addEventListener('click', tryUnlock);
+  passcodeInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+}
+
+// ---- single-session enforcement: only one device may be logged in at a
+// time. Logging in writes a fresh session id to Firebase; any other
+// device watching that path sees the mismatch and is logged out. ----
+function makeSessionId() {
+  return (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
+}
+
+// remove any form elements appended to the gate card so we can render
+// a fresh login form on top of the original logo/intro/error nodes
+function resetGateCard() {
+  while (gateCard.children.length > 3) {
+    gateCard.removeChild(gateCard.lastChild);
+  }
+  gateError.textContent = '';
+}
+
+let sessionWatcherStarted = false;
+function watchSession() {
+  if (sessionWatcherStarted) return;
+  sessionWatcherStarted = true;
+  db.ref('adminAuth/activeSession').on('value', snap => {
+    const active = snap.val();
+    const mine = localStorage.getItem('np_session_id');
+    if (dashboard.style.display !== 'none' && mine && active !== mine) {
+      // another device has logged in — kick this one out
+      localStorage.removeItem('np_session_id');
+      sessionStorage.removeItem('np_admin_ok');
+      dashboard.style.display = 'none';
+      gate.style.display = 'flex';
+      resetGateCard();
+      gateIntro.textContent = "You've been logged out because this account was signed in on another device.";
+      renderLoginForm();
+    }
+  });
+}
+
+function unlock() {
+  const sid = makeSessionId();
+  localStorage.setItem('np_session_id', sid);
+  sessionStorage.setItem('np_admin_ok', '1');
+  db.ref('adminAuth/activeSession').set(sid);
+  gate.style.display = 'none';
+  dashboard.style.display = 'block';
+  startDashboard();
+  watchSession();
+}
+
+// ---- decide which gate form to show ----
+(async function initGate() {
+  if (sessionStorage.getItem('np_admin_ok') === '1') {
+    try {
+      const activeSnap = await db.ref('adminAuth/activeSession').once('value');
+      const mine = localStorage.getItem('np_session_id');
+      if (mine && activeSnap.val() === mine) {
+        gate.style.display = 'none';
+        dashboard.style.display = 'block';
+        startDashboard();
+        watchSession();
+        return;
+      }
+      // session was taken over by another device while we were away
+      sessionStorage.removeItem('np_admin_ok');
+      localStorage.removeItem('np_session_id');
+    } catch (err) {
+      // fall through to normal login if we can't verify the session
+    }
+  }
+  try {
+    const snap = await db.ref('adminAuth/passwordHash').once('value');
+    if (snap.exists()) {
+      renderLoginForm();
+    } else {
+      renderCreatePasswordForm();
+    }
+  } catch (err) {
+    gateError.textContent = 'Could not reach the database (' + (err.message || err) + '). Check that your Firebase Realtime Database rules allow read/write on the "adminAuth" path.';
+  }
+})();
+
+// ---- change password (from inside the dashboard) ----
+const showChangePw = document.getElementById('showChangePw');
+const changePwPanel = document.getElementById('changePwPanel');
+const cpError = document.getElementById('cpError');
+const cpSuccess = document.getElementById('cpSuccess');
+
+showChangePw.addEventListener('click', () => {
+  changePwPanel.style.display = changePwPanel.style.display === 'none' ? 'block' : 'none';
+  cpError.textContent = '';
+  cpSuccess.textContent = '';
+});
+document.getElementById('cpCancel').addEventListener('click', () => {
+  changePwPanel.style.display = 'none';
+});
+document.getElementById('cpSave').addEventListener('click', async () => {
+  cpError.textContent = '';
+  cpSuccess.textContent = '';
+  const current = document.getElementById('cpCurrent').value;
+  const next = document.getElementById('cpNew').value;
+  const confirm = document.getElementById('cpConfirm').value;
+
+  if (!next || next.length < 4) {
+    cpError.textContent = 'New password must be at least 4 characters.';
+    return;
+  }
+  if (next !== confirm) {
+    cpError.textContent = 'New passwords do not match.';
+    return;
+  }
+
+  let snap;
+  try {
+    const currentHash = await sha256Hex(current);
+    snap = await db.ref('adminAuth/passwordHash').once('value');
+    if (currentHash !== snap.val()) {
+      cpError.textContent = 'Current password is incorrect.';
+      return;
+    }
+  } catch (err) {
+    cpError.textContent = 'Could not reach the database (' + (err.message || err) + '). Check your Firebase rules.';
+    return;
+  }
+
+  const newHash = await sha256Hex(next);
+  db.ref('adminAuth/passwordHash').set(newHash)
+    .then(() => {
+      cpSuccess.textContent = 'Password updated.';
+      document.getElementById('cpCurrent').value = '';
+      document.getElementById('cpNew').value = '';
+      document.getElementById('cpConfirm').value = '';
+    })
+    .catch(() => { cpError.textContent = 'Could not update password. Try again.'; });
+});
+
+// ---- visitor stat tiles ----
+let statsStarted = false;
+function startVisitorStats() {
+  if (statsStarted) return;
+  statsStarted = true;
+
+  const totalEl = document.getElementById('statTotalVisits');
+  const indexEl = document.getElementById('statIndexVisits');
+  const printrequestEl = document.getElementById('statPrintrequestVisits');
+
+  db.ref('stats/totalVisits').on('value', snap => {
+    totalEl.textContent = snap.val() || 0;
+  });
+  db.ref('stats/pageViews/index').on('value', snap => {
+    indexEl.textContent = snap.val() || 0;
+  });
+  db.ref('stats/pageViews/printrequest').on('value', snap => {
+    printrequestEl.textContent = snap.val() || 0;
+  });
+}
+
+// ---- dashboard state ----
+let allRequests = [];
+let currentFilter = 'pending';
+let dbStarted = false;
+let expandedIds = new Set(); // request ids whose "Details" panel is open
+
+function startDashboard() {
+  if (dbStarted) return;
+  dbStarted = true;
+
+  db.ref('printRequests').on('value', snapshot => {
+    const data = snapshot.val() || {};
+    allRequests = Object.entries(data)
+      .map(([id, val]) => ({ id, ...val }))
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    render();
+  });
+
+  startVisitorStats();
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentFilter = tab.dataset.filter;
+      render();
+    });
+  });
+
+  // ---- remove a file from Cloudinary.
+  // Preferred path: call our deleteCloudinaryFile Cloud Function, which
+  // holds the Cloudinary API secret server-side and deletes by the file's
+  // permanent public ID. That works no matter how long ago it was
+  // uploaded — see /functions and DEPLOY.md to set it up.
+  // Fallback: the old unsigned delete-token method, kept only for
+  // requests saved before the function existed. Cloudinary invalidates
+  // that token ~10 minutes after upload, so it will usually fail for
+  // anything older — that's expected, not a bug. ----
+  async function deleteCloudinaryFile(file) {
+    if (file.publicId && CONFIG.cloudinary.deleteFunctionUrl) {
+      try {
+        const res = await fetch(CONFIG.cloudinary.deleteFunctionUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            publicId: file.publicId,
+            resourceType: file.resourceType || 'image',
+          }),
+        });
+        const data = await res.json();
+        if (data.ok) return true;
+      } catch (err) {
+        // fall through to the legacy method below
+      }
+    }
+
+    if (!file.deleteToken) return false;
+    try {
+      const resourceType = file.resourceType || 'image';
+      const url = `https://api.cloudinary.com/v1_1/${CONFIG.cloudinary.cloudName}/${resourceType}/destroy`;
+      const body = new FormData();
+      body.append('token', file.deleteToken);
+      const res = await fetch(url, { method: 'POST', body });
+      const data = await res.json();
+      return data.result === 'ok';
+    } catch (err) {
+      return false;
+    }
+  }
+
+  window.markPrinted = async function (id) {
+    const req = allRequests.find(r => r.id === id);
+    if (!req) return;
+
+    if (!confirm(`Mark "${req.name || 'this request'}" as printed?\n\nThis will permanently delete the request and its files.`)) {
+      return;
+    }
+
+    const files = req.files || [];
+    const failed = [];
+    for (const f of files) {
+      const ok = await deleteCloudinaryFile(f);
+      if (!ok) failed.push(f.name);
+    }
+
+    await db.ref('printRequests/' + id).remove();
+
+    if (failed.length) {
+      alert('Request deleted. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
+    }
+  };
+
+  window.cancelRequest = async function (id) {
+    const req = allRequests.find(r => r.id === id);
+    if (!req) return;
+
+    if (!confirm(`Cancel "${req.name || 'this request'}"?\n\nThis will permanently delete the request and its files.`)) {
+      return;
+    }
+
+    const files = req.files || [];
+    const failed = [];
+    for (const f of files) {
+      const ok = await deleteCloudinaryFile(f);
+      if (!ok) failed.push(f.name);
+    }
+
+    await db.ref('printRequests/' + id).remove();
+
+    if (failed.length) {
+      alert('Request cancelled. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
+    }
+  };
+}
+
+function render() {
+  const listEl = document.getElementById('requestList');
+  const filtered = currentFilter === 'all'
+    ? allRequests
+    : allRequests.filter(r => (r.status || 'pending') === currentFilter);
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `<div class="empty-state"><p>No ${currentFilter === 'all' ? '' : currentFilter} requests right now.</p></div>`;
+    return;
+  }
+
+  // Paid requests float to the top; order within each group (paid / unpaid)
+  // is otherwise unchanged, since Array.sort is stable.
+  const sorted = filtered.slice().sort((a, b) => {
+    const aPaid = a.paymentStatus === 'paid' ? 1 : 0;
+    const bPaid = b.paymentStatus === 'paid' ? 1 : 0;
+    return bPaid - aPaid;
+  });
+
+  listEl.innerHTML = sorted.map(r => renderCard(r)).join('');
+}
+
+function printTypeLabel(t) {
+  if (t === 'color') return 'Colour';
+  if (t === 'photo') return 'Photo paper';
+  return 'B&amp;W';
+}
+
+function renderCard(r) {
+  const status = r.status || 'pending';
+  const files = r.files || [];
+  const expanded = expandedIds.has(r.id);
+  const hasPhotoPaper = files.some(f => f.printType === 'photo');
+
+  const filePreviewHtml = files.length
+    ? `<div class="file-preview-list">${files.map(f => `<div class="fp-name">${escapeHtml(f.name)}</div>`).join('')}</div>`
+    : '';
+
+  const pdfCount = files.filter(f => (f.format || '').toLowerCase() === 'pdf').length;
+
+  const filesHtml = files.map((f) => {
+    const printable = isPrintable(f);
+    const actionBtn = printable
+      ? `<button type="button" class="btn-sm" onclick="printFile('${escapeAttr(f.url)}')">Open &amp; print</button>`
+      : `<a class="btn-sm" href="${escapeAttr(f.url)}" target="_blank" rel="noopener">Download</a>`;
+    const pagesLabel = f.pageMode === 'custom' ? `pages ${escapeHtml(f.pages || '')}` : 'all pages';
+    return `
+      <div class="req-file">
+        <span class="fname">${escapeHtml(f.name)} — ${printTypeLabel(f.printType)}, ${pagesLabel}, ${f.copies || 1}× copies</span>
+        <div class="actions">${actionBtn}</div>
+      </div>`;
+  }).join('');
+
+  const bodyHtml = expanded ? `
+      <div class="req-body">
+        <div class="spec-line">
+          <span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>
+          <span><b>₹${r.amount || 0}</b> estimated</span>
+        </div>
+        ${r.notes ? `<p style="font-size:0.88rem;">Note: ${escapeHtml(r.notes)}</p>` : ''}
+        <div class="req-files">${filesHtml}</div>
+        <div class="req-actions">
+          ${pdfCount > 0 ? `<button type="button" class="btn-sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
+          ${status !== 'printed' ? `<button type="button" class="btn-sm mark" onclick="markPrinted('${r.id}')">Mark as printed</button>` : ''}
+        </div>
+      </div>` : '';
+
+  return `
+    <div class="req-card req-card-grid" id="card-${r.id}">
+      ${r.paymentStatus === 'paid' ? '<span class="paid-badge">Paid</span>' : ''}
+      ${hasPhotoPaper ? '<span class="glossy-badge">GlossyPage</span>' : ''}
+      <div class="req-top-grid">
+        <div class="req-col req-col-left">
+          <div class="req-token">${escapeHtml(String(r.token || '—'))}</div>
+          ${status === 'printed' ? `<span class="pill ${status}">${status}</span>` : ''}
+        </div>
+        <div class="req-col req-col-mid">
+          ${filePreviewHtml}
+        </div>
+        <div class="req-col req-col-right">
+          <div class="req-datetime">${formatDateTime(r.createdAt)}</div>
+          <div class="req-actions-row">
+            <button type="button" class="btn-sm" onclick="mergeAndPrint('${r.id}')">Print</button>
+            <button type="button" class="btn-sm" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide' : 'Details'}</button>
+            <button type="button" class="btn-sm cancel-btn" onclick="cancelRequest('${r.id}')">Cancel</button>
+          </div>
+        </div>
+      </div>
+      ${bodyHtml}
+    </div>`;
+}
+
+// ---- toggle the details panel for one request, open below its tile ----
+window.toggleDetails = function (id) {
+  if (expandedIds.has(id)) {
+    expandedIds.delete(id);
+  } else {
+    expandedIds.add(id);
+  }
+  render();
+};
+
+// ---- format a request's created-at timestamp for display ----
+function formatDateTime(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  const datePart = d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+  const timePart = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  return `${datePart}<br>${timePart}`;
+}
+
+function isPrintable(file) {
+  const fmt = (file.format || '').toLowerCase();
+  const type = (file.resourceType || '').toLowerCase();
+  return type === 'image' || fmt === 'pdf';
+}
+
+window.printFile = function (url) {
+  const frame = document.getElementById('print-frame');
+  frame.onload = () => {
+    try {
+      frame.contentWindow.focus();
+      frame.contentWindow.print();
+    } catch (err) {
+      window.open(url, '_blank');
+    }
+  };
+  frame.src = url;
+};
+
+// ---- merge every PDF belonging to one request into a single PDF and
+// send it straight to the print dialog ----
+window.mergeAndPrint = async function (requestId) {
+  const req = allRequests.find(r => r.id === requestId);
+  if (!req) return;
+
+  const files = req.files || [];
+  const pdfFiles = files.filter(f => (f.format || '').toLowerCase() === 'pdf');
+  const otherFiles = files.filter(f => (f.format || '').toLowerCase() !== 'pdf');
+
+  if (pdfFiles.length === 0) {
+    alert('No PDF files to merge for this request.');
+    return;
+  }
+
+  try {
+    const merged = await PDFLib.PDFDocument.create();
+    for (const f of pdfFiles) {
+      const res = await fetch(f.url);
+      const bytes = await res.arrayBuffer();
+      const src = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+      const copies = f.copies || 1;
+      const indices = src.getPageIndices();
+      for (let c = 0; c < copies; c++) {
+        const pages = await merged.copyPages(src, indices);
+        pages.forEach(p => merged.addPage(p));
+      }
+    }
+    const mergedBytes = await merged.save();
+    const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+
+    if (otherFiles.length) {
+      alert('Note: ' + otherFiles.map(f => f.name).join(', ') + ' could not be merged (not a PDF) — print those separately using their own "Download" button.');
+    }
+    printFile(url);
+  } catch (err) {
+    alert('Could not merge files: ' + (err.message || err));
+  }
+};
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAttr(str) { return escapeHtml(str); }
+</script>
+</body>
+</html>

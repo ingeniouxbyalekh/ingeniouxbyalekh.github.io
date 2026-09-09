@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Send your files — NextPrint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="request-page" data-page="printrequest">
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+    <nav>
+      <a href="index.html">Home</a>
+    </nav>
+  </div>
+</header>
+
+<section class="form-page">
+  <div class="wrap">
+    <div style="max-width:720px;margin:0 auto 16px;">
+      <h1 style="font-size:1.5rem;margin-bottom:4px;">Send your files</h1>
+    </div>
+
+    <div class="form-card">
+      <div id="msg-area"></div>
+
+      <form id="request-form">
+        <div class="field">
+          <label>Files</label>
+          <div class="dropzone" id="dropzone">
+            <p style="margin:0;" id="dropzoneText">Tap to choose files</p>
+            <input type="file" id="fileInput" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+          </div>
+          <div class="file-list" id="fileList"></div>
+          <div class="add-more-row" id="addMoreRow" style="display:none;">
+            <button type="button" class="btn-sm" id="addMoreBtn">+ Add more files</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notes">Instructions (optional)</label>
+          <textarea id="notes" rows="3" placeholder="e.g. staple top-left, spiral bound"></textarea>
+        </div>
+
+        <div class="summary-box">
+          <div>
+            <div style="font-size:0.85rem;color:var(--ink-soft);"> Total amount</div>
+            <div class="amount" id="amountDisplay">₹0</div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--ink-soft);max-width:20ch;text-align:right;">
+          </div>
+        </div>
+
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+          <button type="button" class="btn btn-primary" id="payNowBtn" style="width:100%;justify-content:center;">
+            Pay now
+          </button>
+          <button type="button" class="btn btn-outline" id="payLaterBtn" style="width:100%;justify-content:center;">
+            Pay after delivery
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p class="fine">© <span id="year"></span> NextPrint.</p>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="config.js"></script>
+<script>
+document.getElementById('year').textContent = new Date().getFullYear();
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js";
+}
+
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+
+const dropzone = document.getElementById('dropzone');
+const dropzoneText = document.getElementById('dropzoneText');
+const fileInput = document.getElementById('fileInput');
+const fileListEl = document.getElementById('fileList');
+const addMoreRow = document.getElementById('addMoreRow');
+const addMoreBtn = document.getElementById('addMoreBtn');
+const msgArea = document.getElementById('msg-area');
+const payNowBtn = document.getElementById('payNowBtn');
+const payLaterBtn = document.getElementById('payLaterBtn');
+const amountDisplay = document.getElementById('amountDisplay');
+
+// Each entry: { file, id, status, url, progress, kind, pageCount,
+//               printType, pageMode, customPages, copies,
+//               resourceType, format, _resolvedPages }
+let selectedFiles = [];
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag');
+  addFiles(e.dataTransfer.files);
+});
+fileInput.addEventListener('change', () => addFiles(fileInput.files));
+addMoreBtn.addEventListener('click', () => fileInput.click());
+
+function fileKind(file) {
+  const name = file.name.toLowerCase();
+  if (file.type === 'application/pdf' || /\.pdf$/.test(name)) return 'pdf';
+  if (/^image\//.test(file.type) || /\.(jpe?g|png)$/.test(name)) return 'image';
+  if (/\.docx?$/.test(name)) return 'doc';
+  return 'other';
+}
+
+function addFiles(fileArr) {
+  Array.from(fileArr).forEach(file => {
+    const id = 'f' + Math.random().toString(36).slice(2, 9);
+    const kind = fileKind(file);
+    const item = {
+      file, id, status: 'ready', url: null, progress: 0,
+      kind,
+      pageCount: kind === 'image' ? 1 : null,
+      printType: 'bw',
+      pageMode: 'all',
+      customPages: '',
+      copies: 1,
+    };
+    selectedFiles.push(item);
+    if (kind === 'pdf') {
+      getPdfPageCount(file)
+        .then(count => { item.pageCount = count; renderFileList(); })
+        .catch(() => { item.pageCount = null; renderFileList(); });
+    }
+  });
+  fileInput.value = '';
+  renderFileList();
+}
+
+function removeFile(id) {
+  selectedFiles = selectedFiles.filter(f => f.id !== id);
+  renderFileList();
+}
+
+async function getPdfPageCount(file) {
+  const bytes = await file.arrayBuffer();
+  const doc = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+  return doc.getPageCount();
+}
+
+// ---- parse a page-range string like "1,3,5-7" into a sorted,
+// deduplicated array of page numbers, validated against maxPages
+// if known. Returns null if the string is empty or invalid. ----
+function parsePageRanges(str, maxPages) {
+  if (!str || !str.trim()) return null;
+  const parts = str.split(',').map(s => s.trim()).filter(Boolean);
+  const pages = new Set();
+  for (const part of parts) {
+    if (/^\d+$/.test(part)) {
+      const n = parseInt(part, 10);
+      if (n < 1 || (maxPages && n > maxPages)) return null;
+      pages.add(n);
+    } else if (/^\d+\s*-\s*\d+$/.test(part)) {
+      const [a, b] = part.split('-').map(s => parseInt(s.trim(), 10));
+      if (a < 1 || b < a || (maxPages && b > maxPages)) return null;
+      for (let i = a; i <= b; i++) pages.add(i);
+    } else {
+      return null;
+    }
+  }
+  return pages.size ? Array.from(pages).sort((x, y) => x - y) : null;
+}
+
+function effectivePages(f) {
+  if (f.pageMode === 'custom') {
+    const parsed = parsePageRanges(f.customPages, f.pageCount);
+    if (parsed && parsed.length) return parsed.length;
+  }
+  return f.pageCount || 1;
+}
+
+function ratePerPage(printType) {
+  if (printType === 'color') return CONFIG.pricing.color;
+  if (printType === 'photo') return CONFIG.pricing.photoPaper;
+  return CONFIG.pricing.blackAndWhite;
+}
+
+function filePrice(f) {
+  return effectivePages(f) * ratePerPage(f.printType) * (f.copies || 1);
+}
+
+function recalcPrice() {
+  const total = selectedFiles.reduce((sum, f) => sum + filePrice(f), 0);
+  amountDisplay.textContent = '₹' + total;
+  return total;
+}
+
+function statusLabel(s) {
+  if (s === 'ready') return 'Ready';
+  if (s === 'converting') return 'Converting';
+  if (s === 'uploading') return 'Uploading';
+  if (s === 'done') return 'Uploaded';
+  if (s === 'error') return 'Failed';
+  return s;
+}
+
+function showMsg(text, type) {
+  msgArea.innerHTML = `<div class="msg ${type}">${text}</div>`;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function escapeAttr(str) { return escapeHtml(str); }
+
+function updateCardPrice(f) {
+  const el = document.getElementById('price-' + f.id);
+  if (el) el.textContent = '₹' + filePrice(f);
+}
+
+function renderFileList() {
+  fileListEl.innerHTML = '';
+
+  selectedFiles.forEach(f => {
+    const canCustom = f.kind === 'pdf' && f.pageCount && f.pageCount > 1;
+
+    let pageInfo;
+    if (f.kind === 'pdf') pageInfo = f.pageCount ? `${f.pageCount} page${f.pageCount > 1 ? 's' : ''}` : 'reading pages…';
+    else if (f.kind === 'image') pageInfo = '1 page (auto-fitted to A4)';
+    else pageInfo = 'page count unavailable';
+
+    const card = document.createElement('div');
+    card.className = 'file-card';
+    card.innerHTML = `
+      <div class="file-card-top">
+        <span class="name">${escapeHtml(f.file.name)}</span>
+        <span class="status-label">${statusLabel(f.status)}</span>
+        <button type="button" class="remove" aria-label="Remove file">✕</button>
+      </div>
+      <div class="bar"><span style="width:${f.progress}%"></span></div>
+      ${f.status === 'error' && f.errorMessage ? `<p class="file-error">${escapeHtml(f.errorMessage)}</p>` : ''}
+      <div class="file-card-grid">
+        <div>
+          <label>Print type</label>
+          <select class="ft-type">
+            <option value="bw" ${f.printType === 'bw' ? 'selected' : ''}>Black &amp; white</option>
+            <option value="color" ${f.printType === 'color' ? 'selected' : ''}>Colour</option>
+            <option value="photo" ${f.printType === 'photo' ? 'selected' : ''}>Photo paper (₹${CONFIG.pricing.photoPaper}/page)</option>
+          </select>
+        </div>
+        <div>
+          <label>Copies</label>
+          <input type="number" class="ft-copies" min="1" value="${f.copies}">
+        </div>
+      </div>
+      <div class="pages-block">
+        <label class="pages-label">Pages · ${pageInfo}</label>
+        <div class="page-mode">
+          <label><input type="radio" name="pm-${f.id}" class="ft-pmode" value="all" ${f.pageMode === 'all' ? 'checked' : ''}> All pages</label>
+          <label><input type="radio" name="pm-${f.id}" class="ft-pmode" value="custom" ${f.pageMode === 'custom' ? 'checked' : ''} ${canCustom ? '' : 'disabled'}> Custom pages</label>
+        </div>
+        ${canCustom
+          ? `<input type="text" class="ft-custom" placeholder="e.g. 1,3,5-7" value="${escapeAttr(f.customPages)}" style="display:${f.pageMode === 'custom' ? 'block' : 'none'};">`
+          : `<p class="file-note">${f.kind === 'doc' ? "Page selection isn't available for Word files — all pages will be printed." : (f.kind === 'other' ? 'Page selection is not available for this file type.' : '')}</p>`}
+      </div>
+    `;
+
+    card.querySelector('.remove').addEventListener('click', () => removeFile(f.id));
+
+    card.querySelector('.ft-type').addEventListener('change', e => {
+      f.printType = e.target.value;
+      updateCardPrice(f);
+      recalcPrice();
+    });
+
+    card.querySelector('.ft-copies').addEventListener('input', e => {
+      f.copies = Math.max(1, parseInt(e.target.value, 10) || 1);
+      updateCardPrice(f);
+      recalcPrice();
+    });
+
+    card.querySelectorAll('.ft-pmode').forEach(r => {
+      r.addEventListener('change', e => {
+        f.pageMode = e.target.value;
+        const customInput = card.querySelector('.ft-custom');
+        if (customInput) customInput.style.display = f.pageMode === 'custom' ? 'block' : 'none';
+        updateCardPrice(f);
+        recalcPrice();
+      });
+    });
+
+    const customInput = card.querySelector('.ft-custom');
+    if (customInput) {
+      customInput.addEventListener('input', e => {
+        f.customPages = e.target.value;
+        updateCardPrice(f);
+        recalcPrice();
+      });
+    }
+
+    fileListEl.appendChild(card);
+  });
+
+  addMoreRow.style.display = selectedFiles.length ? 'block' : 'none';
+  dropzoneText.textContent = selectedFiles.length ? 'Click to upload more files.' : 'Click to upload files.';
+  recalcPrice();
+}
+
+// ---- convert an image file into a single-page A4 PDF. When `grayscale`
+// is true, the image is desaturated on a canvas before being embedded,
+// so a "Black & white" image prints as true black & white. ----
+function imageFileToA4Pdf(file, grayscale) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read ' + file.name));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not decode ' + file.name));
+      img.onload = () => {
+        try {
+          const { jsPDF } = window.jspdf;
+          const isLandscape = img.width > img.height;
+          const orientation = isLandscape ? 'landscape' : 'portrait';
+          const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+          const pageW = doc.internal.pageSize.getWidth();
+          const pageH = doc.internal.pageSize.getHeight();
+          const margin = 10;
+          const availW = pageW - margin * 2;
+          const availH = pageH - margin * 2;
+
+          const imgRatio = img.width / img.height;
+          let drawW = availW;
+          let drawH = drawW / imgRatio;
+          if (drawH > availH) {
+            drawH = availH;
+            drawW = drawH * imgRatio;
+          }
+          const x = (pageW - drawW) / 2;
+          const y = (pageH - drawH) / 2;
+
+          let imageData = reader.result;
+          let format = /png/i.test(file.type) ? 'PNG' : 'JPEG';
+
+          if (grayscale) {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            const px = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = px.data;
+            for (let i = 0; i < d.length; i += 4) {
+              const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+              d[i] = d[i + 1] = d[i + 2] = gray;
+            }
+            ctx.putImageData(px, 0, 0);
+            imageData = canvas.toDataURL('image/jpeg', 0.92);
+            format = 'JPEG';
+          }
+
+          doc.addImage(imageData, format, x, y, drawW, drawH, undefined, 'FAST');
+
+          const blob = doc.output('blob');
+          const pdfName = file.name.replace(/\.[^.]+$/, '') + '.pdf';
+          const pdfFile = new File([blob], pdfName, { type: 'application/pdf' });
+          resolve(pdfFile);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ---- render one PDF.js page onto a canvas and desaturate it ----
+async function renderPageToGrayscaleCanvas(page, scale) {
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.ceil(viewport.width);
+  canvas.height = Math.ceil(viewport.height);
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport }).promise;
+
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const d = imgData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+    d[i] = d[i + 1] = d[i + 2] = gray;
+  }
+  ctx.putImageData(imgData, 0, 0);
+  return canvas;
+}
+
+// ---- rebuild a PDF with every page flattened to grayscale. Each page
+// is rasterized (via PDF.js) then re-embedded as an image, since there
+// is no way to desaturate a PDF's vector/text content in the browser
+// without rendering it first. Text stops being selectable as a result —
+// that's the trade-off for guaranteeing true black & white output. ----
+async function convertPdfToGrayscale(file) {
+  if (!window.pdfjsLib) {
+    throw new Error('Black & white conversion is unavailable right now (PDF renderer failed to load).');
+  }
+  const bytes = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const { jsPDF } = window.jspdf;
+  const scale = 2; // ~144 DPI — good balance of legibility vs. file size
+  let outDoc = null;
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const canvas = await renderPageToGrayscaleCanvas(page, scale);
+    const widthPt = canvas.width / scale;
+    const heightPt = canvas.height / scale;
+    const orientation = widthPt > heightPt ? 'landscape' : 'portrait';
+
+    if (!outDoc) {
+      outDoc = new jsPDF({ orientation, unit: 'pt', format: [widthPt, heightPt] });
+    } else {
+      outDoc.addPage([widthPt, heightPt], orientation);
+    }
+    const imgData = canvas.toDataURL('image/jpeg', 0.85);
+    outDoc.addImage(imgData, 'JPEG', 0, 0, widthPt, heightPt, undefined, 'FAST');
+  }
+
+  const blob = outDoc.output('blob');
+  return new File([blob], file.name, { type: 'application/pdf' });
+}
+
+
+// ---- rebuild a PDF containing only the chosen pages ----
+async function extractPdfPages(file, pageNumbers) {
+  const bytes = await file.arrayBuffer();
+  const src = await PDFLib.PDFDocument.load(bytes, { ignoreEncryption: true });
+  const out = await PDFLib.PDFDocument.create();
+  const indices = pageNumbers.map(n => n - 1);
+  const copied = await out.copyPages(src, indices);
+  copied.forEach(p => out.addPage(p));
+  const newBytes = await out.save();
+  return new File([newBytes], file.name, { type: 'application/pdf' });
+}
+
+// ---- upload one file to Cloudinary with progress ----
+function uploadToCloudinary(fileItem) {
+  return new Promise((resolve, reject) => {
+    const url = `https://api.cloudinary.com/v1_1/${CONFIG.cloudinary.cloudName}/auto/upload`;
+    const formData = new FormData();
+    formData.append('file', fileItem.file);
+    formData.append('upload_preset', CONFIG.cloudinary.uploadPreset);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) {
+        fileItem.progress = Math.round((e.loaded / e.total) * 100);
+        renderFileList();
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const data = JSON.parse(xhr.responseText);
+        fileItem.status = 'done';
+        fileItem.url = data.secure_url;
+        fileItem.resourceType = data.resource_type;
+        fileItem.format = data.format;
+        fileItem.publicId = data.public_id || null;
+        fileItem.deleteToken = data.delete_token || null;
+        renderFileList();
+        resolve(data);
+      } else {
+        let message = 'Upload failed for ' + fileItem.file.name;
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData && errData.error && errData.error.message) {
+            message = errData.error.message;
+          }
+        } catch (err) { /* response wasn't JSON — keep the generic message */ }
+        fileItem.status = 'error';
+        fileItem.errorMessage = message;
+        renderFileList();
+        reject(new Error(message));
+      }
+    };
+    xhr.onerror = () => {
+      fileItem.status = 'error';
+      fileItem.errorMessage = 'Network error uploading ' + fileItem.file.name;
+      renderFileList();
+      reject(new Error(fileItem.errorMessage));
+    };
+    fileItem.status = 'uploading';
+    renderFileList();
+    xhr.send(formData);
+  });
+}
+
+// ---- pickup token: a sequential 4-digit number from 1001–9999 that
+// wraps back to 1001 once it reaches the top. Stored as a single
+// counter in Firebase and advanced atomically with a transaction, so
+// concurrent submissions never hand out the same token. ----
+async function nextToken() {
+  const result = await db.ref('tokenCounter/current').transaction(current => {
+    if (!current || current >= 9999) return 1001;
+    return current + 1;
+  });
+  return String(result.snapshot.val());
+}
+
+function showTokenSuccess(token) {
+  msgArea.innerHTML = `
+    <div class="msg success">Sent for printing.</div>
+    <div class="otp-banner">
+      <div style="font-size:0.85rem;color:var(--ink-soft);">Your token number</div>
+      <div class="code">${token}</div>
+      <div class="sub"> Collect your prints from room no. 136</div>
+    </div>
+    <div style="margin-top:16px;text-align:center;">
+      <button type="button" class="btn btn-outline" id="sendAnotherBtn">Send another file</button>
+    </div>`;
+  document.getElementById('sendAnotherBtn').addEventListener('click', () => {
+    msgArea.innerHTML = '';
+    document.getElementById('request-form').style.display = '';
+  });
+}
+
+// ---- disable/relabel both action buttons while a request is in flight,
+// and restore them afterwards ----
+function setBusy(activeBtn, text) {
+  payNowBtn.disabled = true;
+  payLaterBtn.disabled = true;
+  if (activeBtn && text) activeBtn.textContent = text;
+}
+function clearBusy() {
+  payNowBtn.disabled = false;
+  payLaterBtn.disabled = false;
+  payNowBtn.textContent = 'Pay now';
+  payLaterBtn.textContent = 'Pay after delivery';
+}
+
+// ---- shared validation for both buttons: checks files are attached
+// and any custom page ranges are valid, then returns the total amount
+// (or null, having already shown an error message) ----
+function validateAndGetAmount() {
+  msgArea.innerHTML = '';
+
+  if (selectedFiles.length === 0) {
+    showMsg('Please attach at least one file.', 'error');
+    return null;
+  }
+
+  for (const f of selectedFiles) {
+    if (f.pageMode === 'custom') {
+      const parsed = parsePageRanges(f.customPages, f.pageCount);
+      if (!parsed) {
+        showMsg(`Please enter valid page numbers for "${escapeHtml(f.file.name)}" (e.g. 1,3,5-7).`, 'error');
+        return null;
+      }
+      f._resolvedPages = parsed;
+    } else {
+      f._resolvedPages = null;
+    }
+  }
+
+  const amount = recalcPrice();
+  if (amount <= 0) {
+    showMsg('Please check your print settings — the total looks incorrect.', 'error');
+    return null;
+  }
+  return amount;
+}
+
+// ---- shared file prep + upload, used by both "Pay now" and "Pay
+// after delivery" ----
+async function processFiles(activeBtn) {
+  for (const f of selectedFiles) {
+    if (f.status === 'done') continue;
+
+    const wantsGrayscale = f.printType === 'bw';
+
+    // Convert images to a single-page A4 PDF first (desaturated up
+    // front when Black & white is selected).
+    if (f.kind === 'image') {
+      f.status = 'converting';
+      renderFileList();
+      f.file = await imageFileToA4Pdf(f.file, wantsGrayscale);
+      f.kind = 'pdf';
+      f.pageCount = 1;
+      f._grayscaled = wantsGrayscale;
+    }
+
+    // Trim down to only the chosen pages, when a valid custom
+    // selection was made on a PDF (or an image-turned-PDF).
+    if (f.kind === 'pdf' && f.pageMode === 'custom' && f._resolvedPages && f._resolvedPages.length) {
+      f.status = 'converting';
+      renderFileList();
+      f.file = await extractPdfPages(f.file, f._resolvedPages);
+    }
+
+    // Flatten real PDF files to grayscale when Black & white is
+    // selected (image-origin PDFs are already grayscale from above).
+    if (f.kind === 'pdf' && wantsGrayscale && !f._grayscaled) {
+      f.status = 'converting';
+      renderFileList();
+      f.file = await convertPdfToGrayscale(f.file);
+      f._grayscaled = true;
+    }
+
+    activeBtn.textContent = 'Uploading files…';
+    await uploadToCloudinary(f);
+  }
+}
+
+// ---- "Pay now": prep & upload files, then open Razorpay checkout for
+// the estimated amount. The request is only saved once payment succeeds. ----
+payNowBtn.addEventListener('click', async () => {
+  const amount = validateAndGetAmount();
+  if (amount === null) return;
+
+  setBusy(payNowBtn, 'Preparing files…');
+  try {
+    await processFiles(payNowBtn);
+  } catch (err) {
+    showMsg(err.message || 'Something went wrong preparing your files.', 'error');
+    clearBusy();
+    return;
+  }
+
+  if (!CONFIG.paymentsEnabled || !window.Razorpay) {
+    showMsg('Online payment is unavailable right now. Please use "Pay after delivery", or reload the page.', 'error');
+    clearBusy();
+    return;
+  }
+
+  const formValues = { notes: document.getElementById('notes').value.trim() };
+  payNowBtn.textContent = 'Opening payment…';
+
+  const rzp = new Razorpay({
+    key: CONFIG.razorpay.keyId,
+    amount: Math.round(amount * 100), // paise
+    currency: 'INR',
+    name: 'NextPrint',
+    description: 'Print request',
+    handler: function (response) {
+      saveRequest(formValues, amount, {
+        paymentStatus: 'paid',
+        paymentId: response.razorpay_payment_id,
+      });
+    },
+    modal: {
+      ondismiss: function () {
+        clearBusy();
+        showMsg('Payment was not completed. You can try again, or choose "Pay after delivery".', 'error');
+      },
+    },
+  });
+
+  rzp.on('payment.failed', function (response) {
+    clearBusy();
+    const desc = response && response.error && response.error.description;
+    showMsg('Payment failed' + (desc ? ': ' + desc : '.') + ' You can try again, or choose "Pay after delivery".', 'error');
+  });
+
+  rzp.open();
+});
+
+// ---- "Pay after delivery": prep & upload files, then save the
+// request straight away with no payment step ----
+payLaterBtn.addEventListener('click', async () => {
+  const amount = validateAndGetAmount();
+  if (amount === null) return;
+
+  setBusy(payLaterBtn, 'Preparing files…');
+  try {
+    await processFiles(payLaterBtn);
+  } catch (err) {
+    showMsg(err.message || 'Something went wrong preparing your files.', 'error');
+    clearBusy();
+    return;
+  }
+
+  payLaterBtn.textContent = 'Sending request…';
+  const formValues = { notes: document.getElementById('notes').value.trim() };
+  saveRequest(formValues, amount, { paymentStatus: 'unpaid' });
+});
+
+async function saveRequest(formValues, amount, paymentInfo) {
+  let token;
+  try {
+    token = await nextToken();
+  } catch (err) {
+    showMsg('We could not generate a token (' + (err.message || err) + '). Check that your Firebase Realtime Database rules allow read/write on the "tokenCounter" path.', 'error');
+    clearBusy();
+    return;
+  }
+
+  const filesData = selectedFiles.map(f => ({
+    name: f.file.name,
+    url: f.url,
+    resourceType: f.resourceType,
+    format: f.format,
+    printType: f.printType,
+    copies: f.copies,
+    pageMode: f.pageMode,
+    pages: f.pageMode === 'custom' && f._resolvedPages ? f._resolvedPages.join(',') : 'all',
+    pageCount: effectivePages(f),
+    publicId: f.publicId || null,
+    deleteToken: f.deleteToken || null,
+  }));
+
+  const record = {
+    ...formValues,
+    amount,
+    token,
+    status: 'pending',
+    paymentStatus: paymentInfo.paymentStatus,
+    ...(paymentInfo.paymentId ? { paymentId: paymentInfo.paymentId, paymentMethod: 'razorpay' } : {}),
+    createdAt: firebase.database.ServerValue.TIMESTAMP,
+    files: filesData,
+  };
+
+  db.ref('printRequests').push(record)
+    .then(() => {
+      showTokenSuccess(token);
+      document.getElementById('request-form').reset();
+      selectedFiles = [];
+      renderFileList();
+      clearBusy();
+      document.getElementById('request-form').style.display = 'none';
+    })
+    .catch((err) => {
+      showMsg('We could not save your request (' + (err.message || err) + '). Please try again or contact us directly.', 'error');
+      clearBusy();
+    });
+}
+
+renderFileList();
+</script>
+<script src="analytics.js"></script>
+</body>
+</html>
