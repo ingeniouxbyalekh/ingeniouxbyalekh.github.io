@@ -1076,6 +1076,258 @@ trackPageView();
 trackClicks();
 
 /* ---------------------------------------------------------------
+   Device info — automatically captured for every logged-in shop
+   customer (not admin/executive accounts — see the calls at the
+   bottom of this file; admin.html/executive.html deliberately don't
+   call captureDeviceInfoOnce for their own sessions)
+   ---------------------------------------------------------------
+   Written to Firebase at UserDeviceInfo/<emailKey>/<pushId> — each
+   new login or device change gets its OWN pushed record rather than
+   overwriting a single one, so admin.html can show a customer's
+   history of logins/devices, not just their most recent. Used by
+   admin.html's "Devices" section.
+
+   Gathers everything the browser will hand over without asking the
+   visitor for any extra permission:
+     - browser + OS (parsed from the UA string)
+     - device model, via Chrome's User-Agent Client Hints
+       (navigator.userAgentData.getHighEntropyValues) when available —
+       this is the only reliable way to get a real model string like
+       "SM-S918B", since plain UA strings are being frozen/genericized
+       on modern Chrome/Android — falling back to a regex guess against
+       the raw UA string on browsers that don't expose client hints
+     - screen/viewport size, pixel ratio, color depth
+     - CPU cores, RAM (where exposed), touch support
+     - network type/speed (navigator.connection, Chrome/Android mostly)
+     - battery level/charging (a handful of browsers still expose this)
+     - public IP, ISP/org, and coarse geolocation (city/region/country)
+       from a free, no-key, CORS-enabled IP lookup — this is the only
+       piece that leaves the browser to a third party (ipwho.is)
+
+   Every field here is best-effort: a browser that doesn't expose a
+   given API (or a blocked/offline IP lookup) just omits that field
+   rather than failing the whole capture — see collectDeviceInfo().
+--------------------------------------------------------------- */
+const DEVICE_INFO_ROOT = "UserDeviceInfo"; // UserDeviceInfo/<emailKey>
+const DEVICE_INFO_SESSION_FLAG = "PlayLearn_device_info_captured";
+
+// Lightweight UA parse — no full UA-parser library is loaded, so this
+// covers the common desktop/mobile browsers with a short list of
+// token/version patterns rather than pulling in a dependency for it.
+function parseUserAgent(ua) {
+  ua = ua || "";
+  let browser = "Unknown";
+  let browserVersion = "";
+  const patterns = [
+    ["Edg", "Edge"],
+    ["OPR", "Opera"],
+    ["SamsungBrowser", "Samsung Internet"],
+    ["Firefox", "Firefox"],
+    ["FxiOS", "Firefox (iOS)"],
+    ["CriOS", "Chrome (iOS)"],
+    ["Chrome", "Chrome"],
+    ["Safari", "Safari"],
+  ];
+  for (const [token, name] of patterns) {
+    const m = ua.match(new RegExp(token + "\\/([\\d.]+)"));
+    if (m) {
+      browser = name;
+      browserVersion = m[1];
+      break;
+    }
+  }
+  let os = "Unknown";
+  let osVersion = "";
+  let m;
+  if ((m = ua.match(/Windows NT ([\d.]+)/))) {
+    os = "Windows";
+    osVersion = m[1];
+  } else if ((m = ua.match(/Mac OS X ([\d_.]+)/))) {
+    os = "macOS";
+    osVersion = m[1].replace(/_/g, ".");
+  } else if ((m = ua.match(/Android ([\d.]+)/))) {
+    os = "Android";
+    osVersion = m[1];
+  } else if ((m = ua.match(/iPad.*CPU OS ([\d_]+)/))) {
+    os = "iPadOS";
+    osVersion = m[1].replace(/_/g, ".");
+  } else if ((m = ua.match(/iPhone OS ([\d_]+)/))) {
+    os = "iOS";
+    osVersion = m[1].replace(/_/g, ".");
+  } else if (/Linux/.test(ua)) {
+    os = "Linux";
+  }
+  return { browser, browserVersion, os, osVersion };
+}
+
+// Best-effort device-model guess straight from the UA string, for
+// browsers that don't expose navigator.userAgentData (Firefox,
+// Samsung Internet, etc. on Android). Matches the bit between
+// "Android X.Y;" and "Build"/")" — e.g. "SM-S918B" out of
+// "...Android 14; SM-S918B Build/UP1A...".
+function guessDeviceModelFromUA(ua) {
+  const m = String(ua || "").match(/Android [\d.]+;\s*([^;)]+?)\s*(Build|\))/i);
+  return m ? m[1].trim() : "";
+}
+
+// Gathers as much device/browser/network info as the platform will
+// give up without prompting the visitor for any extra permission.
+// Every section is wrapped so one missing/throwing API (a browser
+// that doesn't support it, an offline IP lookup, a refused client-
+// hints call) never stops the rest of the fields from being collected.
+async function collectDeviceInfo() {
+  const ua = navigator.userAgent || "";
+  const parsedUA = parseUserAgent(ua);
+
+  const info = {
+    userAgent: ua,
+    browser: parsedUA.browser,
+    browserVersion: parsedUA.browserVersion,
+    os: parsedUA.os,
+    osVersion: parsedUA.osVersion,
+    platform: navigator.platform || "",
+    vendor: navigator.vendor || "",
+    language: navigator.language || "",
+    languages: (navigator.languages || []).join(", "),
+    timezone: (() => {
+      try {
+        return Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      } catch (_) {
+        return "";
+      }
+    })(),
+    screenWidth: window.screen ? screen.width : null,
+    screenHeight: window.screen ? screen.height : null,
+    availWidth: window.screen ? screen.availWidth : null,
+    availHeight: window.screen ? screen.availHeight : null,
+    colorDepth: window.screen ? screen.colorDepth : null,
+    pixelRatio: window.devicePixelRatio || 1,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    orientation: (screen.orientation && screen.orientation.type) || "",
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    deviceMemoryGB: navigator.deviceMemory || null,
+    maxTouchPoints: navigator.maxTouchPoints || 0,
+    isTouchDevice: (navigator.maxTouchPoints || 0) > 0,
+    cookiesEnabled: navigator.cookieEnabled,
+    deviceModel: guessDeviceModelFromUA(ua) || "",
+  };
+
+  const conn = navigator.connection || navigator.webkitConnection || navigator.mozConnection;
+  if (conn) {
+    info.networkType = conn.effectiveType || conn.type || "";
+    info.downlinkMbps = conn.downlink != null ? conn.downlink : null;
+    info.rttMs = conn.rtt != null ? conn.rtt : null;
+    info.saveData = !!conn.saveData;
+  }
+
+  // Chrome's User-Agent Client Hints — the reliable way to get a real
+  // device model string (e.g. "SM-S918B"), plus platform/arch details
+  // that the plain UA string no longer reveals on modern Chrome.
+  if (navigator.userAgentData) {
+    info.uaPlatform = navigator.userAgentData.platform || "";
+    info.uaMobile = !!navigator.userAgentData.mobile;
+    info.uaBrands = (navigator.userAgentData.brands || []).map((b) => `${b.brand} ${b.version}`).join(", ");
+    try {
+      const hi = await navigator.userAgentData.getHighEntropyValues([
+        "model",
+        "platformVersion",
+        "fullVersionList",
+        "architecture",
+        "bitness",
+      ]);
+      if (hi.model) info.deviceModel = hi.model;
+      if (hi.platformVersion) info.platformVersion = hi.platformVersion;
+      if (hi.architecture) info.architecture = hi.architecture;
+      if (hi.bitness) info.bitness = hi.bitness;
+      if (hi.fullVersionList && hi.fullVersionList.length) {
+        info.fullBrowserVersion = hi.fullVersionList.map((b) => `${b.brand} ${b.version}`).join(", ");
+      }
+    } catch (_) {
+      /* client-hints call can refuse/throw — not fatal, keep the UA-string fallback */
+    }
+  }
+
+  // Battery — removed from most desktop browsers, but still present
+  // on some Android WebViews, so it's worth trying best-effort.
+  try {
+    if (navigator.getBattery) {
+      const battery = await navigator.getBattery();
+      info.batteryLevelPct = Math.round(battery.level * 100);
+      info.batteryCharging = !!battery.charging;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+
+  // Public IP + ISP/org + coarse location, from a free, no-key,
+  // CORS-enabled lookup. The only piece of this that's a third-party
+  // network call — wrapped so a blocked/offline request just leaves
+  // these fields off rather than failing the whole capture.
+  try {
+    const res = await fetch("https://ipwho.is/");
+    if (res.ok) {
+      const geo = await res.json();
+      if (geo && geo.success !== false) {
+        info.ip = geo.ip || "";
+        info.isp = (geo.connection && (geo.connection.isp || geo.connection.org)) || "";
+        info.asn = (geo.connection && geo.connection.asn) || "";
+        info.city = geo.city || "";
+        info.region = geo.region || "";
+        info.country = geo.country || "";
+        info.countryCode = geo.country_code || "";
+        info.ipTimezone = (geo.timezone && geo.timezone.id) || "";
+        info.latitude = geo.latitude != null ? geo.latitude : null;
+        info.longitude = geo.longitude != null ? geo.longitude : null;
+      }
+    }
+  } catch (err) {
+    console.error("Could not look up IP/ISP info:", err);
+  }
+
+  return info;
+}
+
+// Collects + pushes a new device-info record for this browser to
+// UserDeviceInfo/<emailKey>/<pushId>. Each capture becomes its own
+// record (not an overwrite) so admin.html can show the customer's
+// history of logins/devices, not just the most recent one. `extra`
+// (e.g. { name, email }) is merged in so admin.html doesn't need a
+// second lookup against /users just to show whose device this is.
+// Fire-and-forget — a failure here never blocks or breaks the page
+// it happens on.
+async function saveDeviceInfo(accountType, emailKey, extra) {
+  if (!db || !emailKey) return;
+  try {
+    const info = await collectDeviceInfo();
+    info.accountType = accountType;
+    info.deviceId = getDeviceId();
+    info.lastPage = currentPageName();
+    info.updatedAt = Date.now();
+    if (extra) Object.assign(info, extra);
+    await db.ref(`${DEVICE_INFO_ROOT}/${emailKey}`).push(info);
+  } catch (err) {
+    console.error("Could not save device info:", err);
+  }
+}
+
+// Runs saveDeviceInfo at most once per browser tab session (per
+// account), so navigating between pages while signed in doesn't
+// re-run the IP lookup and re-write Firebase on every single page —
+// still "automatic" (no user action needed) without hammering either.
+function captureDeviceInfoOnce(accountType, emailKey, extra) {
+  if (!emailKey) return;
+  const flagKey = `${DEVICE_INFO_SESSION_FLAG}:${accountType}:${emailKey}`;
+  try {
+    if (sessionStorage.getItem(flagKey)) return;
+    sessionStorage.setItem(flagKey, "1");
+  } catch (_) {
+    /* sessionStorage unavailable — fall through and just capture anyway */
+  }
+  saveDeviceInfo(accountType, emailKey, extra);
+}
+
+/* ---------------------------------------------------------------
    Guard this device's claim on the shop session — see "Single-
    device login" above. Runs once on load, then keeps watching live
    for the rest of the page's lifetime.
@@ -1090,6 +1342,7 @@ trackClicks();
     syncAccountLink();
     if (typeof showToast === "function") showToast("Logged out — this account signed in on another device");
   }
+  captureDeviceInfoOnce("shop", emailKey, { name: user.name || "", email: user.email });
   verifyDeviceSession("shop", emailKey, invalidate);
   watchDeviceSession("shop", emailKey, invalidate);
 })();

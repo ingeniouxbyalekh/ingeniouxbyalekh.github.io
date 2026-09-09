@@ -227,8 +227,47 @@
       </div>
     </details>
 
+    <details class="admin-section is-collapsible">
+      <summary><h2>Devices</h2><span class="icon">+</span></summary>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="device-info-table">
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Device</th>
+              <th>OS</th>
+              <th>Browser</th>
+              <th>Screen</th>
+              <th>ISP / IP</th>
+              <th>Location</th>
+              <th>Last seen</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="device-info-table-body">
+            <tr><td colspan="9" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
   </div>
 </main>
+
+<div class="modal-overlay" id="device-info-modal">
+  <div class="modal modal-wide">
+    <div class="modal-body">
+      <h3 style="margin:0 0 4px;" id="device-info-modal-title">Device details</h3>
+      <div id="device-info-modal-summary" style="margin-bottom:20px;"></div>
+      <div id="device-info-modal-entries" style="max-height:46vh; overflow:auto;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button type="button" class="btn btn-danger-outline" id="device-info-modal-clear">Clear</button>
+        <button type="button" class="btn" id="device-info-modal-close">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -290,6 +329,7 @@
     loadExecutiveVerification();
     loadExecutives();
     loadActivityUsers();
+    loadDeviceInfo();
   }
 
   document.getElementById("admin-logout-btn").addEventListener("click", async () => {
@@ -1027,6 +1067,388 @@
     } catch (err) {
       console.error("Could not clear activity:", err);
       showToast("Couldn't clear — try again");
+      btn.disabled = false;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Devices — read-only view onto what auth.js automatically writes
+     to Firebase at UserDeviceInfo/<emailKey>/<pushId> on login:
+     device model, OS/browser, screen size, network, and an IP-based
+     ISP/location lookup. Each login or device change gets its own
+     pushed record, so this is a history per person rather than a
+     single overwritten row — the summary table below shows one row
+     per person (their most recent capture); "Details" opens the
+     full history, newest first, listing only the fields that browser
+     actually exposed.
+
+     Rows are cross-checked against /admin and /executive so this
+     reads as people, not raw accountType strings (which older
+     records may be missing entirely):
+       - anyone with an /admin/<emailKey> record is skipped — this
+         panel is for tracking visitors, not the people running it.
+       - anyone with an /executive/<emailKey> record is tagged
+         "Executive" and sorted to the top.
+       - everyone else is tagged "User" and sorted below, most
+         recently seen first (same as executives).
+  --------------------------------------------------------------- */
+  const DEVICE_INFO_FIELD_LABELS = {
+    name: "Name",
+    email: "Email",
+    deviceModel: "Device model",
+    os: "OS",
+    osVersion: "OS version",
+    platformVersion: "OS build/version (client hints)",
+    browser: "Browser",
+    browserVersion: "Browser version",
+    fullBrowserVersion: "Full browser version",
+    uaBrands: "UA brands",
+    uaPlatform: "UA platform",
+    uaMobile: "Is mobile (client hints)",
+    userAgent: "User agent",
+    platform: "navigator.platform",
+    vendor: "Vendor",
+    architecture: "CPU architecture",
+    bitness: "CPU bitness",
+    hardwareConcurrency: "CPU cores",
+    deviceMemoryGB: "Device memory (GB)",
+    screenWidth: "Screen width",
+    screenHeight: "Screen height",
+    availWidth: "Available width",
+    availHeight: "Available height",
+    colorDepth: "Color depth",
+    pixelRatio: "Pixel ratio",
+    viewportWidth: "Viewport width",
+    viewportHeight: "Viewport height",
+    orientation: "Orientation",
+    maxTouchPoints: "Max touch points",
+    isTouchDevice: "Touch device",
+    cookiesEnabled: "Cookies enabled",
+    language: "Language",
+    languages: "Languages",
+    timezone: "Timezone (browser)",
+    ipTimezone: "Timezone (IP)",
+    networkType: "Network type",
+    downlinkMbps: "Downlink (Mbps)",
+    rttMs: "RTT (ms)",
+    saveData: "Data saver on",
+    batteryLevelPct: "Battery level (%)",
+    batteryCharging: "Battery charging",
+    ip: "Public IP",
+    isp: "ISP / org",
+    asn: "ASN",
+    city: "City",
+    region: "Region",
+    country: "Country",
+    countryCode: "Country code",
+    latitude: "Latitude",
+    longitude: "Longitude",
+    deviceId: "Device ID (this site)",
+    lastPage: "Last page visited",
+    updatedAt: "Captured at",
+  };
+  // Preferred order for the details view — anything not listed here
+  // still shows up, appended after these in whatever order Firebase
+  // gave it. accountType is deliberately left out: the Executive/User
+  // tag on each row already covers that, so it's not worth a line in
+  // the details view too.
+  const DEVICE_INFO_FIELD_ORDER = Object.keys(DEVICE_INFO_FIELD_LABELS);
+
+  function deviceInfoFormatValue(key, value) {
+    if (value === null || value === undefined || value === "") return "—";
+    if (key === "updatedAt") return new Date(value).toLocaleString();
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    return escapeHTML(String(value));
+  }
+
+  // emailKey -> { pushId: record, ... } — populated with every
+  // captured record except those belonging to an /admin account (see
+  // loadDeviceInfo's filter below).
+  let deviceInfoByUser = {};
+
+  function latestDeviceInfoEntry(entries) {
+    const ids = Object.keys(entries).sort((a, b) => (entries[b].updatedAt || 0) - (entries[a].updatedAt || 0));
+    return entries[ids[0]];
+  }
+
+  // emailKey -> "executive" | "user" — set by loadDeviceInfo, read by
+  // deviceInfoRowHTML (for the tag) and the sort in loadDeviceInfo
+  // (executives first, then users, most-recent-first within each).
+  let deviceInfoTypeByUser = {};
+
+  function deviceInfoRowHTML(emailKey, entries) {
+    const d = latestDeviceInfoEntry(entries);
+    const count = Object.keys(entries).length;
+    const isExecutive = deviceInfoTypeByUser[emailKey] === "executive";
+    const tag = isExecutive
+      ? `<span class="device-type-tag is-executive">Executive</span>`
+      : `<span class="device-type-tag is-user">User</span>`;
+    const label = escapeHTML(d.name || d.email || emailKey);
+    const device = escapeHTML(d.deviceModel || "—");
+    const os = escapeHTML([d.os, d.osVersion].filter(Boolean).join(" "));
+    const browser = escapeHTML([d.browser, d.browserVersion].filter(Boolean).join(" "));
+    const screenRes = d.screenWidth && d.screenHeight ? `${d.screenWidth}×${d.screenHeight}` : "—";
+    const isp = escapeHTML([d.isp, d.ip].filter(Boolean).join(" / ") || "—");
+    const location = escapeHTML([d.city, d.region, d.country].filter(Boolean).join(", ") || "—");
+    const lastSeen = d.updatedAt ? new Date(d.updatedAt).toLocaleString() : "—";
+    return `
+      <tr data-key="${emailKey}">
+        <td>${tag} ${label}<br><span class="admin-mono" style="font-size:11px;">${count} record${count === 1 ? "" : "s"}</span></td>
+        <td>${device}</td>
+        <td>${os || "—"}</td>
+        <td>${browser || "—"}</td>
+        <td>${screenRes}</td>
+        <td>${isp}</td>
+        <td>${location}</td>
+        <td>${lastSeen}</td>
+        <td><button type="button" class="btn btn-small device-info-details-btn">Details</button></td>
+      </tr>`;
+  }
+
+  async function loadDeviceInfo() {
+    const tbody = document.getElementById("device-info-table-body");
+    tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Loading…</td></tr>`;
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+    try {
+      const [deviceSnap, adminSnap, executiveSnap] = await Promise.all([
+        db.ref("UserDeviceInfo").once("value"),
+        db.ref("admin").once("value"),
+        db.ref("executive").once("value"),
+      ]);
+      if (!deviceSnap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">No device info captured yet.</td></tr>`;
+        return;
+      }
+      // admin accounts are never shown here at all (they're the people
+      // running this panel, not a device to track); executive accounts
+      // are shown but tagged "Executive" and listed ahead of ordinary
+      // shop customers, tagged "User".
+      const adminKeys = new Set(adminSnap.exists() ? Object.keys(adminSnap.val()) : []);
+      const executiveKeys = new Set(executiveSnap.exists() ? Object.keys(executiveSnap.val()) : []);
+
+      const raw = deviceSnap.val();
+      deviceInfoByUser = {};
+      deviceInfoTypeByUser = {};
+      Object.keys(raw).forEach((emailKey) => {
+        if (adminKeys.has(emailKey)) return; // admin — excluded entirely
+        const entries = raw[emailKey] || {};
+        if (!Object.keys(entries).length) return;
+        deviceInfoByUser[emailKey] = entries;
+        deviceInfoTypeByUser[emailKey] = executiveKeys.has(emailKey) ? "executive" : "user";
+      });
+
+      const userKeys = Object.keys(deviceInfoByUser);
+      if (!userKeys.length) {
+        tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">No device info captured yet.</td></tr>`;
+        return;
+      }
+      // Executives first, then users; most-recently-seen first within
+      // each group.
+      userKeys.sort((a, b) => {
+        const aExec = deviceInfoTypeByUser[a] === "executive" ? 0 : 1;
+        const bExec = deviceInfoTypeByUser[b] === "executive" ? 0 : 1;
+        if (aExec !== bExec) return aExec - bExec;
+        return (latestDeviceInfoEntry(deviceInfoByUser[b]).updatedAt || 0) - (latestDeviceInfoEntry(deviceInfoByUser[a]).updatedAt || 0);
+      });
+      tbody.innerHTML = userKeys.map((key) => deviceInfoRowHTML(key, deviceInfoByUser[key])).join("");
+    } catch (err) {
+      console.error("Could not load device info:", err);
+      tbody.innerHTML = `<tr><td colspan="9" class="admin-empty">Couldn't load device info — try refreshing.</td></tr>`;
+    }
+  }
+
+  // A field only counts as "available" if it actually has a value —
+  // undefined/null/empty-string are all treated as not captured, so
+  // the details view only ever lists what that browser/network really
+  // exposed (no "—" filler rows).
+  function deviceInfoHasValue(value) {
+    return value !== undefined && value !== null && value !== "";
+  }
+
+  function deviceInfoEntryCardHTML(d, isLatest) {
+    const when = d.updatedAt ? new Date(d.updatedAt).toLocaleString() : "—";
+    // A handful of very old records apparently had a text field land
+    // in Firebase one character per numeric key ("0":"G", "1":"o",
+    // "2":"o"...) instead of as a single string — not a real field,
+    // so numeric keys are dropped here rather than rendered as a wall
+    // of single-letter rows.
+    const remainingKeys = Object.keys(d).filter((k) => !DEVICE_INFO_FIELD_ORDER.includes(k) && k !== "accountType" && !/^\d+$/.test(k));
+    const orderedKeys = DEVICE_INFO_FIELD_ORDER.filter((k) => deviceInfoHasValue(d[k]))
+      .concat(remainingKeys.filter((k) => deviceInfoHasValue(d[k])));
+    const rows = orderedKeys
+      .map((k) => `<tr><td style="white-space:nowrap; color:var(--text-dim); width:220px;">${escapeHTML(DEVICE_INFO_FIELD_LABELS[k] || k)}</td><td class="admin-mono" style="word-break:break-all;">${deviceInfoFormatValue(k, d[k])}</td></tr>`)
+      .join("");
+    return `
+      <div class="device-info-entry" style="border:1px solid var(--border); border-radius:10px; margin-bottom:16px; overflow:hidden;">
+        <div style="padding:10px 14px; border-bottom:1px solid var(--border); font-size:12.5px; color:var(--text-dim);">
+          ${escapeHTML(when)}${isLatest ? " — most recent" : ""}
+        </div>
+        <table class="admin-table" style="margin:0; width:100%;"><tbody>${rows || `<tr><td class="admin-empty">No details were captured for this record.</td></tr>`}</tbody></table>
+      </div>`;
+  }
+
+  /* ---------------------------------------------------------------
+     Device-name prediction — when the browser never handed over a
+     real model string (deviceModel empty: most desktop browsers and
+     any iOS browser, since Chrome's UA-Client-Hints "model" value
+     and Android's UA string are the only two places a real model
+     ever comes from), guess a general category instead of leaving
+     the tile blank. This is a best-effort label, not a fact, so it's
+     always shown with an "estimated" note — never presented as if it
+     were captured data.
+
+     Signals used, in order of how much they tell us:
+       - os (from the UA string — reliable): iPadOS/iOS name the
+         product line outright; Android/Windows/macOS/Linux only say
+         the OS family, not the model.
+       - uaMobile (Chrome's UA-Client-Hints "mobile" flag — reliable
+         where present): true on phones, false on tablets/desktops,
+         so it splits Android into phone vs tablet.
+       - battery reading (soft signal only): a real desktop's Battery
+         API always reports 100% and "charging" with nothing changing,
+         while a laptop reports a genuine, moving level — so a
+         present reading that's under 100% or not charging leans
+         "laptop", but this is a guess, not a certainty.
+  --------------------------------------------------------------- */
+  function predictDeviceLabel(d) {
+    if (d.deviceModel) return { label: d.deviceModel, estimated: false };
+
+    const os = d.os || "";
+    if (os === "iPadOS") return { label: "iPad", estimated: true };
+    if (os === "iOS") return { label: "iPhone", estimated: true };
+    if (os === "Android") {
+      if (d.uaMobile === false) return { label: "Android tablet", estimated: true };
+      if (d.uaMobile === true) return { label: "Android phone", estimated: true };
+      return { label: "Android phone or tablet", estimated: true };
+    }
+
+    const battery = deviceInfoHasValue(d.batteryLevelPct) ? (d.batteryLevelPct < 100 || d.batteryCharging === false) : null;
+    const pick = (portable, fixed, either) => (battery === true ? portable : battery === false ? fixed : either);
+    if (os === "macOS") return { label: pick("MacBook", "iMac / Mac desktop", "Mac (laptop or desktop)"), estimated: true };
+    if (os === "Windows") return { label: pick("Windows laptop", "Windows desktop PC", "Windows PC"), estimated: true };
+    if (os === "Linux") return { label: pick("Linux laptop", "Linux desktop", "Linux computer"), estimated: true };
+
+    return { label: "", estimated: true };
+  }
+
+  /* ---------------------------------------------------------------
+     Visual summary — a small icon-labeled "at a glance" panel built
+     from the most recent record, shown above the full per-login
+     history. Same rule as the history rows: a tile only renders when
+     that field actually has something to show.
+  --------------------------------------------------------------- */
+  const DEVICE_ANALYSIS_ICONS = {
+    device: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>`,
+    browser: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/></svg>`,
+    screen: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>`,
+    network: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a11 11 0 0 1 14 0"/><path d="M8.2 16a6.5 6.5 0 0 1 7.6 0"/><line x1="12" y1="19.4" x2="12" y2="19.41"/></svg>`,
+    location: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/></svg>`,
+    battery: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="7" width="17" height="10" rx="2"/><line x1="21.5" y1="10.3" x2="21.5" y2="13.7"/></svg>`,
+    clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 13.8"/></svg>`,
+    ip: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="14.5" x2="10" y2="14.5"/></svg>`,
+    model: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4L13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1" fill="currentColor" stroke="none"/></svg>`,
+  };
+
+  function deviceInfoAnalysisTile(icon, label, value, extraHTML) {
+    if (!value) return "";
+    return `
+      <div class="device-analysis-tile">
+        <span class="device-analysis-icon">${icon}</span>
+        <div class="device-analysis-text">
+          <div class="device-analysis-label">${label}</div>
+          <div class="device-analysis-value">${value}</div>
+          ${extraHTML || ""}
+        </div>
+      </div>`;
+  }
+
+  function deviceInfoSummaryHTML(d) {
+    const osLine = escapeHTML([d.os, d.osVersion].filter(Boolean).join(" "));
+    const prediction = predictDeviceLabel(d);
+    const deviceNamePart = prediction.label
+      ? escapeHTML(prediction.label) + (prediction.estimated ? ` <span class="device-analysis-note">estimated</span>` : "")
+      : "";
+    const deviceLine = [deviceNamePart, osLine].filter(Boolean).join(" · ");
+    const browserLine = escapeHTML([d.browser, d.browserVersion].filter(Boolean).join(" "));
+    const screenLine = d.screenWidth && d.screenHeight ? escapeHTML(`${d.screenWidth}×${d.screenHeight}${d.pixelRatio ? ` @${d.pixelRatio}x` : ""}`) : "";
+    const networkLine = escapeHTML([d.isp, d.networkType].filter(Boolean).join(" · "));
+    const locationLine = escapeHTML([d.city, d.region, d.country].filter(Boolean).join(", "));
+    const mapLink = deviceInfoHasValue(d.latitude) && deviceInfoHasValue(d.longitude)
+      ? `<a href="https://www.google.com/maps?q=${encodeURIComponent(d.latitude)},${encodeURIComponent(d.longitude)}" target="_blank" rel="noopener" class="device-analysis-link">View on map</a>`
+      : "";
+    const lastSeenLine = d.updatedAt ? escapeHTML(new Date(d.updatedAt).toLocaleString()) : "";
+    const batteryPct = deviceInfoHasValue(d.batteryLevelPct) ? Number(d.batteryLevelPct) : null;
+    const batteryLine = batteryPct !== null ? escapeHTML(`${batteryPct}%${d.batteryCharging ? " · charging" : ""}`) : "";
+    const ipLine = escapeHTML(d.ip || "");
+    const ipExtra = d.asn ? `<div class="device-analysis-note" style="margin-top:2px;">ASN ${escapeHTML(String(d.asn))}</div>` : "";
+    // Model-name tile — deliberately separate from the Device tile's
+    // laptop/desktop/phone category guess above: this one only ever
+    // shows a real captured model string (e.g. "SM-S918B"), never a
+    // guess, because browsers don't expose actual hardware model
+    // names for desktop OSes — anything invented there would just be
+    // a plausible-looking wrong answer.
+    const modelValueHTML = d.deviceModel
+      ? escapeHTML(d.deviceModel)
+      : `<span class="device-analysis-note">Not found</span>`;
+
+    const tiles = [
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.device, "Device", deviceLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.browser, "Browser", browserLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.screen, "Screen", screenLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.network, "Network", networkLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.ip, "IP address", ipLine, ipExtra),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.location, "Location", locationLine, mapLink),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.battery, "Battery", batteryLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.clock, "Last seen", lastSeenLine),
+      deviceInfoAnalysisTile(DEVICE_ANALYSIS_ICONS.model, "Device model", modelValueHTML),
+    ].join("");
+
+    return tiles ? `<div class="device-analysis-grid">${tiles}</div>` : `<p class="sub" style="margin:0;">No summary details were captured for this record.</p>`;
+  }
+
+  let deviceInfoModalEmailKey = null;
+
+  function openDeviceInfoModal(emailKey) {
+    const entries = deviceInfoByUser[emailKey];
+    if (!entries) return;
+    deviceInfoModalEmailKey = emailKey;
+    const ids = Object.keys(entries).sort((a, b) => (entries[b].updatedAt || 0) - (entries[a].updatedAt || 0));
+    const latest = entries[ids[0]];
+    const typeLabel = deviceInfoTypeByUser[emailKey] === "executive" ? "Executive" : "User";
+    document.getElementById("device-info-modal-title").textContent = `Device history — ${latest.name || latest.email || emailKey} · ${typeLabel} (${ids.length} record${ids.length === 1 ? "" : "s"})`;
+    document.getElementById("device-info-modal-summary").innerHTML = deviceInfoSummaryHTML(latest);
+    document.getElementById("device-info-modal-entries").innerHTML = ids.map((id, i) => deviceInfoEntryCardHTML(entries[id], i === 0)).join("");
+    document.getElementById("device-info-modal").classList.add("is-open");
+  }
+
+  document.getElementById("device-info-table-body").addEventListener("click", (e) => {
+    const btn = e.target.closest(".device-info-details-btn");
+    if (!btn) return;
+    const emailKey = btn.closest("tr[data-key]").dataset.key;
+    openDeviceInfoModal(emailKey);
+  });
+
+  document.getElementById("device-info-modal-close").addEventListener("click", () => {
+    document.getElementById("device-info-modal").classList.remove("is-open");
+  });
+
+  document.getElementById("device-info-modal-clear").addEventListener("click", async () => {
+    if (!deviceInfoModalEmailKey || !db) return;
+    if (!confirm("Clear this customer's entire device history? This can't be undone.")) return;
+    const btn = document.getElementById("device-info-modal-clear");
+    btn.disabled = true;
+    try {
+      await db.ref("UserDeviceInfo/" + deviceInfoModalEmailKey).remove();
+      showToast("Device history cleared");
+      document.getElementById("device-info-modal").classList.remove("is-open");
+      loadDeviceInfo();
+    } catch (err) {
+      console.error("Could not clear device history:", err);
+      showToast("Couldn't clear — try again");
+    } finally {
       btn.disabled = false;
     }
   });
