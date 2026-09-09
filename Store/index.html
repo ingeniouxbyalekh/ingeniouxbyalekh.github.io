@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ingenioux Store - Research Papers, Books & Guides</title>
+
+<!-- SEO Metadata (not visible in title/tab) -->
+<meta name="description" content="Buy research papers, books, guides, and templates from INGENIOUX — independent AI/ML and cloud computing research by Alekh Chandra Sahoo, priced in INR, delivered by email.">
+<meta name="keywords" content="INGENIOUX shop, Ingenioux store, buy research papers online, AI ML research papers India, MTech guides, cloud computing guides, Alekh Chandra Sahoo, Alekha Chandra Sahoo, research templates INR, INGENIOUX books">
+<meta name="author" content="Alekh Chandra Sahoo">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://ingenioux.in/shop/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Shop — INGENIOUX | Research Papers, Books & Guides">
+<meta property="og:description" content="Papers, books, guides and starter kits from INGENIOUX — the same independent research work you'd find on the main site, in a form you can keep, print, or build on.">
+<meta property="og:site_name" content="INGENIOUX">
+<meta property="og:url" content="https://ingenioux.in/shop/">
+<meta property="og:image" content="https://www.ingenioux.in/Storage/Images/ingenioux_round.png">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shop — INGENIOUX | Research Papers, Books & Guides">
+<meta name="twitter:description" content="Papers, books, guides and starter kits from INGENIOUX — the same independent research work you'd find on the main site, in a form you can keep, print, or build on.">
+<meta name="twitter:image" content="https://www.ingenioux.in/Storage/Images/ingenioux_round.png">
+
+<!-- Structured Data: ties the shop back to INGENIOUX and its founder in Google's Knowledge Graph -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "INGENIOUX Shop",
+  "url": "https://ingenioux.in/shop/",
+  "description": "Research papers, books, guides, and templates from INGENIOUX, priced in INR.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "INGENIOUX",
+    "url": "https://ingenioux.in/",
+    "logo": "https://www.ingenioux.in/Storage/Images/ingenioux_round.png",
+    "founder": {
+      "@type": "Person",
+      "name": "Alekh Chandra Sahoo",
+      "alternateName": "Alekha Chandra Sahoo",
+      "sameAs": [
+        "https://www.linkedin.com/in/ingenioux/",
+        "https://github.com/ingenioux",
+        "https://twitter.com/ingenioux_",
+        "https://www.instagram.com/ingenioux.io/"
+      ]
+    }
+  }
+}
+</script>
+
+<link rel="icon" type="image/png" href="https://www.ingenioux.in/Storage/Images/ingenioux_round.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">INGENIOUX</span>
+      <span class="brand-sub">/ Store</span>
+    </a>
+    <a class="main-site-link" href="https://www.ingenioux.in/" target="_blank" rel="noopener">↗ main site</a>
+    <div class="header-actions">
+      <a class="account-link" id="account-link" href="login.html">log in</a>
+      <button class="cart-button" id="open-cart-btn" type="button" aria-haspopup="dialog" aria-controls="cart-drawer">
+        cart
+        <span class="cart-count" id="cart-count-badge" style="display:none">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav class="category-bar" aria-label="Filter by category">
+  <div class="wrap category-bar-wrap">
+    <div class="chip-row" id="category-bar"></div>
+  </div>
+</nav>
+
+<main class="catalog">
+  <div class="wrap">
+    <div class="catalog-heading">
+      <h2>Catalog</h2>
+      <span id="catalog-count"></span>
+    </div>
+    <div class="product-grid" id="catalog-grid"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 INGENIOUX by Alekh. Digital goods, delivered by email.</p>
+    <div class="footer-links">
+      <a href="mailto:business.ingenioux@gmail.com">Contact</a>
+      <a href="executive.html">Executive Login</a>
+      <a href="admin.html">Admin Login</a>
+    </div>
+  </div>
+</footer>
+
+<!-- Cart drawer -->
+<div class="overlay" id="cart-overlay"></div>
+<aside class="drawer" id="cart-drawer" role="dialog" aria-label="Shopping cart" aria-hidden="true">
+  <div class="drawer-header">
+    <span class="terminal-dot"></span>
+    <span class="terminal-dot"></span>
+    <span class="terminal-dot"></span>
+    <span class="terminal-title">Your cart</span>
+    <button class="drawer-close" id="close-cart-btn" aria-label="Close cart">✕</button>
+  </div>
+  <div class="drawer-log">
+    <div id="cart-empty" class="empty-state" style="display:none">→ cart is empty. add something from the catalog.</div>
+    <div class="cart-items" id="cart-items"></div>
+  </div>
+  <div class="drawer-footer">
+    <div class="drawer-summary-row total">
+      <span>Subtotal</span>
+      <span class="price" id="cart-subtotal">0</span>
+    </div>
+    <button class="btn btn-primary btn-block" id="checkout-btn" disabled>Checkout</button>
+  </div>
+</aside>
+
+<!-- Checkout modal -->
+<div class="modal-overlay" id="checkout-overlay">
+  <div class="modal" role="dialog" aria-label="Checkout">
+    <div class="drawer-header">
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-title">Checkout</span>
+      <button class="drawer-close" id="close-checkout-btn" aria-label="Close checkout">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div id="checkout-step-form">
+        <div class="order-summary" id="checkout-summary"></div>
+        <div class="coupon-block">
+          <div class="coupon-row">
+            <input type="text" id="coupon-input" placeholder="Coupon code" autocomplete="off" />
+            <button type="button" class="btn" id="coupon-apply-btn">Apply</button>
+          </div>
+          <p class="coupon-feedback" id="coupon-feedback"></p>
+        </div>
+        <form id="checkout-form">
+          <div class="field">
+            <label for="checkout-name">Name</label>
+            <input id="checkout-name" type="text" required autocomplete="name" readonly />
+          </div>
+          <div class="field">
+            <label for="checkout-phone">Phone number</label>
+            <input id="checkout-phone" type="tel" required autocomplete="tel" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" placeholder="10-digit mobile number" readonly />
+          </div>
+          <div class="field">
+            <label for="checkout-email">Email (for delivery)</label>
+            <input id="checkout-email" type="email" required autocomplete="email" readonly />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="checkout-submit-btn">Pay with Razorpay</button>
+          <p class="checkout-note">
+            Download the invoice after payment. For any help contact business.ingenioux@gmail.com
+          </p>
+        </form>
+      </div>
+
+      <div id="checkout-step-success" style="display:none">
+        <div class="checkout-success">
+          <div class="ok-mark">✓</div>
+          <h3>Order confirmed</h3>
+          <p>Go to your profile page to download your purchased item.</p>
+        </div>
+        <button type="button" class="btn btn-block" id="download-receipt-btn">Download receipt (PDF)</button>
+        <button type="button" class="btn btn-primary btn-block" id="checkout-done-btn">Done</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Stock limit popup — shown when a shopper hits the available stock
+     on a physical product, either via a card/cart "+" or the "Buy
+     now" quantity. See stockFor()/showStockLimitPopup() in cart.js. -->
+<div class="modal-overlay" id="stock-modal-overlay">
+  <div class="modal stock-modal">
+    <div class="drawer-header">
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-dot"></span>
+      <span class="terminal-title">Limited stock</span>
+      <button class="drawer-close" id="close-stock-modal-btn" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p class="stock-modal-message" id="stock-modal-message">Only a few left.</p>
+      <button type="button" class="btn btn-primary btn-block" id="stock-modal-ok-btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="cart.js"></script>
+<script src="catalog.js"></script>
+</body>
+</html>

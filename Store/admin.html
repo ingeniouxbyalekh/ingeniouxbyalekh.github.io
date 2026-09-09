@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — INGENIOUX Shop</title>
+<meta name="robots" content="noindex, nofollow" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">INGENIOUX</span>
+      <span class="brand-sub">/ admin</span>
+    </a>
+    <div class="header-actions">
+      <a class="account-link" href="index.html">↤ back to shop</a>
+    </div>
+  </div>
+</header>
+
+<!-- Admin sign in / sign up — same pattern as the shop's own
+     login.html: an "admin" record in Firebase, password checked
+     client-side. See the comment in the script block below before
+     treating this as real access control. -->
+<main class="auth-main" id="admin-auth">
+  <div class="auth-grid">
+    <div class="auth-form-side">
+      <div class="auth-tabs" role="tablist">
+        <button class="auth-tab" id="admin-tab-login" role="tab" aria-selected="true" type="button">Log in</button>
+        <button class="auth-tab" id="admin-tab-signup" role="tab" aria-selected="false" type="button">Sign up</button>
+      </div>
+
+      <div class="auth-form is-active" id="admin-form-login">
+        <h1>Admin sign in</h1>
+        <p class="sub">Log in with an admin account to continue.</p>
+        <form id="admin-login-form">
+          <div class="field">
+            <label for="admin-login-email">Email</label>
+            <input id="admin-login-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="admin-login-password">Password</label>
+            <input id="admin-login-password" type="password" required autocomplete="current-password" minlength="4" placeholder="••••••••" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </form>
+        <p class="auth-form-foot" id="admin-signup-foot">No admin account yet? <button type="button" id="admin-go-signup">Create one</button></p>
+      </div>
+
+      <div class="auth-form" id="admin-form-signup">
+        <h1>Create admin account</h1>
+        <p class="sub">You'll need to verify your email before you can log in.</p>
+        <form id="admin-signup-form">
+          <div class="field">
+            <label for="admin-signup-name">Name</label>
+            <input id="admin-signup-name" type="text" required autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="admin-signup-email">Email</label>
+            <input id="admin-signup-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <label for="admin-signup-password">Password</label>
+            <input id="admin-signup-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </form>
+        <p class="auth-form-foot">Already have one? <button type="button" id="admin-go-login">Log in</button></p>
+      </div>
+
+      <!-- Covers both log in AND the one-time admin sign-up: Google
+           already verifies the email address, so a first-time Google
+           sign-in here can create the (single) admin account directly,
+           with no separate verification-email step needed. Placed
+           below the traditional forms, shared by both tabs above. -->
+      <div class="auth-divider" id="admin-google-divider">or</div>
+      <div class="auth-google-row" id="admin-google-row">
+        <button type="button" class="btn btn-google btn-block" id="admin-google-auth-btn">
+          <svg viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.68-3.87 2.68-6.62z"/>
+            <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18z"/>
+            <path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.95A9 9 0 0 0 0 9c0 1.45.35 2.83.95 4.03l3-2.33z"/>
+            <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58z"/>
+          </svg>
+          Continue with Google
+        </button>
+      </div>
+
+      <!-- Shown only after a brand-new Google sign-in creates the
+           (single) admin record — Google gives us name + email but no
+           password, so collect one here for the traditional RTDB
+           fallback before finishing setup. -->
+      <div class="auth-form" id="admin-form-google-complete">
+        <h1>Almost there</h1>
+        <p class="sub">One more thing — create a password so you can log in without Google too.</p>
+        <form id="admin-google-complete-form">
+          <div class="field">
+            <label for="admin-google-complete-password">Create password</label>
+            <input id="admin-google-complete-password" type="password" required autocomplete="new-password" minlength="4" placeholder="At least 4 characters" />
+          </div>
+          <div class="field">
+            <label for="admin-google-complete-confirm-password">Confirm password</label>
+            <input id="admin-google-complete-confirm-password" type="password" required autocomplete="new-password" minlength="4" placeholder="Re-enter password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block">Continue</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Admin body -->
+<main class="admin-main" id="admin-body" style="display:none">
+  <div class="wrap">
+
+    <div class="admin-topbar">
+      <span class="admin-welcome" id="admin-welcome"></span>
+      <button type="button" class="account-link" id="admin-logout-btn">log out</button>
+    </div>
+
+    <section class="admin-section">
+      <h2>Sales</h2>
+      
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <span class="admin-stat-label">Items sold</span>
+          <span class="admin-stat-value" id="stat-items">—</span>
+        </div>
+        <div class="admin-stat">
+          <span class="admin-stat-label">Total revenue</span>
+          <span class="admin-stat-value" id="stat-revenue">—</span>
+        </div>
+        <div class="admin-stat">
+          <span class="admin-stat-label">Orders</span>
+          <span class="admin-stat-value" id="stat-orders">—</span>
+        </div>
+      </div>
+
+      <div class="admin-date-filter">
+        <label for="sales-date-input">Day</label>
+        <input type="date" id="sales-date-input" />
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="sales-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Orders</th>
+              <th>Items sold</th>
+              <th>Revenue</th>
+            </tr>
+          </thead>
+          <tbody id="sales-table-body">
+            <tr><td colspan="4" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <details class="admin-section is-collapsible" open>
+      <summary><h2>Executive Verification</h2><span class="icon">+</span></summary>
+      
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="exec-verify-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="exec-verify-table-body">
+            <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <details class="admin-section is-collapsible" open>
+      <summary><h2>Executives</h2><span class="icon">+</span></summary>
+      
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="exec-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="exec-table-body">
+            <tr><td colspan="5" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script src="products.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  /* ---------------------------------------------------------------
+     Admin session
+     ---------------------------------------------------------------
+     Mirrors the shop's own customer accounts (see auth.js): an
+     "admin" record — { name, email, password, createdAt } — lives in
+     Firebase at /admin/<emailKey>, and the password is checked
+     client-side on login. There's still no backend, so this is
+     exactly as strong as the shop's own login and no stronger:
+     anyone who can read the Firebase config (already public in
+     auth.js) can read /admin directly. Before this is trusted with
+     anything real, lock down Firebase's Realtime Database rules —
+     e.g. restrict writes to /products and /admin, and restrict reads of
+     the full /purchases tree — since right now nothing at the rules
+     level distinguishes an admin from any other visitor; this login
+     only gates the page, not the database.
+  --------------------------------------------------------------- */
+  const ADMIN_SESSION_KEY = "ingenioux_admin_user_v1";
+
+  const authGateEl = document.getElementById("admin-auth");
+  const bodyEl = document.getElementById("admin-body");
+  const welcomeEl = document.getElementById("admin-welcome");
+
+  function getAdminSession() {
+    try {
+      const raw = localStorage.getItem(ADMIN_SESSION_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (err) {
+      console.error("Could not read admin session:", err);
+      return null;
+    }
+  }
+
+  function setAdminSession(admin) {
+    try {
+      localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(admin));
+    } catch (err) {
+      console.error("Could not save admin session:", err);
+    }
+  }
+
+  function clearAdminSession() {
+    localStorage.removeItem(ADMIN_SESSION_KEY);
+  }
+
+  function unlockAdmin(admin) {
+    authGateEl.style.display = "none";
+    bodyEl.style.display = "block";
+    welcomeEl.textContent = admin && admin.name ? `signed in as ${admin.name}` : "";
+    loadSales();
+    loadExecutiveVerification();
+    loadExecutives();
+  }
+
+  document.getElementById("admin-logout-btn").addEventListener("click", () => {
+    clearAdminSession();
+    window.location.reload();
+  });
+
+  /* tabs */
+  const adminTabLogin = document.getElementById("admin-tab-login");
+  const adminTabSignup = document.getElementById("admin-tab-signup");
+  const adminFormLoginEl = document.getElementById("admin-form-login");
+  const adminFormSignupEl = document.getElementById("admin-form-signup");
+  const adminSignupFootEl = document.getElementById("admin-signup-foot");
+
+  function showAdminTab(which) {
+    const isLogin = which === "login";
+    adminFormLoginEl.classList.toggle("is-active", isLogin);
+    adminFormSignupEl.classList.toggle("is-active", !isLogin);
+    adminTabLogin.setAttribute("aria-selected", String(isLogin));
+    adminTabSignup.setAttribute("aria-selected", String(!isLogin));
+  }
+  adminTabLogin.addEventListener("click", () => showAdminTab("login"));
+  adminTabSignup.addEventListener("click", () => showAdminTab("signup"));
+  document.getElementById("admin-go-signup").addEventListener("click", () => showAdminTab("signup"));
+  document.getElementById("admin-go-login").addEventListener("click", () => showAdminTab("login"));
+
+  // Only one admin account is allowed, ever. If /admin already has a
+  // record, hide every way to reach the signup form so the login tab
+  // is the only option — this is a UI convenience, not the actual
+  // guard (that's the re-check inside the signup handler below, since
+  // hiding a button doesn't stop a direct write).
+  async function anyAdminExists() {
+    if (!db) return false;
+    try {
+      const snap = await db.ref("admin").once("value");
+      return snap.exists() && Object.keys(snap.val()).length > 0;
+    } catch (err) {
+      console.error("Could not check for an existing admin:", err);
+      return false;
+    }
+  }
+
+  async function lockOutSignupIfAdminExists() {
+    if (await anyAdminExists()) {
+      adminTabSignup.style.display = "none";
+      adminSignupFootEl.style.display = "none";
+      showAdminTab("login");
+    }
+  }
+
+  const existingAdminSession = getAdminSession();
+  if (existingAdminSession && existingAdminSession.email) {
+    unlockAdmin(existingAdminSession);
+  } else {
+    lockOutSignupIfAdminExists();
+  }
+
+  /* login / signup */
+  const adminLoginForm = document.getElementById("admin-login-form");
+  const adminSignupForm = document.getElementById("admin-signup-form");
+  const adminLoginBtn = adminLoginForm.querySelector("button[type=submit]");
+  const adminSignupBtn = adminSignupForm.querySelector("button[type=submit]");
+
+  // Admin login now requires a verified email address (see the
+  // signup handler below for where that verification email is
+  // sent). Firebase Auth is tried first; if it confirms the
+  // password but the account isn't verified yet, access is refused
+  // and a fresh verification email is sent. Accounts that have no
+  // Firebase Auth record at all (pre-existing admins, or ones whose
+  // Auth signup fell back to traditional-only — see below) skip the
+  // verification requirement and use the original RTDB password
+  // check, same as before.
+  adminLoginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("admin-login-email").value.trim();
+    const password = document.getElementById("admin-login-password").value;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    adminLoginBtn.disabled = true;
+    adminLoginBtn.textContent = "Logging in…";
+    try {
+      let usedFirebaseAuth = false;
+      try {
+        const cred = await fbAuthLogIn(email, password);
+        usedFirebaseAuth = true;
+        if (!cred.user.emailVerified) {
+          try {
+            await fbAuthSendVerification(cred.user);
+          } catch (sendErr) {
+            console.error("Could not resend verification email:", sendErr);
+          }
+          await fbAuthSignOut();
+          showToast("Please verify your email first — check your inbox for the link");
+          return;
+        }
+      } catch (fbErr) {
+        // No Firebase Auth account for this email/password — fall
+        // through to the traditional RTDB check below.
+      }
+
+      const snap = await db.ref("admin/" + emailToKey(email)).once("value");
+      const record = snap.exists() ? snap.val() : null;
+
+      if (usedFirebaseAuth) {
+        // Password already confirmed by Firebase Auth and the email
+        // is verified — just need the profile record for the name.
+        if (!record) {
+          showToast("Couldn't find your admin profile — contact support");
+          return;
+        }
+      } else if (!record || record.password !== password) {
+        showToast("Incorrect email or password");
+        return;
+      }
+
+      const admin = { name: record.name, email: record.email };
+      setAdminSession(admin);
+      unlockAdmin(admin);
+    } catch (err) {
+      console.error("Admin login failed:", err);
+      showToast("Couldn't reach the server — try again");
+    } finally {
+      adminLoginBtn.disabled = false;
+      adminLoginBtn.textContent = "Log in";
+    }
+  });
+
+  adminSignupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = document.getElementById("admin-signup-name").value.trim();
+    const email = document.getElementById("admin-signup-email").value.trim();
+    const password = document.getElementById("admin-signup-password").value;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    adminSignupBtn.disabled = true;
+    adminSignupBtn.textContent = "Creating account…";
+    try {
+      if (await anyAdminExists()) {
+        showToast("An admin account already exists — only one admin is allowed");
+        lockOutSignupIfAdminExists();
+        return;
+      }
+      const key = emailToKey(email);
+      const existing = await db.ref("admin/" + key).once("value");
+      if (existing.exists()) {
+        showToast("An admin account with this email already exists");
+        return;
+      }
+
+      await db.ref("admin/" + key).set({ name, email, password, createdAt: Date.now() });
+
+      // Create the real Firebase Auth account and require email
+      // verification before this admin can log in. If Auth itself
+      // is unavailable for some reason, fall back to the original
+      // behavior (sign in immediately, no verification) rather than
+      // blocking signup entirely.
+      try {
+        const cred = await fbAuthSignUp(email, password);
+        await fbAuthSendVerification(cred.user);
+        await fbAuthSignOut();
+        adminSignupForm.reset();
+        showToast("Account created — check your email to verify it before logging in");
+        showAdminTab("login");
+      } catch (fbErr) {
+        console.error("Firebase Auth signup failed (continuing without email verification):", fbErr);
+        const admin = { name, email };
+        setAdminSession(admin);
+        unlockAdmin(admin);
+      }
+    } catch (err) {
+      console.error("Admin signup failed:", err);
+      showToast("Couldn't create the admin account — try again");
+    } finally {
+      adminSignupBtn.disabled = false;
+      adminSignupBtn.textContent = "Create account";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Google Sign-In — covers both admin log in and the one-time admin
+     sign-up. Google already verifies the email address, so a brand-
+     new Google sign-in here can create the (single) admin record
+     directly — no separate verification email needed, unlike the
+     traditional signup form above.
+  --------------------------------------------------------------- */
+  const adminGoogleAuthBtn = document.getElementById("admin-google-auth-btn");
+  const adminFormGoogleCompleteEl = document.getElementById("admin-form-google-complete");
+  const adminGoogleCompleteForm = document.getElementById("admin-google-complete-form");
+  const adminGoogleCompleteBtn = adminGoogleCompleteForm.querySelector("button[type=submit]");
+  let pendingGoogleAdmin = null; // { name, email } — set only while the complete-profile form is showing
+
+  function showAdminGoogleCompleteForm() {
+    adminFormLoginEl.classList.remove("is-active");
+    adminFormSignupEl.classList.remove("is-active");
+    adminFormGoogleCompleteEl.classList.add("is-active");
+    document.querySelector("#admin-auth .auth-tabs").style.display = "none";
+    document.getElementById("admin-google-row").style.display = "none";
+    document.getElementById("admin-google-divider").style.display = "none";
+  }
+
+  adminGoogleAuthBtn.addEventListener("click", async () => {
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+    const originalLabel = adminGoogleAuthBtn.innerHTML;
+    adminGoogleAuthBtn.disabled = true;
+    adminGoogleAuthBtn.textContent = "Connecting…";
+    try {
+      const cred = await fbAuthGoogleSignIn();
+      const email = cred.user.email;
+      const name = cred.user.displayName || "";
+      const key = emailToKey(email);
+
+      const existingSnap = await db.ref("admin/" + key).once("value");
+      if (existingSnap.exists()) {
+        // Returning admin, logging back in with Google.
+        const record = existingSnap.val();
+        const admin = { name: record.name, email: record.email };
+        setAdminSession(admin);
+        unlockAdmin(admin);
+        return;
+      }
+
+      if (await anyAdminExists()) {
+        showToast("An admin account already exists — only one admin is allowed");
+        await fbAuthSignOut();
+        lockOutSignupIfAdminExists();
+        return;
+      }
+
+      // First-ever admin, signing up via Google — still needs a
+      // password for the traditional RTDB fallback, so hold onto the
+      // Google identity and collect one before writing the record.
+      pendingGoogleAdmin = { name, email };
+      showAdminGoogleCompleteForm();
+    } catch (err) {
+      console.error("Admin Google sign-in failed:", err);
+      showToast("Google sign-in failed — try again");
+    } finally {
+      adminGoogleAuthBtn.disabled = false;
+      adminGoogleAuthBtn.innerHTML = originalLabel;
+    }
+  });
+
+  adminGoogleCompleteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!pendingGoogleAdmin || !db) return;
+    const password = document.getElementById("admin-google-complete-password").value;
+    const confirmPassword = document.getElementById("admin-google-complete-confirm-password").value;
+    if (password !== confirmPassword) {
+      showToast("Passwords don't match");
+      return;
+    }
+
+    adminGoogleCompleteBtn.disabled = true;
+    adminGoogleCompleteBtn.textContent = "Saving…";
+    try {
+      // Re-check no one else became the admin in the meantime, then
+      // write the record with the password just created here, so the
+      // traditional RTDB fallback works for this account too.
+      if (await anyAdminExists()) {
+        showToast("An admin account already exists — only one admin is allowed");
+        await fbAuthSignOut();
+        pendingGoogleAdmin = null;
+        adminFormGoogleCompleteEl.classList.remove("is-active");
+        document.querySelector("#admin-auth .auth-tabs").style.display = "";
+        document.getElementById("admin-google-row").style.display = "";
+        document.getElementById("admin-google-divider").style.display = "";
+        lockOutSignupIfAdminExists();
+        return;
+      }
+      const key = emailToKey(pendingGoogleAdmin.email);
+      await db.ref("admin/" + key).set({
+        name: pendingGoogleAdmin.name,
+        email: pendingGoogleAdmin.email,
+        password,
+        createdAt: Date.now(),
+      });
+      const admin = { name: pendingGoogleAdmin.name, email: pendingGoogleAdmin.email };
+      pendingGoogleAdmin = null;
+      setAdminSession(admin);
+      unlockAdmin(admin);
+    } catch (err) {
+      console.error("Could not save admin profile:", err);
+      showToast("Couldn't save your info — try again");
+    } finally {
+      adminGoogleCompleteBtn.disabled = false;
+      adminGoogleCompleteBtn.textContent = "Continue";
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Sales — total items sold / revenue, and orders for one selected
+     day at a time (defaults to today). Reads every order across
+     every shopper from /purchases, which needs Firebase rules that
+     allow reading that whole node — see the comment above the login
+     section.
+  --------------------------------------------------------------- */
+  let salesByDate = {};
+
+  function todayDateKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function renderSalesForDate(dateKey) {
+    const tbody = document.getElementById("sales-table-body");
+    const row = salesByDate[dateKey];
+
+    if (!row) {
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">No orders on ${dateKey}.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = `
+      <tr>
+        <td class="admin-mono">${dateKey}</td>
+        <td>${row.orders}</td>
+        <td>${row.items}</td>
+        <td>₹${row.revenue.toLocaleString("en-IN")}</td>
+      </tr>`;
+  }
+
+  const salesDateInput = document.getElementById("sales-date-input");
+  salesDateInput.addEventListener("change", () => {
+    renderSalesForDate(salesDateInput.value || todayDateKey());
+  });
+
+  async function loadSales() {
+    const tbody = document.getElementById("sales-table-body");
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Firebase isn't initialized — check the SDK &lt;script&gt; tags.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("purchases").once("value");
+      const orders = [];
+      if (snap.exists()) {
+        Object.values(snap.val()).forEach((userOrders) => {
+          Object.values(userOrders).forEach((order) => orders.push(order));
+        });
+      }
+
+      let totalItems = 0;
+      let totalRevenue = 0;
+      const byDate = {};
+
+      orders.forEach((order) => {
+        const dateKey = (order.date || "").slice(0, 10) || "unknown";
+        const itemsQty = (order.items || []).reduce((sum, i) => sum + (i.qty || 0), 0);
+        const revenue = order.total || 0;
+
+        totalItems += itemsQty;
+        totalRevenue += revenue;
+
+        if (!byDate[dateKey]) byDate[dateKey] = { orders: 0, items: 0, revenue: 0 };
+        byDate[dateKey].orders += 1;
+        byDate[dateKey].items += itemsQty;
+        byDate[dateKey].revenue += revenue;
+      });
+
+      document.getElementById("stat-items").textContent = totalItems.toLocaleString("en-IN");
+      document.getElementById("stat-revenue").textContent = "₹" + totalRevenue.toLocaleString("en-IN");
+      document.getElementById("stat-orders").textContent = orders.length.toLocaleString("en-IN");
+
+      salesByDate = byDate;
+      if (!salesDateInput.value) salesDateInput.value = todayDateKey();
+      renderSalesForDate(salesDateInput.value);
+    } catch (err) {
+      console.error("Could not load sales data:", err);
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Couldn't load sales data — this is almost always a Firebase rules issue (read access on /purchases itself, not just /purchases/&lt;uid&gt;). See browser console for the exact error.</td></tr>`;
+    }
+  }
+
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  /* ---------------------------------------------------------------
+     Executive Verification — every pending signup sits in
+     /executive-temp/<emailKey> (written by executive.html's signup
+     form) until it's accepted or declined here. Accept copies the
+     record into /executive/<emailKey> — the table executive.html's
+     login reads from — and removes the /executive-temp copy;
+     decline just removes the /executive-temp copy. Either action
+     drops the row from this list; declined applicants aren't kept
+     anywhere.
+  --------------------------------------------------------------- */
+  // Role labels mirror the dropdown on executive.html's signup form —
+  // each executive picks exactly one of these there, and it's what
+  // executive.html itself uses after login to decide which sections
+  // (Customers/queries, Pending orders/queries, or Digital/Physical
+  // Products/Coupons) that executive actually sees.
+  const EXECUTIVE_ROLE_LABELS = {
+    "customer-support": "Customer Support",
+    "order-handling": "Order Handling",
+    "product-update": "Product Update",
+  };
+  function roleLabel(role) {
+    return EXECUTIVE_ROLE_LABELS[role] || "—";
+  }
+
+  function execVerifyRowHTML(key, u) {
+    const name = escapeHTML(u.name || "");
+    const phone = escapeHTML(u.phone || "");
+    const email = escapeHTML(u.email || "");
+    return `
+      <tr data-key="${key}">
+        <td>${name}</td>
+        <td class="admin-mono">${phone}</td>
+        <td class="admin-mono">${email}</td>
+        <td>${escapeHTML(roleLabel(u.role))}</td>
+        <td>
+          <button type="button" class="btn btn-small btn-primary exec-accept-btn">Accept</button>
+          <button type="button" class="btn btn-small btn-danger-outline exec-decline-btn">Decline</button>
+        </td>
+      </tr>`;
+  }
+
+  async function loadExecutiveVerification() {
+    const tbody = document.getElementById("exec-verify-table-body");
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("executive-temp").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">No pending executive signups.</td></tr>`;
+        return;
+      }
+      const pending = snap.val();
+      const keys = Object.keys(pending).sort((a, b) => (pending[a].createdAt || 0) - (pending[b].createdAt || 0));
+      tbody.innerHTML = keys.map((key) => execVerifyRowHTML(key, pending[key])).join("");
+    } catch (err) {
+      console.error("Could not load pending executives:", err);
+      tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Couldn't load — try refreshing.</td></tr>`;
+    }
+  }
+
+  document.getElementById("exec-verify-table-body").addEventListener("click", async (e) => {
+    const acceptBtn = e.target.closest(".exec-accept-btn");
+    const declineBtn = e.target.closest(".exec-decline-btn");
+    if (!acceptBtn && !declineBtn) return;
+
+    const row = (acceptBtn || declineBtn).closest("tr[data-key]");
+    const key = row.dataset.key;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    const btn = acceptBtn || declineBtn;
+    btn.disabled = true;
+    try {
+      if (acceptBtn) {
+        const snap = await db.ref("executive-temp/" + key).once("value");
+        if (!snap.exists()) {
+          showToast("This signup no longer exists");
+          row.remove();
+          return;
+        }
+        const record = snap.val();
+        await db.ref("executive/" + key).set({
+          name: record.name || "",
+          phone: record.phone || "",
+          email: record.email || "",
+          password: record.password || "",
+          role: record.role || "",
+          createdAt: record.createdAt || Date.now(),
+          verifiedAt: Date.now(),
+        });
+        await db.ref("executive-temp/" + key).remove();
+        showToast("Executive accepted");
+        loadExecutives();
+      } else {
+        await db.ref("executive-temp/" + key).remove();
+        showToast("Signup declined");
+      }
+      row.remove();
+      if (!document.querySelector("#exec-verify-table-body tr[data-key]")) {
+        document.getElementById("exec-verify-table-body").innerHTML = `<tr><td colspan="4" class="admin-empty">No pending executive signups.</td></tr>`;
+      }
+    } catch (err) {
+      console.error("Could not process signup:", err);
+      showToast("Couldn't save — try again");
+      btn.disabled = false;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Executives — every verified /executive/<emailKey> record,
+     editable inline. There's no /purchases or /queries history tied
+     to an executive account, so a changed email only ever needs to
+     move the one /executive row itself — write the new key (carrying
+     the password over), then remove the old one once that succeeds.
+  --------------------------------------------------------------- */
+  function execRoleOptionsHTML(selected) {
+    return Object.entries(EXECUTIVE_ROLE_LABELS)
+      .map(([value, label]) => `<option value="${value}" ${value === selected ? "selected" : ""}>${label}</option>`)
+      .join("");
+  }
+
+  function executiveRowHTML(key, u) {
+    const name = String(u.name || "").replace(/"/g, "&quot;");
+    const phone = String(u.phone || "").replace(/"/g, "&quot;");
+    const email = String(u.email || "").replace(/"/g, "&quot;");
+    return `
+      <tr data-key="${key}">
+        <td><input type="text" class="exec-name" value="${name}" /></td>
+        <td><input type="tel" class="exec-phone" value="${phone}" inputmode="numeric" maxlength="10" /></td>
+        <td><input type="email" class="exec-email" value="${email}" /></td>
+        <td><select class="exec-role">${execRoleOptionsHTML(u.role)}</select></td>
+        <td>
+          <button type="button" class="btn btn-small exec-save-btn">Save</button>
+          <button type="button" class="btn btn-small btn-danger-outline exec-delete-btn">Delete</button>
+        </td>
+      </tr>`;
+  }
+
+  async function loadExecutives() {
+    const tbody = document.getElementById("exec-table-body");
+    tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Loading…</td></tr>`;
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("executive").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">No verified executives yet.</td></tr>`;
+        return;
+      }
+      const execs = snap.val();
+      const keys = Object.keys(execs).sort((a, b) => String(execs[a].name || "").localeCompare(String(execs[b].name || "")));
+      tbody.innerHTML = keys.map((key) => executiveRowHTML(key, execs[key])).join("");
+    } catch (err) {
+      console.error("Could not load executives:", err);
+      tbody.innerHTML = `<tr><td colspan="5" class="admin-empty">Couldn't load executives — try refreshing.</td></tr>`;
+    }
+  }
+
+  document.getElementById("exec-table-body").addEventListener("click", async (e) => {
+    const saveBtn = e.target.closest(".exec-save-btn");
+    const deleteBtn = e.target.closest(".exec-delete-btn");
+    if (!saveBtn && !deleteBtn) return;
+
+    const row = (saveBtn || deleteBtn).closest("tr[data-key]");
+    const originalKey = row.dataset.key;
+
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+
+    if (deleteBtn) {
+      if (!confirm("Remove this executive's access? This can't be undone.")) return;
+      deleteBtn.disabled = true;
+      try {
+        await db.ref("executive/" + originalKey).remove();
+        showToast("Executive removed");
+        row.remove();
+        if (!document.querySelector("#exec-table-body tr[data-key]")) {
+          document.getElementById("exec-table-body").innerHTML = `<tr><td colspan="5" class="admin-empty">No verified executives yet.</td></tr>`;
+        }
+      } catch (err) {
+        console.error("Could not delete executive:", err);
+        showToast("Couldn't delete — try again");
+        deleteBtn.disabled = false;
+      }
+      return;
+    }
+
+    const name = row.querySelector(".exec-name").value.trim();
+    const phone = row.querySelector(".exec-phone").value.trim();
+    const email = row.querySelector(".exec-email").value.trim();
+    const role = row.querySelector(".exec-role").value;
+    if (!name || !email) {
+      showToast("Name and email are required");
+      return;
+    }
+
+    const newKey = emailToKey(email);
+    const originalLabel = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Saving…";
+    try {
+      if (newKey === originalKey) {
+        await db.ref("executive/" + originalKey).update({ name, phone, role, updatedAt: Date.now() });
+        showToast("Executive updated");
+      } else {
+        const clash = await db.ref("executive/" + newKey).once("value");
+        if (clash.exists()) {
+          showToast("That email is already used by another executive");
+          return;
+        }
+        const existingSnap = await db.ref("executive/" + originalKey).once("value");
+        const existing = existingSnap.exists() ? existingSnap.val() : {};
+        await db.ref("executive/" + newKey).set({
+          name,
+          phone,
+          email,
+          role,
+          password: existing.password || "",
+          createdAt: existing.createdAt || Date.now(),
+          verifiedAt: existing.verifiedAt || Date.now(),
+          updatedAt: Date.now(),
+        });
+        await db.ref("executive/" + originalKey).remove();
+        row.dataset.key = newKey;
+        showToast("Email updated");
+      }
+    } catch (err) {
+      console.error("Could not save executive:", err);
+      showToast("Couldn't save — try again");
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalLabel;
+    }
+  });
+</script>
+</body>
+</html>
