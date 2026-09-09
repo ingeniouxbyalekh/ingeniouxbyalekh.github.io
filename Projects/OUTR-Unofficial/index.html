@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8920444499975214" crossorigin="anonymous"></script>
+
+  <meta charset="UTF-8">
+  <title>OUTR | Odisha University of Technology and Research</title>
+  <link rel="icon" type="image/png" href="https://outruniversity.github.io/images/outr-logo.png">
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --purple-1: #6659E8;
+      --purple-2: #5A4CE0;
+      --purple-dark: #453BB0;
+      --ink: #1E1B3A;
+      --paper: #F6F5FB;
+      --clay: #FF8A5B;
+      --gold: #F4B740;
+      --line: #E7E4F5;
+      --muted: #7A768F;
+      --radius: 18px;
+    }
+    
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Manrope', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+    h1, h2, h3, .display { font-family: 'Fraunces', serif; }
+
+    /* ---------- LAYOUT ---------- */
+    .dashboard-wrapper { display: flex; min-height: 100vh; }
+
+    /* ---------- SIDEBAR ---------- */
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: linear-gradient(190deg, var(--purple-1) 0%, var(--purple-dark) 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      padding: 22px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .logo-area { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; padding: 0 4px; }
+    .logo-icon {
+      width: 40px; height: 40px; border-radius: 11px;
+      background: rgba(255, 255, 255, 0.16);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-area span { font-weight: 800; font-size: 16px; letter-spacing: 0.2px; }
+
+    .mobile-menu-btn {
+      display: none;
+      width: 40px; height: 40px; border-radius: 10px; border: none;
+      background: rgba(255, 255, 255, 0.14); color: #fff; font-size: 17px;
+      align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+    }
+
+    .sidebar-body { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .nav-section-label {
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.4px;
+      color: rgba(255, 255, 255, 0.5); margin: 4px 10px 6px; font-weight: 700;
+    }
+
+    .nav-links { list-style: none; flex: 1; }
+    .nav-links li {
+      display: flex; align-items: center; gap: 13px;
+      padding: 11px 13px; border-radius: 11px;
+      font-size: 14.5px; font-weight: 600;
+      color: rgba(255, 255, 255, 0.82);
+      cursor: pointer;
+      margin-bottom: 3px;
+      transition: background .2s ease, color .2s ease, transform .15s ease;
+    }
+    .nav-links li i { width: 18px; text-align: center; font-size: 15px; }
+    .nav-links li:hover { background: rgba(255, 255, 255, 0.10); color: #fff; }
+    .nav-links li.active {
+      background: #fff; color: var(--purple-dark);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+    }
+
+    .student-zone { display: none; }
+    .sz-label {
+      font-size: 10.5px; text-transform: uppercase; letter-spacing: 1.2px;
+      color: rgba(255, 255, 255, 0.5); font-weight: 700; margin-bottom: 10px;
+    }
+    .sz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sz-grid a {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.10); border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 10px 10px; border-radius: 10px; color: #fff; text-decoration: none;
+      font-size: 12px; font-weight: 600;
+    }
+    .sz-grid a:hover { background: rgba(255, 255, 255, 0.18); }
+    .sz-grid a i { color: var(--gold); width: 15px; text-align: center; }
+
+    .sidebar-cta {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 13px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.85);
+    }
+    .sidebar-cta b { display: block; color: #fff; font-size: 13px; margin-bottom: 4px; }
+    .sidebar-cta a {
+      display: inline-block; margin-top: 8px; background: #fff; color: var(--purple-dark);
+      font-weight: 700; font-size: 11.5px; padding: 7px 12px; border-radius: 8px; text-decoration: none;
+    }
+
+    .sidebar-footer {
+      margin-top: 14px; text-align: center; font-size: 10px;
+      color: rgba(255, 255, 255, 0.45); letter-spacing: 0.4px; font-weight: 600;
+    }
+
+    /* ---------- MAIN ---------- */
+    .main-content { flex: 1; min-width: 0; }
+
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 44px 0;
+    }
+    .mobile-branding { display: none; font-weight: 800; color: var(--purple-dark); }
+    .welcome-text { font-size: 26px; font-weight: 600; }
+    .welcome-text span { color: var(--purple-1); }
+    .header-right { display: flex; align-items: center; gap: 18px; }
+    .profile-badge {
+      background: linear-gradient(135deg, var(--clay), var(--gold));
+      color: #fff; font-weight: 800; font-size: 11.5px; letter-spacing: 0.4px; text-transform: uppercase;
+      padding: 9px 16px; border-radius: 100px;
+      display: flex; align-items: center; justify-content: center; cursor: default;
+    }
+
+    /* ---------- HERO ---------- */
+    .hero {
+      margin: 26px 44px 0;
+      border-radius: 28px;
+      position: relative;
+      overflow: hidden;
+      min-height: 430px;
+      display: flex;
+      align-items: center;
+      background:
+        linear-gradient(120deg, rgba(30,20,90,0.82) 0%, rgba(90,76,224,0.55) 55%, rgba(255,138,91,0.35) 100%),
+        url('images/banner.avif') center/cover;
+    }
+    .hero-inner { padding: 56px 60px; max-width: 640px; color: #fff; }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.3);
+      padding: 7px 14px; border-radius: 100px; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 20px;
+    }
+    .hero h1 { font-size: 44px; line-height: 1.12; font-weight: 600; margin-bottom: 16px; }
+    .hero h1 em { font-style: italic; color: var(--gold); }
+    .hero p { font-size: 15.5px; line-height: 1.65; color: rgba(255, 255, 255, 0.88); margin-bottom: 28px; max-width: 520px; }
+    .hero-actions { display: flex; gap: 14px; }
+    .btn-solid {
+      background: #fff; color: var(--purple-dark); padding: 13px 24px; border-radius: 12px;
+      font-weight: 700; font-size: 14px; text-decoration: none; transition: transform .2s ease;
+    }
+    .btn-ghost {
+      border: 1.5px solid rgba(255, 255, 255, 0.55); color: #fff; padding: 13px 24px; border-radius: 12px;
+      font-weight: 700; font-size: 14px; text-decoration: none; transition: transform .2s ease, background .2s ease;
+    }
+    .btn-solid:hover, .btn-ghost:hover { transform: translateY(-2px); }
+    .btn-ghost:hover { background: rgba(255, 255, 255, 0.12); }
+
+    /* ---------- STATS ---------- */
+    .stats-strip {
+      margin: -40px 44px 0;
+      position: relative; z-index: 2;
+      background: #fff; border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(30, 27, 58, 0.10);
+      display: flex; justify-content: space-between;
+      padding: 26px 40px;
+    }
+    .stat { text-align: center; flex: 1; border-right: 1px solid var(--line); }
+    .stat:last-child { border-right: none; }
+    .stat .num { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700; color: var(--purple-dark); }
+    .stat .lbl { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 4px; letter-spacing: 0.3px; }
+
+    /* ---------- E-CLASSROOM BANNER ---------- */
+    .eclass-banner {
+      margin: 34px 44px 0;
+      border-radius: 24px;
+      background: linear-gradient(120deg, #251E5C 0%, var(--purple-dark) 55%, var(--purple-1) 100%);
+      padding: 36px 40px;
+      display: flex; align-items: center; justify-content: space-between; gap: 26px; flex-wrap: wrap;
+      position: relative; overflow: hidden;
+    }
+    .eclass-banner::after {
+      content: ""; position: absolute; right: -60px; top: -60px; width: 220px; height: 220px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(244,183,64,0.25) 0%, rgba(244,183,64,0) 70%);
+    }
+    .eclass-left { display: flex; align-items: center; gap: 20px; position: relative; z-index: 1;}
+    .eclass-icon {
+      width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex; align-items: center; justify-content: center; color: var(--gold); font-size: 24px;
+    }
+    .eclass-copy .eyebrow { color: var(--gold); }
+    .eclass-copy h3 { color: #fff; font-size: 21px; font-weight: 600; margin: 2px 0 6px; }
+    .eclass-copy p { color: rgba(255, 255, 255, 0.78); font-size: 13.5px; max-width: 460px; line-height: 1.55; }
+    .eclass-cta {
+      position: relative; z-index: 1;
+      display: inline-flex; align-items: center; gap: 9px;
+      background: #fff; color: var(--purple-dark);
+      padding: 13px 22px; border-radius: 12px;
+      font-weight: 700; font-size: 14px; text-decoration: none; flex-shrink: 0;
+      transition: transform .2s ease;
+    }
+    .eclass-cta:hover { transform: translateY(-2px); }
+
+    /* ---------- SECTION SHELL ---------- */
+    section.block { padding: 70px 44px 0; }
+    .section-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 34px; flex-wrap: wrap; gap: 14px; }
+    .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase; color: var(--clay); margin-bottom: 8px; }
+    .section-head h2 { font-size: 30px; font-weight: 600; }
+    .section-head p { color: var(--muted); font-size: 14.5px; max-width: 440px; }
+
+    /* ---------- ABOUT ---------- */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; align-items: center; }
+    .about-photo { border-radius: 22px; overflow: hidden; height: 340px; box-shadow: 0 20px 40px rgba(30, 27, 58, 0.12); }
+    .about-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .about-copy p { color: var(--muted); font-size: 15px; line-height: 1.75; margin-bottom: 16px; }
+    .about-list { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+    .about-list li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+    .about-list li i { color: var(--purple-1); }
+
+    /* ---------- CARD GRID ---------- */
+    .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+    .info-card {
+      background: #fff; border-radius: 20px; padding: 28px 24px;
+      box-shadow: 0 10px 26px rgba(30, 27, 58, 0.06);
+      border: 1px solid var(--line);
+      transition: transform .25s ease, box-shadow .25s ease;
+    }
+    .info-card:hover { transform: translateY(-6px); box-shadow: 0 20px 34px rgba(30, 27, 58, 0.12); }
+    .info-icon {
+      width: 50px; height: 50px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--purple-1), var(--purple-dark));
+      color: #fff; font-size: 19px; margin-bottom: 18px;
+    }
+    .info-card h4 { font-size: 16.5px; font-weight: 700; margin-bottom: 8px; }
+    .info-card p { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+    /* ---------- GALLERY (Campus Life) ---------- */
+    .gallery-grid { 
+      display: grid; 
+      grid-template-columns: 1.3fr 1fr 1fr; 
+      grid-template-rows: auto auto; 
+      gap: 18px; 
+    }
+    .gal-item { border-radius: 20px; overflow: hidden; position: relative; min-height: 180px; }
+    .gal-item:nth-child(1) { grid-row: 1 / 3; min-height: 378px; }
+    .gal-item img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s ease; }
+    .gal-item:hover img { transform: scale(1.07); }
+    .gal-tag {
+      position: absolute; left: 14px; bottom: 14px; color: #fff; font-weight: 700; font-size: 13.5px;
+      background: rgba(20, 15, 50, 0.45); backdrop-filter: blur(4px); padding: 7px 14px; border-radius: 100px;
+      z-index: 5;
+    }
+
+    /* Fixed height wrapper framework for modern dynamic responsive components */
+    .ad-gallery-card {
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 280px;
+      border: 1px solid var(--line);
+      padding: 10px;
+    }
+
+    /* ---------- SCHOLARSHIP BANNER ---------- */
+    .scholar-banner {
+      margin-top: 70px;
+      border-radius: 26px;
+      background: linear-gradient(120deg, var(--purple-dark), var(--purple-1));
+      padding: 48px 54px; color: #fff;
+      display: flex; align-items: center; justify-content: space-between; gap: 30px; flex-wrap: wrap;
+    }
+    .scholar-copy h3 { font-size: 25px; font-weight: 600; margin-bottom: 10px; }
+    .scholar-copy p { color: rgba(255,255,255,0.85); font-size: 14px; max-width: 480px; line-height: 1.6; }
+    .scholar-pills { display: flex; gap: 12px; flex-wrap: wrap; }
+    .pill { background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.25); padding: 9px 16px; border-radius: 100px; font-size: 12.5px; font-weight: 700; }
+
+    /* ---------- EVENTS ---------- */
+    .events-list { display: flex; flex-direction: column; gap: 14px; }
+    .event-row {
+      display: flex; align-items: center; gap: 20px; background: #fff; border: 1px solid var(--line);
+      border-radius: 16px; padding: 16px 22px;
+    }
+    .event-date {
+      width: 58px; height: 58px; border-radius: 14px; flex-shrink: 0;
+      background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center;
+      color: var(--purple-dark);
+    }
+    .event-date .d { font-size: 19px; font-weight: 800; line-height: 1; }
+    .event-date .m { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+    .event-info h4 { font-size: 14.5px; font-weight: 700; margin-bottom: 3px; }
+    .event-info p { font-size: 12.5px; color: var(--muted); }
+    .event-tag { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--clay); background: #FFF1EA; padding: 6px 12px; border-radius: 100px; white-space: nowrap; }
+
+    /* ---------- FOOTER ---------- */
+    footer {
+      margin: 80px 44px 0; padding: 50px 54px 34px;
+      background: var(--ink); color: rgba(255, 255, 255, 0.7);
+      border-radius: 28px 28px 0 0;
+    }
+    .foot-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: 34px; }
+    .foot-brand { display: flex; align-items: center; gap: 10px; color: #fff; font-weight: 800; font-size: 16px; margin-bottom: 12px; }
+    .foot-brand i { color: var(--gold); }
+    .foot-grid p { font-size: 13px; line-height: 1.7; }
+    .foot-col h5 { color: #fff; font-size: 13px; margin-bottom: 14px; letter-spacing: 0.4px; }
+    .foot-col a { display: block; color: rgba(255, 255, 255, 0.65); text-decoration: none; font-size: 13px; margin-bottom: 10px; }
+    .foot-col a:hover { color: var(--gold); }
+    .foot-bottom {
+      margin-top: 38px; padding-top: 22px; border-top: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex; justify-content: space-between; font-size: 12px; color: rgba(255, 255, 255, 0.45); flex-wrap: wrap; gap: 10px;
+    }
+
+    section.block:last-of-type { padding-bottom: 20px; }
+
+    /* ---------- RESPONSIVE BREAKPOINTS ---------- */
+    @media(max-width: 1080px) {
+      .about-grid { grid-template-columns: 1fr; }
+      .card-grid { grid-template-columns: repeat(2, 1fr); }
+      .gallery-grid { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+      .gal-item:nth-child(1) { grid-row: auto; grid-column: 1 / 3; min-height: 240px; }
+      .foot-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media(max-width: 860px) {
+      .dashboard-wrapper { flex-direction: column; }
+      .sidebar {
+        width: 100%; height: auto; position: relative; flex-direction: row;
+        align-items: center; justify-content: space-between;
+        padding: 14px 18px; overflow: visible; z-index: 100;
+      }
+      .logo-area { margin-bottom: 0; }
+      .mobile-menu-btn { display: flex; }
+
+      .sidebar-body {
+        display: none;
+        position: absolute; top: 100%; left: 0; right: 0;
+        background: var(--purple-dark);
+        padding: 18px 18px 22px;
+        border-radius: 0 0 18px 18px;
+        box-shadow: 0 24px 40px rgba(20, 15, 50, 0.3);
+        max-height: calc(100vh - 70px); overflow-y: auto;
+        flex: none;
+      }
+      .sidebar.menu-open .sidebar-body { display: flex; flex-direction: column; }
+
+      .nav-section-label { display: block; }
+      .nav-links { display: flex; flex-direction: column; gap: 2px; flex: none; }
+      
+      .sidebar-cta { display: none; }
+      .student-zone {
+        display: block; margin-top: 16px; padding-top: 16px;
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .sidebar-footer { display: block; margin-top: 16px; }
+
+      header { padding: 20px 20px 0; }
+      .hero { margin: 18px 20px 0; min-height: auto; }
+      .hero h1 { font-size: 32px; }
+      .hero-inner { padding: 36px 30px; }
+      .stats-strip { margin: -30px 20px 0; flex-wrap: wrap; gap: 16px; padding: 22px; }
+      .eclass-banner { margin: 24px 20px 0; padding: 26px 24px; flex-direction: column; align-items: flex-start; }
+      .eclass-cta { width: 100%; justify-content: center; }
+      .stat { flex: 1 1 40%; border-right: none; }
+      section.block { padding: 50px 20px 0; }
+      .card-grid { grid-template-columns: 1fr; }
+      .gallery-grid { grid-template-columns: 1fr; }
+      .gal-item:nth-child(1) { grid-column: auto; min-height: 200px; }
+      footer { margin: 60px 20px 0; padding: 36px 24px 26px; }
+      .foot-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="dashboard-wrapper">
+
+  <!-- ================= SIDEBAR ================= -->
+  <nav class="sidebar" id="sidebarNav">
+    <div class="logo-area">
+      <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+      <span>OUTR University</span>
+    </div>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="sidebar-body" id="sidebarBody">
+      <div class="nav-section-label">Explore</div>
+      <ul class="nav-links" id="navLinks">
+        <li class="active" data-target="home"><i class="fas fa-house"></i><span>Home</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/academics.html"><i class="fas fa-book-open"></i><span>Academics</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/campuslife.html"><i class="fas fa-newspaper"></i><span>Campus Life</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/hostel.html"><i class="fas fa-building-user"></i><span>Hostel Life</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/scholarship.html"><i class="fas fa-award"></i><span>Scholarship</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/placements.html"><i class="fas fa-briefcase"></i><span>Placements</span></li>
+        <li data-target="#" data-href="https://hiteshpanigrahi.github.io/LabRecord_CoverPageEditor_App/"><i class="fas fa-clipboard-list"></i><span>Lab Formats</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/events.html"><i class="fas fa-calendar-days"></i><span>Events</span></li>
+        <li data-target="#" data-href="https://outruniversity.github.io/webpages/contacts.html"><i class="fas fa-phone"></i><span>Contact Us</span></li>
+      </ul>
+
+      <div class="student-zone">
+        <div class="sz-label">Student Zone</div>
+        <div class="sz-grid">
+          <a href="https://outruniversity.github.io/webpages/studymaterial.html"><i class="fas fa-note-sticky"></i> Notes</a>
+          <a href="https://outruniversity.github.io/webpages/pyqs.html"><i class="fas fa-file-alt"></i> PYQs</a>
+          <a href="https://outruniversity.github.io/webpages/studymaterial.html"><i class="fas fa-folder-open"></i> Study Material</a>
+          <a href="https://outruniversity.github.io/webpages/ebooks.html"><i class="fas fa-book"></i> Ebooks</a>
+          <a href="https://outruniversity.github.io/webpages/syllabus.html"><i class="fas fa-scroll"></i> Syllabus</a>
+          <a href="https://outr-erp.cet.edu.in/login"><i class="fas fa-calendar-check"></i> Attendance</a>
+        </div>
+      </div>
+
+      <div class="sidebar-cta">
+        <b>Student Portal</b>
+        Access official student erp portal.
+        <a href="https://outr-erp.cet.edu.in/login">Open Portal →</a>
+      </div>
+
+      <div class="sidebar-footer">DESIGNED AND DEVELOPED BY #ALEKH</div>
+    </div>
+  </nav>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="main-content">
+    <header>
+      <div class="mobile-branding">OUTR</div>
+      <h2 class="welcome-text">Welcome to <span>OUTR</span></h2>
+      <div class="header-right">
+        <div class="profile-badge">Unofficial</div>
+      </div>
+    </header>
+
+    <!-- HERO -->
+    <section id="home" class="hero">
+      <div class="hero-inner">
+        <div class="hero-eyebrow"><i class="fas fa-graduation-cap"></i> Odisha University of Technology &amp; Research</div>
+        <h1>Where curiosity meets <em>craftsmanship.</em></h1>
+        <p>A research-driven campus in Bhubaneswar shaping engineers, thinkers and builders — through rigorous academics, hands-on labs and a residential life that pushes you to grow.</p>
+        <div class="hero-actions">
+          <a href="#academics" class="btn-solid">Explore Academics</a>
+          <a href="#contact" class="btn-ghost">Plan a Visit</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats-strip">
+      <div class="stat"><div class="num">1981</div><div class="lbl">Established</div></div>
+      <div class="stat"><div class="num">1,400+</div><div class="lbl">Annual Intake</div></div>
+      <div class="stat"><div class="num">18</div><div class="lbl">Departments</div></div>
+      <div class="stat"><div class="num">100+</div><div class="lbl">Acre Campus</div></div>
+      <div class="stat"><div class="num">70%+</div><div class="lbl">Placement Rate</div></div>
+    </div>
+
+    <!-- PG E-CLASSROOM -->
+    <div class="eclass-banner">
+      <div class="eclass-left">
+        <div class="eclass-icon"><i class="fas fa-laptop-code"></i></div>
+        <div class="eclass-copy">
+          <div class="eyebrow">For MTech CSE Students</div>
+          <h3>MTech CSE E-Classroom</h3>
+          <p>Your dedicated dashboard for class notes, PYQs, syllabus, &amp; timetable, Built specifically for the MTech CSE batch.</p>
+        </div>
+      </div>
+      <a href="https://www.ingenioux.in/Projects/PlayLearn/" class="eclass-cta" target="_blank" rel="noopener">
+        Explore Now <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+
+    <!-- ABOUT -->
+    <section class="block" id="about">
+      <div class="about-grid">
+        <div class="about-photo">
+          <img src="https://outruniversity.github.io/images/outr-main-building.png" alt="OUTR campus building">
+        </div>
+        <div class="about-copy">
+          <div class="eyebrow">About the University</div>
+          <h2 style="font-size:28px;font-weight:600;margin-bottom:16px;">A campus built for makers, researchers &amp; leaders</h2>
+          <p>Odisha University of Technology and Research (OUTR), formerly the College of Engineering and Technology, Bhubaneswar (CETB), was established in 1981 as a constituent college of the Odisha University of Agriculture and Technology. In 2021, the Odisha Assembly passed the OUTR Act upgrading it into a non-affiliating unitary state university.</p>
+          <p>Spread across a 100+ acre residential campus in Bhubaneswar, OUTR runs 18 departments covering engineering, architecture, biotechnology, textile technology, sciences and management.</p>
+          <ul class="about-list">
+            <li><i class="fas fa-circle-check"></i> NAAC 'A' Grade Accredited</li>
+            <li><i class="fas fa-circle-check"></i> NBA Accredited Programs</li>
+            <li><i class="fas fa-circle-check"></i> Unitary University Since 2021</li>
+            <li><i class="fas fa-circle-check"></i> 100+ Acre Residential Campus</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ACADEMICS -->
+    <section class="block" id="academics">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Academics</div>
+          <h2>Programs built around research</h2>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-microchip"></i></div>
+          <h4>B.Tech &amp; B.Arch Programs</h4>
+          <p>11 disciplines including CSE, IT, Civil, Mechanical, Electrical, Electronics &amp; Instrumentation — four-year degrees.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-flask"></i></div>
+          <h4>M.Tech &amp; Doctoral Research</h4>
+          <p>20 M.Tech specializations plus Ph.D. programs across multiple departments, backed by Centres of Excellence.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-briefcase"></i></div>
+          <h4>M.Sc. &amp; MCA</h4>
+          <p>Integrated and two-year M.Sc. tracks alongside a structured two-year Master of Computer Applications program.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CAMPUS LIFE / GALLERY -->
+    <section class="block" id="campuslife">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Campus Life</div>
+          <h2>Life beyond the classroom</h2>
+        </div>
+      </div>
+      
+      <div class="gallery-grid">
+        <div class="gal-item">
+          <img src="https://outruniversity.github.io/images/xtasy.jpg" alt="Xtasy">
+          <div class="gal-tag">Annual Fest — Xtasy</div>
+        </div>
+        <div class="gal-item">
+          <img src="https://outruniversity.github.io/images/conference-hall.jpg" alt="Conference Hall">
+          <div class="gal-tag">Conference Hall</div>
+        </div>
+        <div class="gal-item">
+          <img src="https://outruniversity.github.io/images/t&pcell.jpeg" alt="T&P Cell">
+          <div class="gal-tag">T &amp; P Cell</div>
+        </div>
+        <div class="gal-item">
+          <img src="https://outruniversity.github.io/images/sponsered.jpg" alt="Sports ground">
+          <div class="gal-tag">Sponsored</div>
+        </div>
+
+       <div class="gal-item">
+        <a href="https://www.ingenioux.in/Store/">
+          <img src="https://outruniversity.github.io/images/istore.png" alt="Sports ground">
+          <div class="gal-tag">Sponsored</div></a>
+        </div>
+
+
+      </div>
+
+      
+    </section>
+
+    <!-- HOSTEL RESIDENTIAL LIFE -->
+    <section class="block" id="hostel">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Residential Life</div>
+          <h2>Hostels, mess &amp; everyday essentials</h2>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-building-user"></i></div>
+          <h4>Hostel Life</h4>
+          <p>Separate hostels for boys and girls with 24x7 Wi-Fi (1 Gbps NKN leased line), laundry and common rooms.</p>
+        </div>
+        <div class="info-card" id="mess">
+          <div class="info-icon"><i class="fas fa-utensils"></i></div>
+          <h4>Mess &amp; Dining</h4>
+          <p>Rotating regional menus, a dedicated hygiene team and separate vegetarian/non-veg counters.</p>
+        </div>
+        <div class="info-card" id="library">
+          <div class="info-icon"><i class="fas fa-book"></i></div>
+          <h4>Central Library</h4>
+          <p>A well-stocked library with books, journals and technical periodicals supporting every department on campus.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLACEMENTS -->
+    <section class="block" id="placements">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">Careers</div>
+          <h2>Placements &amp; industry ties</h2>
+        </div>
+      </div>
+      <div class="card-grid">
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-chart-line"></i></div>
+          <h4>70%+ Placement Rate</h4>
+          <p>Consistent placement outcomes year on year, with CSE and IT graduates seeing the strongest demand.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-handshake"></i></div>
+          <h4>130+ Recruiters</h4>
+          <p>Companies including Amazon, Microsoft, Deloitte, Bosch and Adani Group visit campus each placement season.</p>
+        </div>
+        <div class="info-card">
+          <div class="info-icon"><i class="fas fa-laptop-code"></i></div>
+          <h4>Pre-Placement Training</h4>
+          <p>Structured coding, aptitude and mock-interview tracks starting from third semester.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- EVENTS -->
+    <section class="block" id="events">
+      <div class="section-head">
+        <div>
+          <div class="eyebrow">What's On</div>
+          <h2>Upcoming events</h2>
+        </div>
+      </div>
+      <div class="events-list">
+        <div class="event-row">
+          <div class="event-date"><div class="d">17</div><div class="m">AUG</div></div>
+          <div class="event-info"><h4>Freshers' Orientation Week</h4><p>Conference Hall · All Departments</p></div>
+          <div class="event-tag">Registration Open</div>
+        </div>
+        <div class="event-row">
+          <div class="event-date"><div class="d">29</div><div class="m">DEC</div></div>
+          <div class="event-info"><h4>Engineers Cup</h4><p>Sports Ground · All Years</p></div>
+          <div class="event-tag">Open to All</div>
+        </div>
+        <div class="event-row">
+          <div class="event-date"><div class="d">28</div><div class="m">JAN</div></div>
+          <div class="event-info"><h4>Xtasy — Annual Tech Fest</h4><p>Main Campus Grounds</p></div>
+          <div class="event-tag">Flagship Event</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER / CONTACT -->
+    <footer id="contact">
+      <div class="foot-grid">
+        <div>
+          <div class="foot-brand"><i class="fas fa-graduation-cap"></i> OUTR University</div>
+          <p>Odisha University of Technology and Research,<br>Ghatikia, Bhubaneswar, 751029</p>
+        </div>
+        <div class="foot-col">
+          <h5>Explore</h5>
+          <a href="#academics">Academics</a>
+          <a href="#campuslife">Campus Life</a>
+          <a href="#hostel">Hostel Life</a>
+          <a href="#scholarship">Scholarship</a>
+        </div>
+        <div class="foot-col">
+          <h5>Resources</h5>
+          <a href="#library">Library</a>
+          <a href="#placements">Placements</a>
+          <a href="#events">Events</a>
+        </div>
+        <div class="foot-col">
+          <h5>Contact</h5>
+          <a href="#"><i class="fas fa-location-dot"></i> Bhubaneswar, Odisha</a>
+          <a href="#"><i class="fas fa-envelope"></i> info.ingenioux@gmail.com</a>
+          <a href="#"><i class="fas fa-globe"></i> ingenioux.github.io</a>
+        </div>
+      </div>
+      <div class="foot-bottom">
+        <span>© 2026 All rights reserved by 
+          <a href="https://ingenioux.github.io/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none; display: inline-block; margin-left: 5px;">#ALEKH</a>
+        </span>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<script>
+  // Mobile hamburger menu navigation control logic
+  const sidebarNav = document.getElementById('sidebarNav');
+  const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+
+  function closeMobileMenu() {
+    sidebarNav.classList.remove('menu-open');
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    mobileMenuBtn.innerHTML = '<i class="fas fa-bars"></i>';
+  }
+  function openMobileMenu() {
+    sidebarNav.classList.add('menu-open');
+    mobileMenuBtn.setAttribute('aria-expanded', 'true');
+    mobileMenuBtn.innerHTML = '<i class="fas fa-xmark"></i>';
+  }
+
+  mobileMenuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebarNav.classList.contains('menu-open') ? closeMobileMenu() : openMobileMenu();
+  });
+
+  document.addEventListener('click', (e) => {
+    if (sidebarNav.classList.contains('menu-open') && !sidebarNav.contains(e.target)) {
+      closeMobileMenu();
+    }
+  });
+
+  const navItems = document.querySelectorAll('.nav-links li');
+  navItems.forEach(li => {
+    li.addEventListener('click', () => {
+      const href = li.dataset.href;
+      if (href) {
+        window.location.href = href;
+        return;
+      }
+      navItems.forEach(item => item.classList.remove('active'));
+      li.classList.add('active');
+      closeMobileMenu();
+    });
+  });
+</script>
+</body>
+</html>

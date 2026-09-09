@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>About Us — PlayLearn</title>
+<meta name="description" content="About Alekh Chandra Sahoo, the creator of PlayLearn — OUTR study materials, e-classroom and the PlayLearn shop." />
+<meta name="robots" content="index, follow">
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  .about-main { padding: 48px 0 80px; }
+
+  .about-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .about-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 28px;
+  }
+
+  .profile-row-card {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+
+  .profile-img-rect {
+    width: 130px;
+    height: 170px;
+    border-radius: var(--radius);
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .profile-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-details h1 {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--text);
+    margin: 0 0 5px;
+  }
+
+  .social-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color var(--dur) var(--ease);
+  }
+
+  .social-line i { width: 20px; color: var(--accent); font-size: 16px; }
+  .social-line:hover { color: var(--accent); }
+
+  .personal-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .info-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+
+  .info-box i { font-size: 22px; color: var(--accent); margin-bottom: 8px; }
+  .info-box h4 { font-size: 11px; color: var(--text-faint); margin: 0 0 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .info-box p { font-size: 14px; font-weight: 600; color: var(--text); margin: 0; }
+
+  .feedback-card {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .feedback-card a { color: var(--accent); font-weight: 600; text-decoration: none; }
+  .feedback-card a:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .profile-row-card { flex-direction: column; text-align: center; }
+    .profile-details { align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a href="index.html" class="brand">
+      <span class="brand-main">PlayLearn</span>
+      <span class="brand-sub">/ About</span>
+    </a>
+    <a class="main-site-link" href="https://outruniversity.github.io/" target="_blank" rel="noopener">↗ main site</a>
+    <div class="header-actions">
+      <a class="account-link" href="store.html">browse store</a>
+      <a class="account-link" href="index.html">dashboard</a>
+    </div>
+  </div>
+</header>
+
+<main class="about-main">
+  <div class="wrap">
+    <div class="about-grid">
+
+      <div class="about-card profile-row-card">
+        <img src="ALEKH.png" alt="Alekh" class="profile-img-rect" onerror="this.src='https://ui-avatars.com/api/?name=Alekh&background=1f7a5c&color=fff&size=200'">
+        <div class="profile-details">
+          <h1>ALEKH CHANDRA SAHOO</h1>
+          <a href="https://github.com/ingenioux" class="social-line">
+            <i class="fab fa-github"></i>
+            <span>github.com/ingenioux</span>
+          </a>
+          <a href="https://linkedin.com/in/ingenioux" class="social-line">
+            <i class="fab fa-linkedin"></i>
+            <span>linkedin.com/ingenioux</span>
+          </a>
+          <a href="https://instagram.com/ingenioux.io" class="social-line">
+            <i class="fab fa-instagram"></i>
+            <span>instagram.com/ingenioux.io</span>
+          </a>
+          <a href="mailto:info.ingenioux@gmail.com" class="social-line">
+            <i class="fas fa-envelope"></i>
+            <span>info.ingenioux@gmail.com</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="personal-info">
+        <div class="info-box">
+          <i class="fas fa-map-marker-alt"></i>
+          <h4>Location</h4>
+          <p>Puri, Odisha</p>
+        </div>
+        <div class="info-box">
+          <i class="fas fa-user-graduate"></i>
+          <h4>Degree</h4>
+          <p>M.Tech CSE</p>
+        </div>
+        <div class="info-box">
+          <i class="fas fa-laptop-code"></i>
+          <h4>Research Area</h4>
+          <p>Cloud Computing</p>
+        </div>
+      </div>
+
+      <div class="about-card feedback-card">
+        <span>Share your feedback,</span>
+        <a href="https://forms.gle/L8pTPJ3zobzV4NnU9" target="_blank" rel="noopener noreferrer">Click here</a>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 PlayLearn by Alekh. Digital goods, delivered by email.</p>
+    <div class="footer-links">
+      <a href="store.html">Store</a>
+      <a href="executive.html">Executive Login</a>
+      <a href="admin.html">Admin Login</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
