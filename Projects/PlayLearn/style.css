@@ -1505,26 +1505,24 @@ a { color: inherit; }
   background: var(--bg-elevated);
   box-shadow: var(--shadow-sm);
 }
-.admin-table, .executive-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.admin-table, .executive-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .admin-table th, .admin-table td, .executive-table th, .executive-table td {
   text-align: left;
-  padding: 11px 14px;
+  padding: 10px 10px;
   border-bottom: 1px solid var(--border-soft);
   vertical-align: middle;
-  white-space: normal;
-  word-break: break-word;
   overflow-wrap: anywhere;
 }
 .admin-table th, .executive-table th { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-faint); background: var(--bg-sunken); }
 .admin-table tbody tr:last-child td, .executive-table tbody tr:last-child td { border-bottom: none; }
 .admin-mono, .executive-mono { font-family: var(--font-mono); color: var(--text-dim); font-size: 12px; }
 .admin-empty, .executive-empty { text-align: center; color: var(--text-faint); padding: 34px 14px; }
-.admin-table td:last-child, .executive-table td:last-child {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
+.admin-table td:last-child, .executive-table td:last-child,
+.admin-table th:last-child, .executive-table th:last-child {
+  width: 1%;
+  white-space: nowrap;
 }
+.admin-table td .btn-small + .btn-small, .executive-table td .btn-small + .btn-small { margin-left: 6px; }
 
 .admin-link-form, .executive-link-form {
   display: flex;
