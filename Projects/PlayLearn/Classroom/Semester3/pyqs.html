@@ -218,7 +218,7 @@
           const entry = linksMap[`${subject.code}-PYQs`];
           const url = entry && entry.url;
           const action = url
-            ? `<a href="${escapeHTML(url)}" target="_blank" class="download-btn" rel="noopener noreferrer">Download</a>`
+            ? `<a href="${escapeHTML(url)}" target="_blank" class="download-btn" data-material="${escapeHTML(subject.code + " — " + subject.name + " (PYQ)")}" rel="noopener noreferrer">Download</a>`
             : `<span class="download-btn" style="opacity:.5;cursor:not-allowed;">Not uploaded yet</span>`;
           return `
                     <div class="paper-card">

@@ -200,8 +200,9 @@
   function materialTileHTML(tag, subject, typeKey, unlocked) {
     const linkId = `${subject.code}-${typeKey}`;
     const tileClass = unlocked ? "material-tile" : "material-tile is-locked";
+    const materialLabel = `${subject.code} — ${subject.name} (${tag})`;
     const button = unlocked
-      ? `<button class="btn material-download-btn" type="button" data-link-id="${linkId}">⬇ Download</button>`
+      ? `<button class="btn material-download-btn" type="button" data-link-id="${linkId}" data-material="${escapeHTML(materialLabel)}">⬇ Download</button>`
       : `<button class="btn" type="button" disabled>Purchase this to download</button>`;
     return `
       <div class="${tileClass}">

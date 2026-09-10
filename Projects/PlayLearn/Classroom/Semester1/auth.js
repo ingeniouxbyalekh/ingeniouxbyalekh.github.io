@@ -835,6 +835,7 @@ function logoutUser() {
   syncHeader();
   if (typeof showToast === "function") showToast("logged out");
   if (user && user.email) releaseDeviceSession("shop", emailToKey(user.email));
+  if (user && user.email) logActivity(emailToKey(user.email), "logout");
 }
 
 function initials(name) {
@@ -932,6 +933,92 @@ syncHeader();
 window.addEventListener("storage", (e) => {
   if (e.key === AUTH_KEY) syncHeader();
 });
+
+/* ---------------------------------------------------------------
+   Activity log — private, never surfaced to the student themselves
+   ---------------------------------------------------------------
+   Same feature as the main site's auth.js (activity/<emailKey>/
+   <pushId> in Firebase, read only by admin.html/executive.html) —
+   this is the classroom-side twin so time spent inside a semester's
+   classroom (not just the shop) shows up too.
+     type: "logout" | "pageview" | "click"
+   `page` is a path relative to the site root, e.g.
+   "Classroom/Semester2/notes.html" — never a bare "index.html" or
+   "notes.html", since every semester (and the main site) has its
+   own page by that name and a bare filename can't tell them apart.
+   A click's `material` field, when present, names the specific
+   subject + material type a Download link was for, since every
+   "Download" link on a page shares that same generic label.
+--------------------------------------------------------------- */
+const ACTIVITY_LAST_PAGE_KEY = "PlayLearn_activity_last_page";
+
+function pageNameFromPath(pathname) {
+  const parts = String(pathname || "").split("/").filter(Boolean);
+  const file = parts[parts.length - 1] || "index.html";
+  const parent = parts[parts.length - 2] || "";
+  const grandparent = parts[parts.length - 3] || "";
+  if (/^Semester\d+$/i.test(parent) && /^Classroom$/i.test(grandparent)) {
+    return `Classroom/${parent}/${file}`;
+  }
+  return file;
+}
+
+function currentPageName() {
+  return pageNameFromPath(window.location.pathname);
+}
+
+// Fire-and-forget — a logging failure never blocks or breaks the
+// page it happens on.
+async function logActivity(emailKey, type, details) {
+  if (!db || !emailKey) return;
+  try {
+    await db.ref("activity/" + emailKey).push({
+      type,
+      page: currentPageName(),
+      ts: Date.now(),
+      ...(details || {}),
+    });
+  } catch (err) {
+    console.error("Could not log activity:", err);
+  }
+}
+
+function trackPageView() {
+  const user = getUser();
+  if (!user || !user.email) return;
+  let from = "";
+  try {
+    from = sessionStorage.getItem(ACTIVITY_LAST_PAGE_KEY) || "";
+  } catch (_) { /* ignore */ }
+  if (!from && document.referrer) {
+    try {
+      from = pageNameFromPath(new URL(document.referrer).pathname);
+    } catch (_) { /* ignore */ }
+  }
+  logActivity(emailToKey(user.email), "pageview", { from: from || "(direct)" });
+  try {
+    sessionStorage.setItem(ACTIVITY_LAST_PAGE_KEY, currentPageName());
+  } catch (_) { /* ignore */ }
+}
+
+// Every click on a link or button, site-wide, while signed in.
+function trackClicks() {
+  document.addEventListener("click", (e) => {
+    const user = getUser();
+    if (!user || !user.email) return;
+    const el = e.target.closest("a, button");
+    if (!el) return;
+    const label = (el.textContent || el.getAttribute("aria-label") || "").trim().replace(/\s+/g, " ").slice(0, 80);
+    const href = el.tagName === "A" ? el.getAttribute("href") || "" : "";
+    const material = (el.dataset && el.dataset.material) || "";
+    const details = { tag: el.tagName.toLowerCase(), label, href };
+    if (material) details.material = material;
+    logActivity(emailToKey(user.email), "click", details);
+  }, true);
+}
+
+trackPageView();
+trackClicks();
 
 /* ---------------------------------------------------------------
    Toast fallback — pages that want a fancier toast can define their

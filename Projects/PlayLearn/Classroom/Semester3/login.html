@@ -211,6 +211,7 @@
         return;
       }
       setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "", photoUrl: profile.photoUrl || "", photoOriginalUrl: profile.photoOriginalUrl || "" });
+      logActivity(emailKey, "login", { method: "password" });
       showToast("Logged in");
       window.location.href = postLoginDestination();
     } catch (err) {
@@ -248,6 +249,7 @@
       await saveUserToCloud({ name, email, phone, regNo, semester, password });
       await claimDeviceSession("shop", emailToKey(email), getDeviceId());
       setUser({ name, email, phone, regNo, semester });
+      logActivity(emailToKey(email), "signup", { method: "password" });
       showToast("Account created");
       window.location.href = postLoginDestination();
     } catch (err) {
@@ -295,6 +297,7 @@
       return;
     }
     setUser({ name: profile.name, email: profile.email, phone: profile.phone || "", regNo: profile.regNo || "", semester: profile.semester || "", photoUrl: profile.photoUrl || "", photoOriginalUrl: profile.photoOriginalUrl || "" });
+    logActivity(emailToKey(profile.email), "login", { method: "google" });
     showToast("Logged in with Google");
     window.location.href = postLoginDestination();
   }

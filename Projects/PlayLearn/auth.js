@@ -1017,8 +1017,26 @@ syncAccountLink();
 --------------------------------------------------------------- */
 const ACTIVITY_LAST_PAGE_KEY = "PlayLearn_activity_last_page";
 
+// Path relative to the site root — "index.html" for the main
+// Downloads hub, "profile.html" for the shop's own profile page, or
+// "Classroom/Semester2/notes.html" for a page inside a semester's
+// classroom. Several pages across the site share a plain filename
+// (every semester's classroom, plus the main site, each has its own
+// index.html/login.html/profile.html), so a bare filename alone
+// can't tell them apart in the activity log — this can.
+function pageNameFromPath(pathname) {
+  const parts = String(pathname || "").split("/").filter(Boolean);
+  const file = parts[parts.length - 1] || "index.html";
+  const parent = parts[parts.length - 2] || "";
+  const grandparent = parts[parts.length - 3] || "";
+  if (/^Semester\d+$/i.test(parent) && /^Classroom$/i.test(grandparent)) {
+    return `Classroom/${parent}/${file}`;
+  }
+  return file;
+}
+
 function currentPageName() {
-  return window.location.pathname.split("/").pop() || "index.html";
+  return pageNameFromPath(window.location.pathname);
 }
 
 // Fire-and-forget — a logging failure never blocks or breaks the
@@ -1046,7 +1064,7 @@ function trackPageView() {
   } catch (_) { /* ignore */ }
   if (!from && document.referrer) {
     try {
-      from = new URL(document.referrer).pathname.split("/").pop() || "";
+      from = pageNameFromPath(new URL(document.referrer).pathname);
     } catch (_) { /* ignore */ }
   }
   logActivity(emailToKey(user.email), "pageview", { from: from || "(direct)" });
@@ -1068,7 +1086,14 @@ function trackClicks() {
     if (!el) return;
     const label = (el.textContent || el.getAttribute("aria-label") || "").trim().replace(/\s+/g, " ").slice(0, 80);
     const href = el.tagName === "A" ? el.getAttribute("href") || "" : "";
-    logActivity(emailToKey(user.email), "click", { tag: el.tagName.toLowerCase(), label, href });
+    // Every "Download" button on the site shares that same generic
+    // label — data-material (set on the button/link itself, where
+    // the subject + material type is known) is what actually says
+    // which download this was.
+    const material = (el.dataset && el.dataset.material) || "";
+    const details = { tag: el.tagName.toLowerCase(), label, href };
+    if (material) details.material = material;
+    logActivity(emailToKey(user.email), "click", details);
   }, true);
 }
 

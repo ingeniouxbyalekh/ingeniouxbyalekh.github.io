@@ -230,7 +230,7 @@
           const entry = linksMap[`${subject.code}-Notes`];
           const url = entry && entry.url;
           const action = url
-            ? `<a href="${escapeHTML(url)}" target="_blank" class="download-btn" rel="noopener noreferrer"><i class="fas fa-download"></i> Download</a>`
+            ? `<a href="${escapeHTML(url)}" target="_blank" class="download-btn" data-material="${escapeHTML(subject.code + " — " + subject.name + " (Notes)")}" rel="noopener noreferrer"><i class="fas fa-download"></i> Download</a>`
             : `<span class="download-btn" style="opacity:.5;cursor:not-allowed;">Not uploaded yet</span>`;
           return `
                     <div class="syllabus-card">

@@ -916,23 +916,82 @@
     }
   }
 
-  // Turns one activity record into a short human-readable line —
-  // what page a pageview came from, what a click landed on, which
-  // field a profile edit touched, which method a login/signup used.
-  function activityDetailText(entry) {
-    const parts = [];
-    if (entry.type === "pageview" && entry.from) parts.push(`came from ${entry.from}`);
-    if (entry.type === "click") {
-      if (entry.label) parts.push(`clicked "${entry.label}"`);
-      if (entry.href) parts.push(`→ ${entry.href}`);
-    }
-    if (entry.type === "profile_update" && entry.field) parts.push(entry.field.replace(/_/g, " ") + " changed");
-    if (entry.method) parts.push(`via ${entry.method}`);
-    return parts.join(" — ") || "—";
+  // Shortens a long string to maxLen chars with an ellipsis. The full
+  // text still goes in a title attribute wherever this is used, so
+  // nothing is actually lost — just kept out of the row's width.
+  function activityShortenLabel(str, maxLen) {
+    const s = String(str);
+    return s.length > maxLen ? s.slice(0, maxLen - 1).trimEnd() + "…" : s;
   }
 
+  // Turns a clicked link's href into a short, recognizable label
+  // instead of dumping the full URL into the row.
+  function activityLinkLabel(href) {
+    try {
+      const host = new URL(href).hostname.replace(/^www\./, "");
+      if (host === "drive.google.com") return "Google Drive ↗";
+      if (host === "docs.google.com") return "Google Docs ↗";
+      if (host === "forms.gle") return "Google Form ↗";
+      return host + " ↗";
+    } catch {
+      return "link ↗";
+    }
+  }
+
+  // Turns one activity record into a short, scannable HTML line —
+  // what page a pageview came from, what a click landed on (as a
+  // truncated label plus a short clickable link chip), which field a
+  // profile edit touched, which method a login/signup used. Long text
+  // is shortened with a title tooltip carrying the full value, rather
+  // than left to overflow the row. Callers must NOT re-escape this —
+  // it returns safe, already-escaped HTML (including a real <a> tag).
+  function activityDetailText(entry) {
+    const sep = `<span class="activity-detail-sep">·</span>`;
+    const parts = [];
+    if (entry.type === "pageview" && entry.from) {
+      parts.push(`from ${activityEscapeHtml(activityPageLabel(entry.from))}`);
+    }
+    if (entry.type === "click") {
+      const clickText = entry.material || (entry.label ? `"${entry.label}"` : "");
+      if (clickText) {
+        const short = activityEscapeHtml(activityShortenLabel(clickText, 42));
+        parts.push(`<span title="${activityEscapeHtml(clickText)}">${short}</span>`);
+      }
+      if (entry.href) {
+        const safeHref = activityEscapeHtml(entry.href);
+        parts.push(`<a href="${safeHref}" target="_blank" rel="noopener" class="activity-link" title="${safeHref}">${activityEscapeHtml(activityLinkLabel(entry.href))}</a>`);
+      }
+    }
+    if (entry.type === "profile_update" && entry.field) {
+      parts.push(activityEscapeHtml(entry.field.replace(/_/g, " ")) + " changed");
+    }
+    if (entry.method) parts.push(`via ${activityEscapeHtml(entry.method)}`);
+    return parts.join(sep) || "—";
+  }
+
+  // Turns the raw `page` value ("index.html", "profile.html", or
+  // "Classroom/Semester2/notes.html") into something readable —
+  // distinguishes the main Downloads hub from each semester's
+  // classroom, since several pages across the site share a bare
+  // filename (see pageNameFromPath in auth.js).
+  function activityPageLabel(page) {
+    if (!page || page === "(direct)") return page || "—";
+    const m = String(page).match(/^Classroom\/Semester(\d+)\/(.+)$/i);
+    if (m) return `Classroom · Sem ${m[1]} · ${m[2]}`;
+    return `Home · ${page}`;
+  }
+
+  // Escapes text for safe use both as HTML content and inside a
+  // quoted HTML attribute (title="...", href="...") — activityDetailText
+  // now builds real tags (an <a> link chip, title tooltips), so this
+  // needs to cover &, <, >, and quotes, not just "<".
   function activityEscapeHtml(str) {
-    return String(str).replace(/</g, "&lt;");
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   // Renders one ranked bar list (top 6 by count) into containerId, or
@@ -980,13 +1039,14 @@
       if (counts[entry.type] !== undefined) counts[entry.type]++;
       if (entry.ts && (lastTs === null || entry.ts > lastTs)) lastTs = entry.ts;
       if (entry.type === "pageview" && entry.page) {
-        pageCounts[entry.page] = (pageCounts[entry.page] || 0) + 1;
-        const from = entry.from && entry.from !== "(direct)" ? entry.from : "(direct)";
-        const flowKey = `${from} → ${entry.page}`;
+        const pageLabel = activityPageLabel(entry.page);
+        pageCounts[pageLabel] = (pageCounts[pageLabel] || 0) + 1;
+        const from = entry.from && entry.from !== "(direct)" ? activityPageLabel(entry.from) : "(direct)";
+        const flowKey = `${from} → ${pageLabel}`;
         flowCounts[flowKey] = (flowCounts[flowKey] || 0) + 1;
       }
       if (entry.type === "click") {
-        const label = entry.label || entry.href || "(unlabeled)";
+        const label = entry.material || entry.label || entry.href || "(unlabeled)";
         clickCounts[label] = (clickCounts[label] || 0) + 1;
       }
     });
@@ -1043,8 +1103,8 @@
         .map((entry) => {
           const when = entry.ts ? new Date(entry.ts).toLocaleString() : "—";
           const type = String(entry.type || "—").replace(/_/g, " ");
-          const page = String(entry.page || "—").replace(/</g, "&lt;");
-          const detail = activityDetailText(entry).replace(/</g, "&lt;");
+          const page = activityPageLabel(entry.page).replace(/</g, "&lt;");
+          const detail = activityDetailText(entry); // already safe HTML — do not re-escape
           return `<tr><td>${when}</td><td>${type}</td><td>${page}</td><td>${detail}</td></tr>`;
         })
         .join("");
