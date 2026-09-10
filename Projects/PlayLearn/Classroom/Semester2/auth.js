@@ -834,7 +834,7 @@ function logoutUser() {
   localStorage.removeItem(AUTH_KEY);
   syncHeader();
   if (typeof showToast === "function") showToast("logged out");
-  if (user && user.email) releaseDeviceSession("shop", emailToKey(user.email));
+  if (user && user.email) releaseDeviceSession("user", emailToKey(user.email));
   if (user && user.email) logActivity(emailToKey(user.email), "logout");
 }
 
@@ -922,8 +922,8 @@ syncHeader();
     syncHeader();
     if (typeof showToast === "function") showToast("Logged out — this account signed in on another device");
   }
-  verifyDeviceSession("shop", emailKey, invalidate);
-  watchDeviceSession("shop", emailKey, invalidate);
+  verifyDeviceSession("user", emailKey, invalidate);
+  watchDeviceSession("user", emailKey, invalidate);
 })();
 
 // Cross-tab sync: if the user signs in/out in another tab (this

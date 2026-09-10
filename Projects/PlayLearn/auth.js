@@ -972,7 +972,7 @@ function logoutUser() {
   localStorage.removeItem(AUTH_KEY);
   syncAccountLink();
   if (typeof showToast === "function") showToast("logged out");
-  if (user && user.email) releaseDeviceSession("shop", emailToKey(user.email));
+  if (user && user.email) releaseDeviceSession("user", emailToKey(user.email));
 }
 
 function syncAccountLink() {
@@ -1367,9 +1367,9 @@ function captureDeviceInfoOnce(accountType, emailKey, extra) {
     syncAccountLink();
     if (typeof showToast === "function") showToast("Logged out — this account signed in on another device");
   }
-  captureDeviceInfoOnce("shop", emailKey, { name: user.name || "", email: user.email });
-  verifyDeviceSession("shop", emailKey, invalidate);
-  watchDeviceSession("shop", emailKey, invalidate);
+  captureDeviceInfoOnce("user", emailKey, { name: user.name || "", email: user.email });
+  verifyDeviceSession("user", emailKey, invalidate);
+  watchDeviceSession("user", emailKey, invalidate);
 })();
 
 // Cross-tab sync: if the user signs in/out in another tab (this page,

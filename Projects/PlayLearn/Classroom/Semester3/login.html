@@ -205,7 +205,7 @@
         return;
       }
       await clearLoginAttempts("loginAttempts", emailKey);
-      const canProceed = await resolveDeviceLogin("shop", emailKey);
+      const canProceed = await resolveDeviceLogin("user", emailKey);
       if (!canProceed) {
         showToast("Login cancelled");
         return;
@@ -247,7 +247,7 @@
         return;
       }
       await saveUserToCloud({ name, email, phone, regNo, semester, password });
-      await claimDeviceSession("shop", emailToKey(email), getDeviceId());
+      await claimDeviceSession("user", emailToKey(email), getDeviceId());
       setUser({ name, email, phone, regNo, semester });
       logActivity(emailToKey(email), "signup", { method: "password" });
       showToast("Account created");
@@ -290,7 +290,7 @@
   }
 
   async function finishGoogleLogin(profile) {
-    const canProceed = await resolveDeviceLogin("shop", emailToKey(profile.email));
+    const canProceed = await resolveDeviceLogin("user", emailToKey(profile.email));
     if (!canProceed) {
       showToast("Login cancelled");
       if (auth) auth.signOut();
