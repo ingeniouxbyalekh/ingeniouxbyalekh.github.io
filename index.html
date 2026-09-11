@@ -558,7 +558,7 @@ published research, and real-time technical insights.</p>
   (function watchTotalVisitors(){
     const el = document.getElementById('totalVisitorsCount');
     if(!el) return;
-    onValue(ref(dbVisitor, 'visitorMeta/count'), (snap)=>{
+    onValue(ref(dbVisitor, 'TotalVisitors/count'), (snap)=>{
       const count = snap.val();
       el.textContent = 'Total visitors: ' + (typeof count === 'number' ? count.toLocaleString() : '0');
     }, ()=>{
@@ -629,9 +629,9 @@ published research, and real-time technical insights.</p>
       const ua = navigator.userAgent;
       const device = parseUserAgent(ua);
 
-      // Atomically bump a shared counter so every visitor gets a sequential number.
+      // Atomically bump the site-wide total; this also becomes the visitor's sequential number.
       const counterResult = await withTimeout(
-        runTransaction(ref(dbVisitor, 'visitorMeta/count'), (current) => (current || 0) + 1),
+        runTransaction(ref(dbVisitor, 'TotalVisitors/count'), (current) => (current || 0) + 1),
         10000
       );
       const visitorNumber = counterResult.committed ? counterResult.snapshot.val() : null;

@@ -155,6 +155,52 @@ async function resolveVisitorInfo(){
 
 const visitorInfoPromise = resolveVisitorInfo();
 
+// ---------- visitor logging (ingenioux-visitor database only) ----------
+// Runs once per browser tab/session. Bumps the shared TotalVisitors/count
+// counter (also used as this visitor's sequential number) and saves the
+// full visitor record, same as the public site does.
+(async function logAdminVisit(){
+  try{
+    if(sessionStorage.getItem('ingenioux_admin_visit_logged')) return;
+
+    const info = await withTimeout(visitorInfoPromise, 8000);
+
+    const counterResult = await withTimeout(
+      runTransaction(ref(dbVisitor, 'TotalVisitors/count'), (current) => (current || 0) + 1),
+      10000
+    );
+    const visitorNumber = counterResult.committed ? counterResult.snapshot.val() : null;
+
+    await withTimeout(push(ref(dbVisitor, VISITORS_PATH), {
+      visitorNumber,
+      ip: info.ip || null,
+      city: info.city || null,
+      region: info.region || null,
+      country: info.country || null,
+      countryCode: info.countryCode || null,
+      latitude: info.latitude ?? null,
+      longitude: info.longitude ?? null,
+      timezone: info.timezone || null,
+      isp: info.isp || null,
+      userAgent: info.userAgent || null,
+      browser: info.browser || null,
+      os: info.os || null,
+      deviceType: info.deviceType || null,
+      screen: `${screen.width}x${screen.height}`,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      language: navigator.language || null,
+      referrer: document.referrer || 'direct',
+      page: location.pathname + location.search,
+      createdAt: serverTimestamp()
+    }), 10000);
+
+    sessionStorage.setItem('ingenioux_admin_visit_logged', '1');
+  }catch(err){
+    // Never let visitor logging break the admin page.
+    console.warn('Admin visit logging failed:', err);
+  }
+})();
+
 // ---------- elements ----------
 const loginScreen = document.getElementById('loginScreen');
 const dashboard = document.getElementById('dashboard');
