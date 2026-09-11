@@ -203,6 +203,19 @@ body{min-height:100vh;}
 .panel.collapsed .panel-body{display:none;}
 .panel.collapsed .toolbar-extra{display:none;}
 
+/* ---- top blogs ---- */
+.top-blogs-list{display:flex;flex-direction:column;gap:10px;}
+.blog-tile{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  border:1px solid var(--line);background:var(--surface-2);border-radius:3px;
+  padding:14px 18px;
+}
+.blog-rank{font-family:var(--font-mono);font-size:13px;color:var(--ember);font-weight:600;min-width:28px;flex:0 0 auto;}
+.blog-info{display:flex;flex-direction:column;gap:4px;flex:1 1 220px;min-width:0;}
+.blog-name{font-family:var(--font-display);font-weight:600;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.blog-views{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-faint);}
+.blog-tile .btn{flex:0 0 auto;}
+
 /* ---- login sessions ---- */
 .session-list{display:flex;flex-direction:column;gap:10px;}
 .session-tile{

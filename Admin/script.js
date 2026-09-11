@@ -35,6 +35,7 @@ const dbVisitor = getDatabase(visitorApp);
 const ADMIN_PATH = 'adminConfig/passwordHash';
 const MESSAGES_PATH = 'contactMessages';
 const VISITORS_PATH = 'visitors';
+const BLOGS_PATH = 'blogs';
 const LOGIN_ATTEMPTS_PATH = 'loginAttempts';   // per ip/device: current fail count + block state
 const LOGIN_LOGS_PATH = 'loginAttemptLogs';    // flat history of every failed attempt, for the admin table
 const ACTIVE_SESSION_PATH = 'adminConfig/activeSession'; // single-device login enforcement
@@ -252,6 +253,9 @@ const loginLogsTableWrap = document.getElementById('loginLogsTableWrap');
 const loginLogsTableBody = document.getElementById('loginLogsTableBody');
 const clearLoginLogsBtn = document.getElementById('clearLoginLogsBtn');
 
+const topBlogsLoading = document.getElementById('topBlogsLoading');
+const topBlogsList = document.getElementById('topBlogsList');
+
 const sessionsLoading = document.getElementById('sessionsLoading');
 const sessionList = document.getElementById('sessionList');
 const clearSessionsBtn = document.getElementById('clearSessionsBtn');
@@ -265,6 +269,7 @@ let messagesListenerAttached = false;
 let visitorsListenerAttached = false;
 let loginLogsListenerAttached = false;
 let sessionsListenerAttached = false;
+let topBlogsListenerAttached = false;
 let unsubscribeActiveSession = null;
 
 // ---------- auth flow ----------
@@ -276,6 +281,7 @@ function showDashboard(){
   startLoginLogsListener();
   startSessionsListener();
   startActiveSessionListener();
+  startTopBlogsListener();
 }
 function showLogin(){
   dashboard.style.display = 'none';
@@ -372,6 +378,7 @@ wireCollapse('msgPanelToggle');
 wireCollapse('visitorPanelToggle');
 wireCollapse('loginLogsPanelToggle');
 wireCollapse('sessionsPanelToggle');
+wireCollapse('topBlogsPanelToggle');
 
 checkExistingSession();
 
@@ -769,6 +776,56 @@ function updateVisitorStats(){
   const todayStart = new Date();
   todayStart.setHours(0,0,0,0);
   statVisitorsToday.textContent = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+}
+
+// ---------- top blogs ----------
+// Reads blogs/<slug>/count from the visitor DB (bumped by each blog post's own
+// visitor-logging script) and shows the 10 most-viewed posts, newest count first.
+function startTopBlogsListener(){
+  if(topBlogsListenerAttached) return;
+  topBlogsListenerAttached = true;
+
+  topBlogsLoading.style.display = 'block';
+  topBlogsLoading.classList.remove('is-error');
+  topBlogsLoading.textContent = 'Loading top blogs…';
+
+  onValue(ref(dbVisitor, BLOGS_PATH), (snapshot)=>{
+    const val = snapshot.val() || {};
+    const blogs = Object.keys(val)
+      .map(slug => ({ slug, count: (val[slug] && val[slug].count) || 0 }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+    topBlogsLoading.style.display = 'none';
+    renderTopBlogs(blogs);
+  }, (err)=>{
+    console.error('Top blogs listener error:', err);
+    topBlogsLoading.style.display = 'block';
+    topBlogsLoading.classList.add('is-error');
+    topBlogsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function renderTopBlogs(blogs){
+  if(blogs.length === 0){
+    topBlogsList.innerHTML = '';
+    topBlogsLoading.style.display = 'block';
+    topBlogsLoading.classList.remove('is-error');
+    topBlogsLoading.textContent = 'No blog views recorded yet.';
+    return;
+  }
+
+  topBlogsLoading.style.display = 'none';
+
+  topBlogsList.innerHTML = blogs.map((b, i) => `
+    <div class="blog-tile">
+      <span class="blog-rank">#${i + 1}</span>
+      <div class="blog-info">
+        <span class="blog-name">${escapeHtml(b.slug)}</span>
+        <span class="blog-views">${b.count} view${b.count === 1 ? '' : 's'}</span>
+      </div>
+      <a class="btn btn-small btn-primary" href="https://ingenioux.in/Blogs/${encodeURIComponent(b.slug)}.html" target="_blank" rel="noopener noreferrer">Visit</a>
+    </div>
+  `).join('');
 }
 
 // Builds <datalist> suggestions straight from what's actually in the Visitors table, A→Z.
