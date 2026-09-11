@@ -78,6 +78,20 @@
     <div class="panel-status" id="passwordStatus"></div>
   </div>
 
+  <!-- ---- top blogs ---- -->
+  <div class="panel collapsed">
+    <div class="msg-toolbar">
+      <h2>Top blogs</h2>
+      <div class="admin-actions">
+        <button class="btn btn-small panel-toggle" id="topBlogsPanelToggle" title="Expand" aria-label="Expand top blogs">+</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="loading-row" id="topBlogsLoading">Loading top blogs…</div>
+      <div class="top-blogs-list" id="topBlogsList"></div>
+    </div>
+  </div>
+
   <!-- ---- messages ---- -->
   <div class="panel collapsed">
     <div class="msg-toolbar">
@@ -94,6 +108,50 @@
     <div class="panel-body">
       <div class="loading-row" id="msgLoading">Loading messages…</div>
       <div class="msg-list" id="msgList"></div>
+    </div>
+  </div>
+
+  <!-- ---- login sessions ---- -->
+  <div class="panel collapsed">
+    <div class="msg-toolbar">
+      <h2>Login sessions</h2>
+      <div class="admin-actions">
+        <button class="btn btn-small btn-danger toolbar-extra" id="clearSessionsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="sessionsPanelToggle" title="Expand" aria-label="Expand login sessions">+</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="loading-row" id="sessionsLoading">Loading sessions…</div>
+      <div class="session-list" id="sessionList"></div>
+    </div>
+  </div>
+
+  <!-- ---- failed login attempts ---- -->
+  <div class="panel collapsed">
+    <div class="msg-toolbar">
+      <h2>Failed login attempts</h2>
+      <div class="admin-actions">
+        <button class="btn btn-small btn-danger toolbar-extra" id="clearLoginLogsBtn">Clear all</button>
+        <button class="btn btn-small panel-toggle" id="loginLogsPanelToggle" title="Expand" aria-label="Expand failed login attempts">+</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="loading-row" id="loginLogsLoading">Loading…</div>
+      <div class="visitor-table-wrap" id="loginLogsTableWrap" style="display:none;">
+        <table class="visitor-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>IP address</th>
+              <th>Location</th>
+              <th>Device</th>
+              <th>Browser / OS</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="loginLogsTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -136,64 +194,6 @@
       <div class="visitor-cards-wrap" id="visitorTableWrap" style="display:none;">
         <div class="visitor-cards" id="visitorTableBody"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- ---- top blogs ---- -->
-  <div class="panel collapsed">
-    <div class="msg-toolbar">
-      <h2>Top blogs</h2>
-      <div class="admin-actions">
-        <button class="btn btn-small panel-toggle" id="topBlogsPanelToggle" title="Expand" aria-label="Expand top blogs">+</button>
-      </div>
-    </div>
-    <div class="panel-body">
-      <div class="loading-row" id="topBlogsLoading">Loading top blogs…</div>
-      <div class="top-blogs-list" id="topBlogsList"></div>
-    </div>
-  </div>
-
-  <!-- ---- failed login attempts ---- -->
-  <div class="panel collapsed">
-    <div class="msg-toolbar">
-      <h2>Failed login attempts</h2>
-      <div class="admin-actions">
-        <button class="btn btn-small btn-danger toolbar-extra" id="clearLoginLogsBtn">Clear all</button>
-        <button class="btn btn-small panel-toggle" id="loginLogsPanelToggle" title="Expand" aria-label="Expand failed login attempts">+</button>
-      </div>
-    </div>
-    <div class="panel-body">
-      <div class="loading-row" id="loginLogsLoading">Loading…</div>
-      <div class="visitor-table-wrap" id="loginLogsTableWrap" style="display:none;">
-        <table class="visitor-table">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>IP address</th>
-              <th>Location</th>
-              <th>Device</th>
-              <th>Browser / OS</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="loginLogsTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ---- login sessions ---- -->
-  <div class="panel collapsed">
-    <div class="msg-toolbar">
-      <h2>Login sessions</h2>
-      <div class="admin-actions">
-        <button class="btn btn-small btn-danger toolbar-extra" id="clearSessionsBtn">Clear all</button>
-        <button class="btn btn-small panel-toggle" id="sessionsPanelToggle" title="Expand" aria-label="Expand login sessions">+</button>
-      </div>
-    </div>
-    <div class="panel-body">
-      <div class="loading-row" id="sessionsLoading">Loading sessions…</div>
-      <div class="session-list" id="sessionList"></div>
     </div>
   </div>
 </div>

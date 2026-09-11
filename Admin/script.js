@@ -779,8 +779,9 @@ function updateVisitorStats(){
 }
 
 // ---------- top blogs ----------
-// Reads blogs/<slug>/count from the visitor DB (bumped by each blog post's own
-// visitor-logging script) and shows the 10 most-viewed posts, newest count first.
+// Reads blogs/<slug>/count and blogs/<slug>/title from the visitor DB (bumped
+// by each blog post's own visitor-logging script) and shows the 10
+// most-viewed posts, newest count first.
 function startTopBlogsListener(){
   if(topBlogsListenerAttached) return;
   topBlogsListenerAttached = true;
@@ -792,7 +793,7 @@ function startTopBlogsListener(){
   onValue(ref(dbVisitor, BLOGS_PATH), (snapshot)=>{
     const val = snapshot.val() || {};
     const blogs = Object.keys(val)
-      .map(slug => ({ slug, count: (val[slug] && val[slug].count) || 0 }))
+      .map(slug => ({ slug, title: (val[slug] && val[slug].title) || null, count: (val[slug] && val[slug].count) || 0 }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
     topBlogsLoading.style.display = 'none';
@@ -820,7 +821,7 @@ function renderTopBlogs(blogs){
     <div class="blog-tile">
       <span class="blog-rank">#${i + 1}</span>
       <div class="blog-info">
-        <span class="blog-name">${escapeHtml(b.slug)}</span>
+        <span class="blog-name" title="${escapeHtml(b.slug)}">${escapeHtml(b.title || b.slug)}</span>
         <span class="blog-views">${b.count} view${b.count === 1 ? '' : 's'}</span>
       </div>
       <a class="btn btn-small btn-primary" href="https://ingenioux.in/Blogs/${encodeURIComponent(b.slug)}.html" target="_blank" rel="noopener noreferrer">Visit</a>
