@@ -196,7 +196,7 @@ const visitorInfoPromise = resolveVisitorInfo();
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       language: navigator.language || null,
       referrer: document.referrer || 'direct',
-      page: location.pathname + location.search,
+      page: location.href,
       createdAt: serverTimestamp()
     }), 10000);
 
@@ -832,6 +832,9 @@ function renderVisitorTable(list){
         <span class="v-time">${formatDate(v.createdAt)}</span>
         <span class="v-device">${escapeHtml(v.deviceType) || '—'}</span>
       </div>
+      <div class="v-row v-row-page">
+        <span class="v-item v-page" title="${escapeHtml(v.page)}"><b>Page</b>${escapeHtml(v.page) || '—'}</span>
+      </div>
       <div class="v-row">
         <span class="v-item"><b>IP</b>${escapeHtml(v.ip) || '—'}</span>
         <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}${locationPinIcon(v)}</span>
@@ -840,7 +843,6 @@ function renderVisitorTable(list){
       <div class="v-row">
         <span class="v-item"><b>Browser/OS</b>${escapeHtml([v.browser, v.os].filter(Boolean).join(' / ')) || '—'}</span>
         <span class="v-item"><b>Referrer</b>${escapeHtml(v.referrer) || 'direct'}</span>
-        <span class="v-item v-page" title="${escapeHtml(v.page)}"><b>Page</b>${escapeHtml(v.page) || '—'}</span>
       </div>
     </div>
   `).join('');

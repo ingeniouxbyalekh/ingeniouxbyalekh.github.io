@@ -168,6 +168,8 @@ body{min-height:100vh;}
   letter-spacing:.06em;margin-right:6px;
 }
 .v-item.v-page{flex:1 1 220px;min-width:0;}
+.v-row-page{width:100%;}
+.v-row-page .v-item.v-page{flex:1 1 100%;width:100%;}
 
 /* ---- location pin (opens Google Maps) ---- */
 .v-pin{
