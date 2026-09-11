@@ -1,206 +1,1064 @@
-// ---------- mobile nav toggle ----------
-(function(){
-  const toggle = document.getElementById('navToggle');
-  const menu = document.getElementById('mobileMenu');
-  const closeBtn = document.getElementById('mobileMenuClose');
-  if(!toggle || !menu) return;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+import {
+  getDatabase, ref, get, set, update, remove, onValue, query, orderByChild, limitToLast,
+  runTransaction, push, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
 
-  function openMenu(){
-    document.body.classList.add('menu-open');
-    toggle.setAttribute('aria-expanded', 'true');
-    menu.setAttribute('aria-hidden', 'false');
-  }
-  function closeMenu(){
-    document.body.classList.remove('menu-open');
-    toggle.setAttribute('aria-expanded', 'false');
-    menu.setAttribute('aria-hidden', 'true');
-  }
-  toggle.addEventListener('click', ()=>{
-    document.body.classList.contains('menu-open') ? closeMenu() : openMenu();
-  });
-  if(closeBtn) closeBtn.addEventListener('click', closeMenu);
-  menu.querySelectorAll('a').forEach(a=>a.addEventListener('click', closeMenu));
-  window.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeMenu(); });
+// ---- primary database: contact messages, admin password, login rate-limit state ----
+const firebaseConfig = {
+  apiKey: "AIzaSyAkYWiiqp_nQc7wRE31CH3E0l0wlM-JQ9Y",
+  authDomain: "ingenioux-55f27.firebaseapp.com",
+  databaseURL: "https://ingenioux-55f27-default-rtdb.firebaseio.com",
+  projectId: "ingenioux-55f27",
+  storageBucket: "ingenioux-55f27.firebasestorage.app",
+  messagingSenderId: "514072384167",
+  appId: "1:514072384167:web:d2e3a4c8c024abed924182"
+};
 
-  // highlight the section currently in view
-  const navLinks = menu.querySelectorAll('.mobile-nav-link[data-target]');
-  const sections = Array.from(navLinks)
-    .map(a=>document.getElementById(a.dataset.target))
-    .filter(Boolean);
-  if(sections.length){
-    const navIO = new IntersectionObserver((entries)=>{
-      entries.forEach(entry=>{
-        if(!entry.isIntersecting) return;
-        navLinks.forEach(a=>a.classList.toggle('active', a.dataset.target === entry.target.id));
-      });
-    }, {rootMargin:'-45% 0px -45% 0px'});
-    sections.forEach(sec=>navIO.observe(sec));
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// ---- visitor database: visitor logs, total visitor count, failed-login detail logs ----
+const visitorFirebaseConfig = {
+  apiKey: "AIzaSyBFkN8erxsvRRAwMipQu7xZGLeXsQu9E_w",
+  authDomain: "ingenioux-visitor.firebaseapp.com",
+  databaseURL: "https://ingenioux-visitor-default-rtdb.firebaseio.com",
+  projectId: "ingenioux-visitor",
+  storageBucket: "ingenioux-visitor.firebasestorage.app",
+  messagingSenderId: "426646415346",
+  appId: "1:426646415346:web:38373322949588eb14ed6b"
+};
+
+const visitorApp = initializeApp(visitorFirebaseConfig, 'visitor');
+const dbVisitor = getDatabase(visitorApp);
+
+const ADMIN_PATH = 'adminConfig/passwordHash';
+const MESSAGES_PATH = 'contactMessages';
+const VISITORS_PATH = 'visitors';
+const LOGIN_ATTEMPTS_PATH = 'loginAttempts';   // per ip/device: current fail count + block state
+const LOGIN_LOGS_PATH = 'loginAttemptLogs';    // flat history of every failed attempt, for the admin table
+const ACTIVE_SESSION_PATH = 'adminConfig/activeSession'; // single-device login enforcement
+const SESSIONS_PATH = 'adminSessions'; // login session history + per-session activity log
+const MAX_LOGIN_ATTEMPTS = 3;
+const LOGIN_BLOCK_MS = 60 * 60 * 1000; // 1 hour
+const SESSION_KEY = 'ingenioux_admin_session';
+const SESSION_ID_KEY = 'ingenioux_admin_session_id';
+
+function genSessionId(){
+  return crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(16) + Math.random().toString(16).slice(2));
+}
+
+// ---------- helpers ----------
+async function sha256(text){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// Fails a hung request after this long so buttons never get stuck forever.
+function withTimeout(promise, ms){
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+  ]);
+}
+
+function friendlyError(err){
+  if(err && err.message === 'timeout') return 'This is taking too long — check your connection and try again.';
+  if(err && err.code === 'PERMISSION_DENIED') return 'Blocked by database rules — check your Realtime Database rules.';
+  return 'Something went wrong. Please try again.';
+}
+
+function setStatus(el, msg, type){
+  el.textContent = msg;
+  el.classList.remove('is-success','is-error');
+  if(type) el.classList.add(type === 'success' ? 'is-success' : 'is-error');
+}
+
+function formatDate(ts){
+  if(!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleString(undefined, { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+function escapeHtml(str){
+  return String(str || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// ---------- caller identity (for login rate-limiting) ----------
+// Firebase RTDB keys can't contain . # $ [ ] /
+function sanitizeKey(str){
+  return String(str).replace(/[.#$\[\]/]/g, '_');
+}
+
+function getOrCreateDeviceId(){
+  let id = localStorage.getItem('ingenioux_admin_device_id');
+  if(!id){
+    id = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(16) + Math.random().toString(16).slice(2)));
+    localStorage.setItem('ingenioux_admin_device_id', id);
+  }
+  return id;
+}
+
+// Very small user-agent parser — good enough for admin display, not meant to be exhaustive.
+function parseUserAgent(ua){
+  let browser = 'Unknown';
+  if(/Edg\//.test(ua)) browser = 'Edge';
+  else if(/OPR\//.test(ua)) browser = 'Opera';
+  else if(/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
+  else if(/Firefox\//.test(ua)) browser = 'Firefox';
+  else if(/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+
+  let os = 'Unknown';
+  if(/Windows NT/.test(ua)) os = 'Windows';
+  else if(/Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua)) os = 'macOS';
+  else if(/Android/.test(ua)) os = 'Android';
+  else if(/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+  else if(/Linux/.test(ua)) os = 'Linux';
+
+  let deviceType = 'Desktop';
+  if(/iPad|Tablet/.test(ua)) deviceType = 'Tablet';
+  else if(/Mobi|Android/.test(ua)) deviceType = 'Mobile';
+
+  return { browser, os, deviceType };
+}
+
+// Resolved once per page load — IP/geo lookup is best-effort; falls back to a
+// per-browser device id (localStorage) so blocking still works if it fails.
+async function resolveVisitorInfo(){
+  const ua = navigator.userAgent;
+  const device = parseUserAgent(ua);
+  let geo = {};
+  try{
+    const res = await withTimeout(fetch('https://ipwho.is/'), 6000);
+    const data = await res.json();
+    if(data && data.success !== false){
+      geo = {
+        ip: data.ip || null,
+        city: data.city || null,
+        region: data.region || null,
+        country: data.country || null,
+        countryCode: data.country_code || null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
+        timezone: (data.timezone && data.timezone.id) || null,
+        isp: (data.connection && (data.connection.isp || data.connection.org)) || null
+      };
+    }
+  }catch(err){
+    console.warn('Admin geo lookup failed:', err);
+  }
+  const key = geo.ip ? ('ip_' + sanitizeKey(geo.ip)) : ('device_' + getOrCreateDeviceId());
+  return { ...geo, userAgent: ua, browser: device.browser, os: device.os, deviceType: device.deviceType, key };
+}
+
+const visitorInfoPromise = resolveVisitorInfo();
+
+// ---------- visitor logging (ingenioux-visitor database only) ----------
+// Runs once per browser tab/session. Bumps the shared TotalVisitors/count
+// counter (also used as this visitor's sequential number) and saves the
+// full visitor record, same as the public site does.
+(async function logAdminVisit(){
+  try{
+    if(sessionStorage.getItem('ingenioux_admin_visit_logged')) return;
+
+    const info = await withTimeout(visitorInfoPromise, 8000);
+
+    const counterResult = await withTimeout(
+      runTransaction(ref(dbVisitor, 'TotalVisitors/count'), (current) => (current || 0) + 1),
+      10000
+    );
+    const visitorNumber = counterResult.committed ? counterResult.snapshot.val() : null;
+
+    // Separate tally just for admin-page visits, kept apart from the public TotalVisitors count.
+    await withTimeout(
+      runTransaction(ref(dbVisitor, 'admin/count'), (current) => (current || 0) + 1),
+      10000
+    );
+
+    await withTimeout(push(ref(dbVisitor, VISITORS_PATH), {
+      visitorNumber,
+      ip: info.ip || null,
+      city: info.city || null,
+      region: info.region || null,
+      country: info.country || null,
+      countryCode: info.countryCode || null,
+      latitude: info.latitude ?? null,
+      longitude: info.longitude ?? null,
+      timezone: info.timezone || null,
+      isp: info.isp || null,
+      userAgent: info.userAgent || null,
+      browser: info.browser || null,
+      os: info.os || null,
+      deviceType: info.deviceType || null,
+      screen: `${screen.width}x${screen.height}`,
+      viewport: `${window.innerWidth}x${window.innerHeight}`,
+      language: navigator.language || null,
+      referrer: document.referrer || 'direct',
+      page: location.pathname + location.search,
+      createdAt: serverTimestamp()
+    }), 10000);
+
+    sessionStorage.setItem('ingenioux_admin_visit_logged', '1');
+  }catch(err){
+    // Never let visitor logging break the admin page.
+    console.warn('Admin visit logging failed:', err);
   }
 })();
 
-// ---------- reveal on scroll ----------
-const revealEls = document.querySelectorAll('.reveal');
-const io = new IntersectionObserver((entries)=>{
-  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
-},{threshold:.15});
-revealEls.forEach(el=>io.observe(el));
+// ---------- elements ----------
+const loginScreen = document.getElementById('loginScreen');
+const dashboard = document.getElementById('dashboard');
+const loginForm = document.getElementById('loginForm');
+const loginBtn = document.getElementById('loginBtn');
+const loginStatus = document.getElementById('loginStatus');
+const logoutBtn = document.getElementById('logoutBtn');
 
-// ---------- scroll spine ----------
-const spineFill = document.getElementById('spineFill');
-const spineDot = document.getElementById('spineDot');
-function updateSpine(){
-  const h = document.documentElement.scrollHeight - window.innerHeight;
-  const pct = Math.min(1, Math.max(0, window.scrollY / h));
-  spineFill.style.height = (pct*60)+'vh';
-  spineDot.style.top = (pct*60)+'vh';
+const togglePasswordPanel = document.getElementById('togglePasswordPanel');
+const passwordPanel = document.getElementById('passwordPanel');
+const savePasswordBtn = document.getElementById('savePasswordBtn');
+const passwordStatus = document.getElementById('passwordStatus');
+
+const msgList = document.getElementById('msgList');
+const msgLoading = document.getElementById('msgLoading');
+const statTotal = document.getElementById('statTotal');
+const statUnread = document.getElementById('statUnread');
+const filterBtns = document.querySelectorAll('.msg-filter button');
+
+const visitorsLoading = document.getElementById('visitorsLoading');
+const visitorTableWrap = document.getElementById('visitorTableWrap');
+const visitorTableBody = document.getElementById('visitorTableBody');
+const statVisitors = document.getElementById('statVisitors');
+const statVisitorsToday = document.getElementById('statVisitorsToday');
+const clearVisitorsBtn = document.getElementById('clearVisitorsBtn');
+const visitorIpFilter = document.getElementById('visitorIpFilter');
+const visitorIpList = document.getElementById('visitorIpList');
+const visitorRegionFilter = document.getElementById('visitorRegionFilter');
+const visitorRegionList = document.getElementById('visitorRegionList');
+const visitorCityFilter = document.getElementById('visitorCityFilter');
+const visitorCityList = document.getElementById('visitorCityList');
+const visitorPostalFilter = document.getElementById('visitorPostalFilter');
+const visitorPostalList = document.getElementById('visitorPostalList');
+const visitorDateFrom = document.getElementById('visitorDateFrom');
+const visitorDateTo = document.getElementById('visitorDateTo');
+const visitorDeviceFilter = document.getElementById('visitorDeviceFilter');
+const visitorFilterSearch = document.getElementById('visitorFilterSearch');
+const visitorFilterReset = document.getElementById('visitorFilterReset');
+const visitorFilterCount = document.getElementById('visitorFilterCount');
+
+const loginLogsLoading = document.getElementById('loginLogsLoading');
+const loginLogsTableWrap = document.getElementById('loginLogsTableWrap');
+const loginLogsTableBody = document.getElementById('loginLogsTableBody');
+const clearLoginLogsBtn = document.getElementById('clearLoginLogsBtn');
+
+const sessionsLoading = document.getElementById('sessionsLoading');
+const sessionList = document.getElementById('sessionList');
+const clearSessionsBtn = document.getElementById('clearSessionsBtn');
+
+let currentFilter = 'all';
+let allMessages = [];
+let allVisitorsCache = [];
+let allSessionsCache = [];
+let expandedSessionIds = new Set();
+let messagesListenerAttached = false;
+let visitorsListenerAttached = false;
+let loginLogsListenerAttached = false;
+let sessionsListenerAttached = false;
+let unsubscribeActiveSession = null;
+
+// ---------- auth flow ----------
+function showDashboard(){
+  loginScreen.style.display = 'none';
+  dashboard.style.display = 'block';
+  startMessagesListener();
+  startVisitorsListener();
+  startLoginLogsListener();
+  startSessionsListener();
+  startActiveSessionListener();
 }
-window.addEventListener('scroll', updateSpine, {passive:true});
-updateSpine();
+function showLogin(){
+  dashboard.style.display = 'none';
+  loginScreen.style.display = 'flex';
+}
 
-// ---------- work card cursor glow ----------
-document.querySelectorAll('.work-card').forEach(card=>{
-  card.addEventListener('mousemove', e=>{
-    const r = card.getBoundingClientRect();
-    card.style.setProperty('--x', (e.clientX - r.left)+'px');
-    card.style.setProperty('--y', (e.clientY - r.top)+'px');
+// ---------- single-device login enforcement ----------
+// Whoever logs in most recently writes their sessionId to ACTIVE_SESSION_PATH.
+// Every logged-in tab listens on that path in realtime; if it ever sees a
+// sessionId that isn't its own, someone else has logged in elsewhere, so this
+// device is signed out immediately with an explanatory message.
+function startActiveSessionListener(){
+  if(unsubscribeActiveSession) return; // already listening
+  unsubscribeActiveSession = onValue(ref(db, ACTIVE_SESSION_PATH), (snapshot)=>{
+    const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    if(!mySessionId) return; // not logged in on this device (yet) — ignore
+    const active = snapshot.val();
+    if(active && active.sessionId && active.sessionId !== mySessionId){
+      handleKickedOut(active);
+    }
+  }, (err)=>{
+    console.warn('Active session listener error:', err);
+  });
+}
+
+function stopActiveSessionListener(){
+  if(unsubscribeActiveSession){
+    unsubscribeActiveSession();
+    unsubscribeActiveSession = null;
+  }
+}
+
+// ---------- per-session activity log ----------
+// Every meaningful thing an admin does while logged in gets appended here,
+// scoped to their current session, so the "Login sessions" panel can show
+// exactly what happened during any past visit.
+function logActivity(action, detail){
+  const sid = sessionStorage.getItem(SESSION_ID_KEY);
+  if(!sid) return; // not logged in — nothing to attach this to
+  push(ref(db, `${SESSIONS_PATH}/${sid}/activities`), {
+    action,
+    detail: detail || null,
+    at: serverTimestamp()
+  }).catch(err => console.warn('Failed to log activity:', err));
+}
+
+function handleKickedOut(active){
+  stopActiveSessionListener();
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_ID_KEY);
+  showLogin();
+  setStatus(loginStatus, 'You were logged out.', 'error');
+}
+
+// On page load, don't just trust the local sessionStorage flag — check whether
+// a *different* device has since taken over the session (e.g. this tab was
+// left open in the background while someone logged in elsewhere).
+async function checkExistingSession(){
+  if(sessionStorage.getItem(SESSION_KEY) !== 'true'){
+    showLogin();
+    return;
+  }
+  const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  try{
+    const snap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    const active = snap.val();
+    if(active && active.sessionId && active.sessionId !== mySessionId){
+      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_ID_KEY);
+      showLogin();
+      setStatus(loginStatus, 'You were logged out.', 'error');
+      return;
+    }
+    showDashboard();
+  }catch(err){
+    // Can't verify (offline, etc.) — fall back to trusting the local session
+    // rather than locking the admin out.
+    console.warn('Active session check failed:', err);
+    showDashboard();
+  }
+}
+
+function wireCollapse(btnId){
+  const btn = document.getElementById(btnId);
+  if(!btn) return;
+  btn.addEventListener('click', ()=>{
+    const panel = btn.closest('.panel');
+    const collapsed = panel.classList.toggle('collapsed');
+    btn.textContent = collapsed ? '+' : '×';
+    btn.setAttribute('aria-label', (collapsed ? 'Expand' : 'Minimize') + ' list');
+  });
+}
+wireCollapse('msgPanelToggle');
+wireCollapse('visitorPanelToggle');
+wireCollapse('loginLogsPanelToggle');
+wireCollapse('sessionsPanelToggle');
+
+checkExistingSession();
+
+loginForm.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const pwd = document.getElementById('adminPassword').value;
+  if(!pwd){ setStatus(loginStatus, 'Enter a password.', 'error'); return; }
+
+  loginBtn.disabled = true;
+  setStatus(loginStatus, 'Checking…', null);
+
+  try{
+    const info = await withTimeout(visitorInfoPromise, 8000)
+      .catch(()=> ({ key: 'device_' + getOrCreateDeviceId() }));
+    const attemptsRef = ref(db, `${LOGIN_ATTEMPTS_PATH}/${info.key}`);
+
+    // Block check happens before anything else — a correct password doesn't bypass a block.
+    const attemptsSnap = await withTimeout(get(attemptsRef), 10000);
+    const attemptsState = attemptsSnap.val() || {};
+    const now = Date.now();
+    if(attemptsState.blockedUntil && attemptsState.blockedUntil > now){
+      const mins = Math.ceil((attemptsState.blockedUntil - now) / 60000);
+      setStatus(loginStatus, `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`, 'error');
+      loginBtn.disabled = false;
+      return;
+    }
+
+    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
+    const hash = await sha256(pwd);
+    let success = false;
+    let previousSessionId = null;
+
+    if(!snap.exists()){
+      // first-time setup: whatever is entered becomes the admin password
+      await withTimeout(set(ref(db, ADMIN_PATH), hash), 10000);
+      success = true;
+      setStatus(loginStatus, 'Admin password created. Logging in…', 'success');
+    }else if(snap.val() === hash){
+      success = true;
+    }
+
+    if(success){
+      // ---- another-device check: warn before taking over an active session ----
+      // Fetching this doesn't touch the block/attempt state above — a cancelled
+      // takeover should leave everything exactly as it was.
+      try{
+        const activeSnap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+        const active = activeSnap.exists() ? activeSnap.val() : null;
+        if(active && active.sessionId){
+          const device = [active.browser, active.os].filter(Boolean).join(' / ');
+          const loc = [active.city, active.country].filter(Boolean).join(', ');
+          const detail = [device, loc].filter(Boolean).join(' · ');
+          const proceed = window.confirm(
+            `Another login found${detail ? ' (' + detail + ')' : ''}. Proceed here and log out the other session?`
+          );
+          if(!proceed){
+            setStatus(loginStatus, 'Login cancelled — the other session stays active.', 'error');
+            loginBtn.disabled = false;
+            return;
+          }
+          previousSessionId = active.sessionId;
+        }
+      }catch(err){
+        // Can't check (offline, etc.) — don't block login over it, just proceed.
+        console.warn('Active session pre-check failed:', err);
+      }
+
+      await withTimeout(remove(attemptsRef), 10000).catch(()=>{}); // clear any prior fail count on success
+
+      // Claim the single admin session. Writing this immediately trips the
+      // active-session listener on any other device that's currently logged
+      // in, logging it out there.
+      const mySessionId = genSessionId();
+      sessionStorage.setItem(SESSION_KEY, 'true');
+      sessionStorage.setItem(SESSION_ID_KEY, mySessionId);
+      await withTimeout(set(ref(db, ACTIVE_SESSION_PATH), {
+        sessionId: mySessionId,
+        ip: info.ip || null,
+        city: info.city || null,
+        region: info.region || null,
+        country: info.country || null,
+        browser: info.browser || null,
+        os: info.os || null,
+        deviceType: info.deviceType || null,
+        loginAt: serverTimestamp()
+      }), 10000).catch(err => console.warn('Failed to record active session:', err));
+
+      // Start this session's own history record — this is what the
+      // "Login sessions" panel reads from.
+      await withTimeout(set(ref(db, `${SESSIONS_PATH}/${mySessionId}`), {
+        sessionId: mySessionId,
+        ip: info.ip || null,
+        city: info.city || null,
+        region: info.region || null,
+        country: info.country || null,
+        browser: info.browser || null,
+        os: info.os || null,
+        deviceType: info.deviceType || null,
+        loginAt: serverTimestamp(),
+        logoutAt: null
+      }), 10000).catch(err => console.warn('Failed to record session history:', err));
+      logActivity('Logged in');
+
+      // Close out the session we just took over, so its history shows when
+      // (and that) it ended, rather than looking like it's still active.
+      if(previousSessionId){
+        update(ref(db, `${SESSIONS_PATH}/${previousSessionId}`), { logoutAt: serverTimestamp() })
+          .catch(()=>{});
+        push(ref(db, `${SESSIONS_PATH}/${previousSessionId}/activities`), {
+          action: 'Logged out',
+          detail: 'Signed in on another device',
+          at: serverTimestamp()
+        }).catch(()=>{});
+      }
+
+      loginForm.reset();
+      setStatus(loginStatus, '', null);
+      showDashboard();
+      return;
+    }
+
+    // ---- wrong password: bump the counter and, at 3, block for an hour ----
+    const txResult = await withTimeout(runTransaction(attemptsRef, (current)=>{
+      const c = current || {};
+      const stillBlocked = c.blockedUntil && c.blockedUntil > now;
+      if(stillBlocked) return c;
+      const newCount = (c.failCount || 0) + 1;
+      const blockedUntil = newCount >= MAX_LOGIN_ATTEMPTS ? now + LOGIN_BLOCK_MS : null;
+      return {
+        failCount: blockedUntil ? 0 : newCount,
+        blockedUntil,
+        lastAttempt: now,
+        ip: info.ip || null
+      };
+    }), 10000);
+
+    const updated = txResult.snapshot.val() || {};
+    const gotBlocked = !!updated.blockedUntil;
+
+    // Log the attempt with visitor details — never the password itself.
+    withTimeout(push(ref(db, LOGIN_LOGS_PATH), {
+      ip: info.ip || null,
+      city: info.city || null,
+      region: info.region || null,
+      country: info.country || null,
+      countryCode: info.countryCode || null,
+      latitude: info.latitude ?? null,
+      longitude: info.longitude ?? null,
+      timezone: info.timezone || null,
+      isp: info.isp || null,
+      browser: info.browser || null,
+      os: info.os || null,
+      deviceType: info.deviceType || null,
+      userAgent: info.userAgent || null,
+      blocked: gotBlocked,
+      createdAt: serverTimestamp()
+    }), 10000).catch(err => console.warn('Failed to log login attempt:', err));
+
+    if(gotBlocked){
+      setStatus(loginStatus, 'Too many failed attempts. Blocked for 1 hour.', 'error');
+    }else{
+      const remaining = MAX_LOGIN_ATTEMPTS - (updated.failCount || 0);
+      setStatus(loginStatus, `Incorrect password. ${remaining} attempt${remaining === 1 ? '' : 's'} left.`, 'error');
+    }
+  }catch(err){
+    console.error('Admin login error:', err);
+    setStatus(loginStatus, friendlyError(err), 'error');
+  }finally{
+    loginBtn.disabled = false;
+  }
+});
+
+logoutBtn.addEventListener('click', async ()=>{
+  const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+  logActivity('Logged out');
+  stopActiveSessionListener();
+  sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(SESSION_ID_KEY);
+  showLogin();
+  try{
+    // Only clear the shared record if it's still ours — if another device
+    // already took over the session, don't log that device out too.
+    const snap = await withTimeout(get(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    const active = snap.val();
+    if(active && active.sessionId === mySessionId){
+      await withTimeout(remove(ref(db, ACTIVE_SESSION_PATH)), 8000);
+    }
+    if(mySessionId){
+      await withTimeout(update(ref(db, `${SESSIONS_PATH}/${mySessionId}`), { logoutAt: serverTimestamp() }), 8000);
+    }
+  }catch(err){
+    console.warn('Failed to clear active session on logout:', err);
+  }
+});
+
+// ---------- change password ----------
+togglePasswordPanel.addEventListener('click', ()=>{
+  passwordPanel.style.display = passwordPanel.style.display === 'none' ? 'block' : 'none';
+});
+
+savePasswordBtn.addEventListener('click', async ()=>{
+  const current = document.getElementById('currentPassword').value;
+  const next = document.getElementById('newPassword').value;
+  const confirm = document.getElementById('confirmPassword').value;
+
+  if(!current || !next || !confirm){
+    setStatus(passwordStatus, 'Fill in all fields.', 'error'); return;
+  }
+  if(next !== confirm){
+    setStatus(passwordStatus, 'New passwords do not match.', 'error'); return;
+  }
+  if(next.length < 6){
+    setStatus(passwordStatus, 'New password should be at least 6 characters.', 'error'); return;
+  }
+
+  savePasswordBtn.disabled = true;
+  setStatus(passwordStatus, 'Saving…', null);
+
+  try{
+    const snap = await withTimeout(get(ref(db, ADMIN_PATH)), 10000);
+    const currentHash = await sha256(current);
+    if(snap.exists() && snap.val() !== currentHash){
+      setStatus(passwordStatus, 'Current password is incorrect.', 'error');
+      savePasswordBtn.disabled = false;
+      return;
+    }
+    const newHash = await sha256(next);
+    await withTimeout(set(ref(db, ADMIN_PATH), newHash), 10000);
+    logActivity('Changed admin password');
+    setStatus(passwordStatus, 'Password updated.', 'success');
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('confirmPassword').value = '';
+  }catch(err){
+    console.error('Change password error:', err);
+    setStatus(passwordStatus, friendlyError(err), 'error');
+  }finally{
+    savePasswordBtn.disabled = false;
+  }
+});
+
+// ---------- messages ----------
+function startMessagesListener(){
+  if(messagesListenerAttached) return;
+  messagesListenerAttached = true;
+
+  msgLoading.style.display = 'block';
+  msgLoading.classList.remove('is-error');
+  msgLoading.textContent = 'Loading messages…';
+
+  const messagesQuery = query(ref(db, MESSAGES_PATH), orderByChild('createdAt'));
+  onValue(messagesQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    allMessages = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse(); // orderByChild is ascending; newest first
+    msgLoading.style.display = 'none';
+    renderMessages();
+  }, (err)=>{
+    console.error('Messages listener error:', err);
+    msgLoading.style.display = 'block';
+    msgLoading.classList.add('is-error');
+    msgLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function renderMessages(){
+  const total = allMessages.length;
+  const unread = allMessages.filter(m => !m.read).length;
+  statTotal.textContent = total;
+  statUnread.textContent = unread;
+
+  let list = allMessages;
+  if(currentFilter === 'unread') list = allMessages.filter(m => !m.read);
+  if(currentFilter === 'read') list = allMessages.filter(m => m.read);
+
+  if(list.length === 0){
+    msgList.innerHTML = `<div class="msg-empty">No messages ${currentFilter === 'all' ? 'yet' : 'in this view'}.</div>`;
+    return;
+  }
+
+  msgList.innerHTML = list.map(m => `
+    <div class="msg-card ${!m.read ? 'is-unread' : ''}" data-id="${m.id}">
+      <div class="msg-head">
+        <div class="msg-who">${escapeHtml(m.name) || 'Unknown'} ${!m.read ? '<span class="badge">Unread</span>' : ''}</div>
+        <div class="msg-meta">${formatDate(m.createdAt)}</div>
+      </div>
+      <div class="msg-contact">
+        ${m.email ? `<a href="mailto:${escapeHtml(m.email)}">${escapeHtml(m.email)}</a>` : ''}
+        ${m.phone ? ` · ${escapeHtml(m.phone)}` : ''}
+      </div>
+      <div class="msg-subject">${escapeHtml(m.subject) || 'No subject'}</div>
+      <div class="msg-body">${escapeHtml(m.message)}</div>
+      <div class="msg-actions">
+        ${!m.read ? `<button class="btn btn-small mark-read-btn">Mark as read</button>` : `<button class="btn btn-small" disabled>Read</button>`}
+        <button class="btn btn-small btn-danger clear-btn">Clear</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+msgList.addEventListener('click', async (e)=>{
+  const card = e.target.closest('.msg-card');
+  if(!card) return;
+  const id = card.dataset.id;
+
+  if(e.target.classList.contains('mark-read-btn')){
+    e.target.disabled = true;
+    try{
+      await withTimeout(update(ref(db, `${MESSAGES_PATH}/${id}`), { read: true }), 10000);
+      const m = allMessages.find(x => x.id === id);
+      logActivity('Marked message as read', m ? `From ${m.name || 'Unknown'}` : null);
+    }catch(err){
+      console.error('Mark as read error:', err);
+      alert(friendlyError(err));
+      e.target.disabled = false;
+    }
+  }
+
+  if(e.target.classList.contains('clear-btn')){
+    if(!confirm('Delete this message permanently?')) return;
+    e.target.disabled = true;
+    try{
+      const m = allMessages.find(x => x.id === id);
+      await withTimeout(remove(ref(db, `${MESSAGES_PATH}/${id}`)), 10000);
+      logActivity('Deleted a message', m ? `From ${m.name || 'Unknown'}` : null);
+    }catch(err){
+      console.error('Delete message error:', err);
+      alert(friendlyError(err));
+      e.target.disabled = false;
+    }
+  }
+});
+
+filterBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    filterBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderMessages();
   });
 });
 
-// ---------- skill bars: fill + count up on reveal ----------
-const skillItems = document.querySelectorAll('.skill-item');
-const skillIO = new IntersectionObserver((entries)=>{
-  entries.forEach(entry=>{
-    if(!entry.isIntersecting) return;
-    const item = entry.target;
-    const target = parseInt(item.dataset.percent, 10) || 0;
-    const fill = item.querySelector('.skill-fill');
-    const pctLabel = item.querySelector('.skill-pct');
-    fill.style.width = target + '%';
-    let current = 0;
-    const duration = 1200;
-    const start = performance.now();
-    function tick(now){
-      const t = Math.min(1, (now - start) / duration);
-      current = Math.round(t * target);
-      pctLabel.textContent = current + '%';
-      if(t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-    skillIO.unobserve(item);
+// ---------- visitors ----------
+function startVisitorsListener(){
+  if(visitorsListenerAttached) return;
+  visitorsListenerAttached = true;
+
+  visitorsLoading.style.display = 'block';
+  visitorsLoading.classList.remove('is-error');
+  visitorsLoading.textContent = 'Loading visitors…';
+
+  // Cap at the most recent 500 so a busy site doesn't pull the whole table into the browser.
+  const visitorsQuery = query(ref(dbVisitor, VISITORS_PATH), orderByChild('createdAt'), limitToLast(500));
+  onValue(visitorsQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    allVisitorsCache = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse(); // orderByChild is ascending; newest first
+    visitorsLoading.style.display = 'none';
+    updateVisitorStats();
+    populateFilterSuggestions();
+    applyVisitorFilters();
+  }, (err)=>{
+    console.error('Visitors listener error:', err);
+    visitorsLoading.style.display = 'block';
+    visitorsLoading.classList.add('is-error');
+    visitorsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
   });
-},{threshold:.3});
-skillItems.forEach(item=>skillIO.observe(item));
-
-// ---------- ember particle canvas ----------
-const canvas = document.getElementById('ember-canvas');
-const ctx = canvas.getContext('2d');
-let W, H, particles;
-
-function resize(){
-  W = canvas.width = canvas.offsetWidth;
-  H = canvas.height = canvas.offsetHeight;
-}
-function initParticles(){
-  const count = W < 700 ? 34 : 70;
-  particles = Array.from({length:count}, ()=>({
-    x: Math.random()*W,
-    y: Math.random()*H,
-    r: Math.random()*1.6+0.4,
-    vy: Math.random()*0.35+0.08,
-    vx: (Math.random()-0.5)*0.15,
-    a: Math.random()*0.6+0.15,
-    hue: Math.random()>0.82 ? 'gold' : 'ember'
-  }));
-}
-function draw(){
-  ctx.clearRect(0,0,W,H);
-  particles.forEach(p=>{
-    p.y -= p.vy; p.x += p.vx;
-    if(p.y < -10){ p.y = H+10; p.x = Math.random()*W; }
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-    ctx.fillStyle = p.hue==='gold' ? `rgba(232,176,75,${p.a})` : `rgba(255,122,41,${p.a})`;
-    ctx.fill();
-  });
-  requestAnimationFrame(draw);
-}
-window.addEventListener('resize', ()=>{ resize(); initParticles(); });
-resize(); initParticles(); draw();
-
-// ---------- daily log / blog ----------
-// The list of posts now lives directly in index.html as <a class="blog-node">
-// blocks inside #blogTimeline — edit the date, title and href there to add,
-// rename or remove entries. This just shows a fallback message if that
-// section is ever left empty.
-const timelineEl = document.getElementById('blogTimeline');
-if(timelineEl && !timelineEl.querySelector('.blog-node')){
-  timelineEl.insertAdjacentHTML('beforeend',
-    `<div class="blog-empty">No entries yet — add a &lt;a class="blog-node"&gt; block in index.html.</div>`);
 }
 
-// ---------- custom animated cursor ----------
-(function(){
-  const isFinePointer = window.matchMedia('(pointer: fine)').matches;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!isFinePointer || prefersReducedMotion) return;
+function locationLabel(v){
+  const parts = [v.city, v.region, v.country].filter(Boolean);
+  return parts.length ? parts.join(', ') : '—';
+}
 
-  const dot = document.getElementById('cursorDot');
-  const ring = document.getElementById('cursorRing');
-  document.body.classList.add('has-fine-cursor');
+// Returns a clickable pin icon (opens Google Maps in a new tab at the stored
+// lat/long) when coordinates exist, or an em-dash placeholder when they don't.
+function locationPinIcon(v){
+  const lat = Number(v.latitude);
+  const lng = Number(v.longitude);
+  if(!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+  const url = `https://www.google.com/maps?q=${lat},${lng}`;
+  const title = `Open location on Google Maps (${lat.toFixed(5)}, ${lng.toFixed(5)})`;
+  return `<a class="v-pin" href="${url}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}" onclick="event.stopPropagation()">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+      <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.6"/>
+    </svg>
+  </a>`;
+}
 
-  let mouseX = 0, mouseY = 0;      // real pointer position
-  let ringX = 0, ringY = 0;        // eased trailing position
-  let started = false;
+function updateVisitorStats(){
+  statVisitors.textContent = allVisitorsCache.length;
+  const todayStart = new Date();
+  todayStart.setHours(0,0,0,0);
+  statVisitorsToday.textContent = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+}
 
-  window.addEventListener('mousemove', e=>{
-    mouseX = e.clientX; mouseY = e.clientY;
-    if(!started){
-      started = true;
-      ringX = mouseX; ringY = mouseY;
-      dot.classList.add('active');
-      ring.classList.add('active');
-    }
-    dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%,-50%)`;
-  }, {passive:true});
+// Builds <datalist> suggestions straight from what's actually in the Visitors table, A→Z.
+function uniqueSorted(values){
+  return [...new Set(values.filter(Boolean))].sort((a,b) => a.localeCompare(b));
+}
 
-  document.addEventListener('mouseleave', ()=>{
-    dot.classList.remove('active');
-    ring.classList.remove('active');
-  });
-  document.addEventListener('mouseenter', ()=>{
-    if(started){ dot.classList.add('active'); ring.classList.add('active'); }
-  });
+function populateFilterSuggestions(){
+  const ips = uniqueSorted(allVisitorsCache.map(v => v.ip));
+  const regions = uniqueSorted(allVisitorsCache.map(v => v.region));
+  const cities = uniqueSorted(allVisitorsCache.map(v => v.city));
+  const postals = uniqueSorted(allVisitorsCache.map(v => v.postal));
 
-  let smokeCounter = 0;
-  function spawnSmoke(x, y){
-    const wisp = document.createElement('div');
-    wisp.className = 'cursor-smoke';
-    // tiny random jitter so wisps sit in a small cluster right behind the ring,
-    // not stretched out into a long trail
-    const jx = x + (Math.random() - 0.5) * 6;
-    const jy = y + (Math.random() - 0.5) * 6;
-    wisp.style.transform = `translate(${jx}px, ${jy}px) translate(-50%,-50%)`;
-    document.body.appendChild(wisp);
-    setTimeout(() => wisp.remove(), 600);
+  visitorIpList.innerHTML = ips.map(i => `<option value="${escapeHtml(i)}"></option>`).join('');
+  visitorRegionList.innerHTML = regions.map(r => `<option value="${escapeHtml(r)}"></option>`).join('');
+  visitorCityList.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+  visitorPostalList.innerHTML = postals.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+}
+
+// Each field checks only its own data. When more than one field has a value,
+// results must match ALL of them (AND), not just any one.
+function applyVisitorFilters(){
+  const ip = visitorIpFilter.value.trim().toLowerCase();
+  const region = visitorRegionFilter.value.trim().toLowerCase();
+  const city = visitorCityFilter.value.trim().toLowerCase();
+  const postal = visitorPostalFilter.value.trim().toLowerCase();
+  const from = visitorDateFrom.value ? new Date(visitorDateFrom.value + 'T00:00:00').getTime() : null;
+  const to = visitorDateTo.value ? new Date(visitorDateTo.value + 'T23:59:59').getTime() : null;
+  const device = visitorDeviceFilter.value;
+
+  let filtered = allVisitorsCache;
+  if(ip) filtered = filtered.filter(v => (v.ip || '').toLowerCase().includes(ip));
+  if(region) filtered = filtered.filter(v => (v.region || '').toLowerCase().includes(region));
+  if(city) filtered = filtered.filter(v => (v.city || '').toLowerCase().includes(city));
+  if(postal) filtered = filtered.filter(v => (v.postal || '').toLowerCase().includes(postal));
+  if(from) filtered = filtered.filter(v => v.createdAt && v.createdAt >= from);
+  if(to) filtered = filtered.filter(v => v.createdAt && v.createdAt <= to);
+  if(device) filtered = filtered.filter(v => v.deviceType === device);
+
+  const isFiltering = ip || region || city || postal || from || to || device;
+  visitorFilterCount.textContent = isFiltering ? `Showing ${filtered.length} of ${allVisitorsCache.length}` : '';
+  renderVisitorTable(filtered);
+}
+
+function renderVisitorTable(list){
+  if(list.length === 0){
+    visitorTableWrap.style.display = 'none';
+    visitorsLoading.style.display = 'block';
+    visitorsLoading.classList.remove('is-error');
+    visitorsLoading.textContent = allVisitorsCache.length === 0 ? 'No visitors logged yet.' : 'No visitors match these filters.';
+    return;
   }
 
-  function tick(){
-    ringX += (mouseX - ringX) * 0.16;
-    ringY += (mouseY - ringY) * 0.16;
-    ring.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%,-50%)`;
+  visitorsLoading.style.display = 'none';
+  visitorTableWrap.style.display = 'block';
 
-    // throttle to every 4th frame so the smoke stays sparse and small, not a dense cloud
-    smokeCounter++;
-    if(started && smokeCounter % 4 === 0){
-      spawnSmoke(ringX, ringY);
-    }
-    requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
+  visitorTableBody.innerHTML = list.map(v => `
+    <div class="visitor-tile">
+      <div class="v-row v-row-top">
+        <span class="v-num">#${v.visitorNumber ?? '—'}</span>
+        <span class="v-time">${formatDate(v.createdAt)}</span>
+        <span class="v-device">${escapeHtml(v.deviceType) || '—'}</span>
+      </div>
+      <div class="v-row">
+        <span class="v-item"><b>IP</b>${escapeHtml(v.ip) || '—'}</span>
+        <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}${locationPinIcon(v)}</span>
+        <span class="v-item"><b>Postal</b>${escapeHtml(v.postal) || '—'}</span>
+      </div>
+      <div class="v-row">
+        <span class="v-item"><b>Browser/OS</b>${escapeHtml([v.browser, v.os].filter(Boolean).join(' / ')) || '—'}</span>
+        <span class="v-item"><b>Referrer</b>${escapeHtml(v.referrer) || 'direct'}</span>
+        <span class="v-item v-page" title="${escapeHtml(v.page)}"><b>Page</b>${escapeHtml(v.page) || '—'}</span>
+      </div>
+    </div>
+  `).join('');
+}
 
-  const hoverTargets = 'a, button, .work-card, .nav-cta, .blog-node, .friend-card';
-  document.querySelectorAll(hoverTargets).forEach(el=>{
-    el.addEventListener('mouseenter', ()=>ring.classList.add('hovering'));
-    el.addEventListener('mouseleave', ()=>ring.classList.remove('hovering'));
+// Typing only drives the native datalist suggestions (browser-built-in, always live).
+// Filtering itself is explicit: click Search, or press Enter in any field.
+[visitorIpFilter, visitorRegionFilter, visitorCityFilter, visitorPostalFilter].forEach(el=>{
+  el.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); applyVisitorFilters(); }
   });
-})();
+});
+[visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
+  el.addEventListener('change', applyVisitorFilters);
+});
+
+visitorFilterSearch.addEventListener('click', applyVisitorFilters);
+
+visitorFilterReset.addEventListener('click', ()=>{
+  visitorIpFilter.value = '';
+  visitorRegionFilter.value = '';
+  visitorCityFilter.value = '';
+  visitorPostalFilter.value = '';
+  visitorDateFrom.value = '';
+  visitorDateTo.value = '';
+  visitorDeviceFilter.value = '';
+  applyVisitorFilters();
+});
+
+clearVisitorsBtn.addEventListener('click', async ()=>{
+  if(!confirm('Delete all visitor logs permanently?')) return;
+  clearVisitorsBtn.disabled = true;
+  try{
+    await withTimeout(remove(ref(dbVisitor, VISITORS_PATH)), 10000);
+    logActivity('Cleared all visitor logs');
+  }catch(err){
+    console.error('Clear visitors error:', err);
+    alert(friendlyError(err));
+  }finally{
+    clearVisitorsBtn.disabled = false;
+  }
+});
+
+// ---------- failed login attempts ----------
+function startLoginLogsListener(){
+  if(loginLogsListenerAttached) return;
+  loginLogsListenerAttached = true;
+
+  loginLogsLoading.style.display = 'block';
+  loginLogsLoading.classList.remove('is-error');
+  loginLogsLoading.textContent = 'Loading…';
+
+  const logsQuery = query(ref(db, LOGIN_LOGS_PATH), orderByChild('createdAt'), limitToLast(300));
+  onValue(logsQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    const logs = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse();
+    loginLogsLoading.style.display = 'none';
+    renderLoginLogs(logs);
+  }, (err)=>{
+    console.error('Login logs listener error:', err);
+    loginLogsLoading.style.display = 'block';
+    loginLogsLoading.classList.add('is-error');
+    loginLogsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function renderLoginLogs(logs){
+  if(logs.length === 0){
+    loginLogsTableWrap.style.display = 'none';
+    loginLogsLoading.style.display = 'block';
+    loginLogsLoading.classList.remove('is-error');
+    loginLogsLoading.textContent = 'No failed login attempts.';
+    return;
+  }
+
+  loginLogsLoading.style.display = 'none';
+  loginLogsTableWrap.style.display = 'block';
+
+  loginLogsTableBody.innerHTML = logs.map(l => `
+    <tr>
+      <td>${formatDate(l.createdAt)}</td>
+      <td>${escapeHtml(l.ip) || '—'}</td>
+      <td class="v-location-cell">${escapeHtml(locationLabel(l))}${locationPinIcon(l)}</td>
+      <td>${escapeHtml(l.deviceType) || '—'}</td>
+      <td>${escapeHtml([l.browser, l.os].filter(Boolean).join(' / ')) || '—'}</td>
+      <td>${l.blocked ? '<span style="color:var(--ember);font-weight:600;">Blocked (1h)</span>' : 'Failed'}</td>
+    </tr>
+  `).join('');
+}
+
+clearLoginLogsBtn.addEventListener('click', async ()=>{
+  if(!confirm('Delete all failed-login logs permanently?')) return;
+  clearLoginLogsBtn.disabled = true;
+  try{
+    await withTimeout(remove(ref(db, LOGIN_LOGS_PATH)), 10000);
+    logActivity('Cleared all failed-login logs');
+  }catch(err){
+    console.error('Clear login logs error:', err);
+    alert(friendlyError(err));
+  }finally{
+    clearLoginLogsBtn.disabled = false;
+  }
+});
+
+// ---------- login sessions ----------
+function startSessionsListener(){
+  if(sessionsListenerAttached) return;
+  sessionsListenerAttached = true;
+
+  sessionsLoading.style.display = 'block';
+  sessionsLoading.classList.remove('is-error');
+  sessionsLoading.textContent = 'Loading sessions…';
+
+  const sessionsQuery = query(ref(db, SESSIONS_PATH), orderByChild('loginAt'), limitToLast(100));
+  onValue(sessionsQuery, (snapshot)=>{
+    const val = snapshot.val() || {};
+    allSessionsCache = Object.keys(val)
+      .map(id => ({ id, ...val[id] }))
+      .reverse(); // orderByChild is ascending; newest first
+    sessionsLoading.style.display = 'none';
+    renderSessions();
+  }, (err)=>{
+    console.error('Sessions listener error:', err);
+    sessionsLoading.style.display = 'block';
+    sessionsLoading.classList.add('is-error');
+    sessionsLoading.textContent = friendlyError(err) + ' (' + (err.code || 'unknown') + ')';
+  });
+}
+
+function sessionActivities(s){
+  const val = s.activities || {};
+  return Object.keys(val)
+    .map(id => ({ id, ...val[id] }))
+    .sort((a, b) => (a.at || 0) - (b.at || 0));
+}
+
+function renderSessions(){
+  if(allSessionsCache.length === 0){
+    sessionList.innerHTML = '';
+    sessionsLoading.style.display = 'block';
+    sessionsLoading.classList.remove('is-error');
+    sessionsLoading.textContent = 'No login sessions recorded yet.';
+    return;
+  }
+
+  sessionsLoading.style.display = 'none';
+
+  sessionList.innerHTML = allSessionsCache.map(s => {
+    const activities = sessionActivities(s);
+    const isOpen = expandedSessionIds.has(s.id);
+    const isActive = !s.logoutAt;
+    const device = [s.deviceType, [s.browser, s.os].filter(Boolean).join(' / ')].filter(Boolean).join(' · ');
+    const loc = locationLabel(s);
+
+    return `
+    <div class="session-tile ${isOpen ? 'expanded' : ''}" data-session-id="${s.id}">
+      <div class="session-head">
+        <button class="btn btn-small panel-toggle session-toggle" title="${isOpen ? 'Minimize' : 'Expand'}" aria-label="${isOpen ? 'Minimize' : 'Expand'} activity log">${isOpen ? '×' : '+'}</button>
+        <div class="session-summary">
+          <div class="session-row session-row-top">
+            <span class="s-time">${formatDate(s.loginAt)}</span>
+            <span class="s-status ${isActive ? 'is-active' : ''}">${isActive ? 'Active' : 'Ended ' + formatDate(s.logoutAt)}</span>
+            <span class="s-count">${activities.length} action${activities.length === 1 ? '' : 's'}</span>
+          </div>
+          <div class="session-row">
+            <span class="v-item"><b>IP</b>${escapeHtml(s.ip) || '—'}</span>
+            <span class="v-item"><b>Location</b>${escapeHtml(loc)}</span>
+            <span class="v-item"><b>Device</b>${escapeHtml(device) || '—'}</span>
+          </div>
+        </div>
+      </div>
+      <div class="session-activities" ${isOpen ? '' : 'style="display:none;"'}>
+        ${activities.length === 0
+          ? '<div class="activity-empty">No activity recorded for this session.</div>'
+          : activities.map(a => `
+            <div class="activity-row">
+              <span class="a-time">${formatDate(a.at)}</span>
+              <span class="a-action">${escapeHtml(a.action)}</span>
+              ${a.detail ? `<span class="a-detail">${escapeHtml(a.detail)}</span>` : ''}
+            </div>
+          `).join('')
+        }
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Delegated so it keeps working across re-renders triggered by the realtime
+// listener (e.g. a new activity arriving while a session is expanded).
+sessionList.addEventListener('click', (e)=>{
+  const toggle = e.target.closest('.session-toggle');
+  if(!toggle) return;
+  const tile = toggle.closest('.session-tile');
+  const id = tile.dataset.sessionId;
+  if(expandedSessionIds.has(id)) expandedSessionIds.delete(id);
+  else expandedSessionIds.add(id);
+  renderSessions();
+});
+
+clearSessionsBtn.addEventListener('click', async ()=>{
+  if(!confirm('Delete all login session history permanently? (Your current session will be kept.)')) return;
+  clearSessionsBtn.disabled = true;
+  try{
+    // Keep the current session's own record so activity logging (including
+    // this "Cleared session history" entry) still has somewhere to write to.
+    const mySessionId = sessionStorage.getItem(SESSION_ID_KEY);
+    const updates = {};
+    allSessionsCache.forEach(s => {
+      if(s.id !== mySessionId) updates[s.id] = null;
+    });
+    await withTimeout(update(ref(db, SESSIONS_PATH), updates), 10000);
+    logActivity('Cleared login session history');
+  }catch(err){
+    console.error('Clear sessions error:', err);
+    alert(friendlyError(err));
+  }finally{
+    clearSessionsBtn.disabled = false;
+  }
+});
