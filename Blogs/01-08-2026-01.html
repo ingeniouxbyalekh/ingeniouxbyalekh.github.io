@@ -205,5 +205,142 @@ const io = new IntersectionObserver((entries)=>{
 },{threshold:.15});
 revealEls.forEach(el=>io.observe(el));
 </script>
+
+<!-- ================= FIREBASE / VISITOR TRACKING ================= -->
+<!--
+  Writes into the SHARED ingenioux-visitor database — the same one used by
+  the main site, Admin panel, Store, and Projects page.
+
+  On page load:
+  1. Bumps TotalVisitors/count and pushes a full record to visitors/
+     (same shape as every other page on the site).
+  2. Bumps blogs/<slug>/count and sets blogs/<slug>/title, using this
+     file's own name as the slug (e.g. "01-08-2026-01") and the
+     .post-title heading as the title — read by the Admin panel's
+     Top Blogs list.
+-->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import {
+    getDatabase, ref, push, runTransaction, set, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-database.js";
+
+  const visitorFirebaseConfig = {
+    apiKey: "AIzaSyBFkN8erxsvRRAwMipQu7xZGLeXsQu9E_w",
+    authDomain: "ingenioux-visitor.firebaseapp.com",
+    databaseURL: "https://ingenioux-visitor-default-rtdb.firebaseio.com",
+    projectId: "ingenioux-visitor",
+    storageBucket: "ingenioux-visitor.firebasestorage.app",
+    messagingSenderId: "426646415346",
+    appId: "1:426646415346:web:38373322949588eb14ed6b"
+  };
+
+  const visitorApp = initializeApp(visitorFirebaseConfig, 'visitor');
+  const dbVisitor = getDatabase(visitorApp);
+
+  function withTimeout(promise, ms){
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms))
+    ]);
+  }
+
+  function parseUserAgent(ua){
+    let browser = 'Unknown';
+    if(/Edg\//.test(ua)) browser = 'Edge';
+    else if(/OPR\//.test(ua)) browser = 'Opera';
+    else if(/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = 'Chrome';
+    else if(/Firefox\//.test(ua)) browser = 'Firefox';
+    else if(/Safari\//.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+
+    let os = 'Unknown';
+    if(/Windows NT/.test(ua)) os = 'Windows';
+    else if(/Mac OS X/.test(ua) && !/iPhone|iPad/.test(ua)) os = 'macOS';
+    else if(/Android/.test(ua)) os = 'Android';
+    else if(/iPhone|iPad|iPod/.test(ua)) os = 'iOS';
+    else if(/Linux/.test(ua)) os = 'Linux';
+
+    let deviceType = 'Desktop';
+    if(/iPad|Tablet/.test(ua)) deviceType = 'Tablet';
+    else if(/Mobi|Android/.test(ua)) deviceType = 'Mobile';
+
+    return { browser, os, deviceType };
+  }
+
+  // Slug is this file's own name, e.g. "01-08-2026-01" from "01-08-2026-01.html".
+  const slug = location.pathname.split('/').pop().replace(/\.html?$/i, '');
+  const postTitleEl = document.querySelector('.post-title');
+  const blogTitle = (postTitleEl ? postTitleEl.textContent.trim() : document.title) || slug;
+
+  (async function logBlogPageVisit(){
+    try{
+      // Only once per browser tab/session — refreshes won't inflate the counts.
+      const sessionFlag = 'ingenioux_blog_visit_logged_' + slug;
+      if(sessionStorage.getItem(sessionFlag)) return;
+
+      let geo = {};
+      try{
+        const geoRes = await withTimeout(fetch('https://ipwho.is/'), 6000);
+        const geoData = await geoRes.json();
+        if(geoData && geoData.success !== false){
+          geo = {
+            ip: geoData.ip || null,
+            city: geoData.city || null,
+            region: geoData.region || null,
+            country: geoData.country || null,
+            countryCode: geoData.country_code || null,
+            postal: geoData.postal || null,
+            latitude: geoData.latitude ?? null,
+            longitude: geoData.longitude ?? null,
+            timezone: (geoData.timezone && geoData.timezone.id) || null,
+            isp: (geoData.connection && (geoData.connection.isp || geoData.connection.org)) || null
+          };
+        }
+      }catch(geoErr){
+        console.warn('Blog page geolocation lookup failed:', geoErr);
+      }
+
+      const ua = navigator.userAgent;
+      const device = parseUserAgent(ua);
+
+      // Site-wide total — same counter the main site, Admin page, Store, and Projects page bump.
+      const totalResult = await withTimeout(
+        runTransaction(ref(dbVisitor, 'TotalVisitors/count'), (current) => (current || 0) + 1),
+        10000
+      );
+      const visitorNumber = totalResult.committed ? totalResult.snapshot.val() : null;
+
+      await withTimeout(push(ref(dbVisitor, 'visitors'), {
+        visitorNumber,
+        ...geo,
+        userAgent: ua,
+        browser: device.browser,
+        os: device.os,
+        deviceType: device.deviceType,
+        screen: `${screen.width}x${screen.height}`,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        language: navigator.language || null,
+        referrer: document.referrer || 'direct',
+        page: (location.hostname + location.pathname).replace(/\/$/, '') + location.search,
+        createdAt: serverTimestamp()
+      }), 10000);
+
+      // Per-post view count + title, read by the Admin panel's Top Blogs list.
+      await withTimeout(
+        runTransaction(ref(dbVisitor, `blogs/${slug}/count`), (current) => (current || 0) + 1),
+        10000
+      );
+      await withTimeout(
+        set(ref(dbVisitor, `blogs/${slug}/title`), blogTitle),
+        10000
+      );
+
+      sessionStorage.setItem(sessionFlag, '1');
+    }catch(err){
+      // Never let visitor logging break the page for a real reader.
+      console.warn('Blog visitor logging failed:', err);
+    }
+  })();
+</script>
 </body>
 </html>
