@@ -1145,3 +1145,89 @@ header {
     text-decoration: underline;
 }
 .ppm-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+
+/* =========================================================
+   FIRST-TIME DASHBOARD TOUR (see tour.js)
+   ========================================================= */
+.tour-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 4998;
+    background: transparent; /* the dark tint comes from .tour-highlight's box-shadow spread below */
+}
+
+.tour-highlight {
+    position: fixed;
+    z-index: 4999;
+    border: 2px solid var(--primary);
+    border-radius: 14px;
+    box-shadow: 0 0 0 9999px rgba(15, 15, 20, 0.55);
+    pointer-events: none;
+    transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
+}
+
+.tour-tooltip {
+    position: fixed;
+    z-index: 5000;
+    width: min(220px, calc(100vw - 24px));
+    background: var(--white);
+    border-radius: 14px;
+    padding: 12px 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transition: top 0.25s ease, left 0.25s ease;
+}
+
+.tour-tip-count {
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.tour-tip-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0 0 3px;
+}
+
+.tour-tip-text {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--text-light);
+    margin: 0 0 10px;
+}
+
+.tour-tip-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.tour-skip-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 11px;
+    color: var(--text-light);
+    cursor: pointer;
+    text-decoration: underline;
+    flex-shrink: 0;
+}
+.tour-skip-btn:hover { color: var(--text-dark); }
+
+.tour-next-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.tour-next-btn:hover { opacity: 0.9; }

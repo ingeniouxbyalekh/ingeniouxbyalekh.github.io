@@ -253,6 +253,41 @@
       </div>
     </details>
 
+    <details class="admin-section is-collapsible">
+      <summary><h2>Feedback</h2><span class="icon">+</span></summary>
+
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <span class="admin-stat-label">Average rating</span>
+          <span class="admin-stat-value" id="stat-rating-average">—</span>
+        </div>
+        <div class="admin-stat">
+          <span class="admin-stat-label">Ratings given</span>
+          <span class="admin-stat-value" id="stat-rating-count">—</span>
+        </div>
+      </div>
+
+      <div class="activity-controls">
+        <button type="button" class="btn btn-small btn-danger-outline" id="feedback-clear-btn">Clear</button>
+      </div>
+
+      <div class="admin-table-wrap">
+        <table class="admin-table" id="feedback-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Rating</th>
+              <th>Feedback</th>
+              <th>Submitted</th>
+            </tr>
+          </thead>
+          <tbody id="feedback-table-body">
+            <tr><td colspan="4" class="admin-empty">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </details>
+
   </div>
 </main>
 
@@ -335,6 +370,7 @@
     loadExecutives();
     loadActivityUsers();
     loadDeviceInfo();
+    loadFeedback();
   }
 
   document.getElementById("admin-logout-btn").addEventListener("click", async () => {
@@ -654,6 +690,14 @@
 
   function escapeHTML(str) {
     return String(str).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // DD/MM/YYYY, regardless of browser/OS locale.
+  function formatDateDMY(ts) {
+    const d = new Date(ts);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
   }
 
   /* ---------------------------------------------------------------
@@ -1059,7 +1103,7 @@
       { num: counts.profile_update, label: "Profile edits" },
       {
         num: lastTs
-          ? `${new Date(lastTs).toLocaleDateString()}, ${new Date(lastTs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+          ? `${formatDateDMY(lastTs)}, ${new Date(lastTs).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
           : "—",
         label: "Last active",
         small: true,
@@ -1508,6 +1552,106 @@
       loadDeviceInfo();
     } catch (err) {
       console.error("Could not clear device history:", err);
+      showToast("Couldn't clear — try again");
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  /* ---------------------------------------------------------------
+     Feedback — every submission from contacts.html's feedback form
+     lives at feedback/<pushId>: { name, email, rating, message,
+     date }. Newest first.
+
+     Every star rating is ALSO recorded independently at
+     Rating/entries/<pushId>: { rating, date }, with the running
+     average kept at Rating/average — see contacts.html for where
+     both get written on submit.
+
+     "Clear" here permanently removes everything under /feedback in
+     Firebase (with a confirm prompt, same as the other danger
+     buttons on this page) — it does NOT touch /Rating, so the star
+     ratings and the average survive even after feedback is cleared.
+  --------------------------------------------------------------- */
+  function starsHTML(rating) {
+    const n = Math.max(0, Math.min(5, Number(rating) || 0));
+    return "★".repeat(n) + "☆".repeat(5 - n);
+  }
+
+  function feedbackRowHTML(f) {
+    const name = escapeHTML(f.name || "Anonymous");
+    const message = escapeHTML(f.message || "");
+    const when = f.date ? new Date(f.date).toLocaleString() : "—";
+    return `
+      <tr>
+        <td>${name}</td>
+        <td class="admin-mono">${starsHTML(f.rating)}</td>
+        <td>${message}</td>
+        <td>${when}</td>
+      </tr>`;
+  }
+
+  async function loadRatingStats() {
+    const avgEl = document.getElementById("stat-rating-average");
+    const countEl = document.getElementById("stat-rating-count");
+    if (!db) return;
+    try {
+      const [avgSnap, entriesSnap] = await Promise.all([
+        db.ref("Rating/average").once("value"),
+        db.ref("Rating/entries").once("value"),
+      ]);
+      const count = entriesSnap.exists() ? Object.keys(entriesSnap.val()).length : 0;
+      avgEl.textContent = avgSnap.exists() ? `${avgSnap.val()} ★` : "—";
+      countEl.textContent = count.toLocaleString("en-IN");
+    } catch (err) {
+      console.error("Could not load Rating stats:", err);
+      avgEl.textContent = "—";
+      countEl.textContent = "—";
+    }
+  }
+
+  async function loadFeedback() {
+    const tbody = document.getElementById("feedback-table-body");
+    tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Loading…</td></tr>`;
+
+    loadRatingStats();
+
+    if (!db) {
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Firebase isn't initialized.</td></tr>`;
+      return;
+    }
+
+    try {
+      const snap = await db.ref("feedback").once("value");
+      if (!snap.exists()) {
+        tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">No feedback submitted yet.</td></tr>`;
+        return;
+      }
+      const all = snap.val();
+      const rows = Object.keys(all)
+        .map((key) => all[key])
+        .sort((a, b) => (b.date || 0) - (a.date || 0));
+      tbody.innerHTML = rows.map(feedbackRowHTML).join("");
+    } catch (err) {
+      console.error("Could not load feedback:", err);
+      tbody.innerHTML = `<tr><td colspan="4" class="admin-empty">Couldn't load feedback — try refreshing.</td></tr>`;
+    }
+  }
+
+  document.getElementById("feedback-clear-btn").addEventListener("click", async () => {
+    if (!db) {
+      showToast("Firebase isn't initialized");
+      return;
+    }
+    if (!confirm("Clear all feedback from Firebase? This can't be undone. (The Rating table and average are untouched.)")) return;
+    const btn = document.getElementById("feedback-clear-btn");
+    btn.disabled = true;
+    try {
+      await db.ref("feedback").remove();
+      showToast("Feedback cleared");
+      loadFeedback();
+    } catch (err) {
+      console.error("Could not clear feedback:", err);
       showToast("Couldn't clear — try again");
     } finally {
       btn.disabled = false;

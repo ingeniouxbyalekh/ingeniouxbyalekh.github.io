@@ -61,6 +61,20 @@
     margin: 0 0 5px;
   }
 
+  .profile-role {
+    display: inline-block;
+    align-self: flex-start;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft, rgba(31,122,92,0.1));
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    padding: 3px 12px;
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+
   .social-line {
     display: flex;
     align-items: center;
@@ -74,39 +88,78 @@
   .social-line i { width: 20px; color: var(--accent); font-size: 16px; }
   .social-line:hover { color: var(--accent); }
 
-  .personal-info {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 14px;
+  .feedback-form-card h3 {
+    font-family: var(--font-display);
+    font-size: 19px;
+    color: var(--text);
+    margin: 0 0 4px;
   }
 
-  .info-box {
-    background: var(--bg-card);
+  .feedback-form-card .sub {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    margin: 0 0 18px;
+  }
+
+  .feedback-tile {
+    background: #fff;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px;
-    text-align: center;
+    margin-bottom: 14px;
   }
 
-  .info-box i { font-size: 22px; color: var(--accent); margin-bottom: 8px; }
-  .info-box h4 { font-size: 11px; color: var(--text-faint); margin: 0 0 5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .info-box p { font-size: 14px; font-weight: 600; color: var(--text); margin: 0; }
+  .feedback-tile .field { margin-bottom: 0; }
 
-  .feedback-card {
+  .feedback-tile .field > label {
+    text-transform: none;
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: normal;
+    margin-bottom: 10px;
+  }
+
+  .feedback-tile .field textarea {
+    background: #fff;
+  }
+
+  .feedback-tile .field textarea:focus {
+    background: #fff;
+  }
+
+  .star-rating {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 6px;
-    text-align: center;
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+    gap: 2px;
   }
 
-  .feedback-card a { color: var(--accent); font-weight: 600; text-decoration: none; }
-  .feedback-card a:hover { text-decoration: underline; }
+  .star-rating input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .star-rating label {
+    font-size: 30px;
+    line-height: 1.1;
+    color: var(--border);
+    cursor: pointer;
+    transition: color var(--dur) var(--ease);
+  }
+
+  .star-rating input:checked ~ label,
+  .star-rating label:hover,
+  .star-rating label:hover ~ label {
+    color: var(--price, #e0a531);
+  }
 
   @media (max-width: 600px) {
     .profile-row-card { flex-direction: column; text-align: center; }
     .profile-details { align-items: center; }
+    .profile-role { align-self: center; }
+    .profile-details h1 { font-size: clamp(14px, 5.2vw, 22px); white-space: nowrap; }
   }
 </style>
 </head>
@@ -134,6 +187,7 @@
         <img src="ALEKH.png" alt="Alekh" class="profile-img-rect" onerror="this.src='https://ui-avatars.com/api/?name=Alekh&background=1f7a5c&color=fff&size=200'">
         <div class="profile-details">
           <h1>ALEKH CHANDRA SAHOO</h1>
+          <span class="profile-role">The Developer, Ingenioux</span>
           <a href="https://github.com/ingenioux" class="social-line">
             <i class="fab fa-github"></i>
             <span>github.com/ingenioux</span>
@@ -153,27 +207,36 @@
         </div>
       </div>
 
-      <div class="personal-info">
-        <div class="info-box">
-          <i class="fas fa-map-marker-alt"></i>
-          <h4>Location</h4>
-          <p>Puri, Odisha</p>
-        </div>
-        <div class="info-box">
-          <i class="fas fa-user-graduate"></i>
-          <h4>Degree</h4>
-          <p>M.Tech CSE</p>
-        </div>
-        <div class="info-box">
-          <i class="fas fa-laptop-code"></i>
-          <h4>Research Area</h4>
-          <p>Cloud Computing</p>
-        </div>
-      </div>
+      <div class="about-card feedback-form-card">
+        <h3>Share your feedback</h3>
+        <form id="feedback-form">
+          <div class="feedback-tile">
+            <div class="field">
+              <label>Rate this website</label>
+              <div class="star-rating" id="feedback-star-rating">
+                <input type="radio" id="fb-star-5" name="rating" value="5" />
+                <label for="fb-star-5" title="5 stars">★</label>
+                <input type="radio" id="fb-star-4" name="rating" value="4" />
+                <label for="fb-star-4" title="4 stars">★</label>
+                <input type="radio" id="fb-star-3" name="rating" value="3" />
+                <label for="fb-star-3" title="3 stars">★</label>
+                <input type="radio" id="fb-star-2" name="rating" value="2" />
+                <label for="fb-star-2" title="2 stars">★</label>
+                <input type="radio" id="fb-star-1" name="rating" value="1" />
+                <label for="fb-star-1" title="1 star">★</label>
+              </div>
+            </div>
+          </div>
 
-      <div class="about-card feedback-card">
-        <span>Share your feedback,</span>
-        <a href="https://forms.gle/L8pTPJ3zobzV4NnU9" target="_blank" rel="noopener noreferrer">Click here</a>
+          <div class="feedback-tile">
+            <div class="field">
+              <label for="feedback-message">Any suggestion or feedback?</label>
+              <textarea id=""></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">Submit feedback</button>
+        </form>
       </div>
 
     </div>
@@ -190,6 +253,99 @@
     </div>
   </div>
 </footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="auth.js"></script>
+<script>
+  /* ---------------------------------------------------------------
+     Feedback form — writes each submission as its own record to
+     Firebase Realtime Database at feedback/<pushId>, so admin.html
+     can list every submission (not just the latest one per person).
+     Name/email are pulled from the shop session (see auth.js) when
+     signed in, otherwise the submission is stored as "Anonymous" —
+     there's no separate name field on this form by design.
+
+     Every submitted rating is ALSO recorded on its own, separate from
+     feedback, at Rating/entries/<pushId> — so the star rating survives
+     even if the Feedback table is ever cleared from admin.html. After
+     each new rating, Rating/average is recalculated from every entry
+     in Rating/entries and stored back, rounded to 2 decimal places.
+  --------------------------------------------------------------- */
+  const feedbackForm = document.getElementById("feedback-form");
+
+  // Reads every entry under Rating/entries and writes their average to
+  // Rating/average. Called right after a new rating is pushed.
+  async function updateRatingAverage() {
+    const snap = await db.ref("Rating/entries").once("value");
+    let total = 0;
+    let count = 0;
+    if (snap.exists()) {
+      Object.values(snap.val()).forEach((entry) => {
+        if (entry && typeof entry.rating === "number") {
+          total += entry.rating;
+          count += 1;
+        }
+      });
+    }
+    const average = count ? Math.round((total / count) * 100) / 100 : 0;
+    await db.ref("Rating/average").set(average);
+  }
+
+  feedbackForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const ratingInput = feedbackForm.querySelector('input[name="rating"]:checked');
+    const rating = ratingInput ? Number(ratingInput.value) : 0;
+    const messageEl = document.getElementById("feedback-message");
+    const message = messageEl.value.trim();
+
+    if (!rating) {
+      showToast("Please pick a star rating");
+      return;
+    }
+    if (!message) {
+      showToast("Please add a suggestion or feedback");
+      return;
+    }
+    if (!db) {
+      showToast("Couldn't connect — try again");
+      return;
+    }
+
+    const submitBtn = feedbackForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+
+    const user = getUser();
+    const now = Date.now();
+
+    try {
+      await Promise.all([
+        db.ref("feedback").push({
+          name: (user && user.name) || "Anonymous",
+          email: (user && user.email) || "",
+          rating,
+          message,
+          date: now,
+        }),
+        db.ref("Rating/entries").push({
+          rating,
+          date: now,
+        }),
+      ]);
+      await updateRatingAverage();
+      showToast("Thanks for your feedback!");
+      feedbackForm.reset();
+    } catch (err) {
+      console.error("Could not save feedback:", err);
+      showToast("Couldn't send — try again");
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
 
 </body>
 </html>
