@@ -247,11 +247,12 @@
               <th>Name</th>
               <th>Phone</th>
               <th>Email</th>
+              <th>Reg No.</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="customers-table-body">
-            <tr><td colspan="4" class="executive-empty">Loading…</td></tr>
+            <tr><td colspan="5" class="executive-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -849,7 +850,7 @@
 
   /* ---------------------------------------------------------------
      Customers — every /users/<emailKey> record, editable inline.
-     Name/Phone/Email are plain inputs; hitting Save either:
+     Name/Phone/Email/Reg No. are plain inputs; hitting Save either:
        - updates name/phone in place (email unchanged, password left
          untouched via .update()), or
        - if the email changed: writes a brand-new /users/<newKey> row
@@ -874,11 +875,13 @@
     const name = String(u.name || "").replace(/"/g, "&quot;");
     const phone = String(u.phone || "").replace(/"/g, "&quot;");
     const email = String(u.email || "").replace(/"/g, "&quot;");
+    const regNo = String(u.regNo || "").replace(/"/g, "&quot;");
     return `
       <tr data-key="${key}">
         <td><input type="text" class="cust-name" value="${name}" /></td>
         <td><input type="tel" class="cust-phone" value="${phone}" inputmode="numeric" maxlength="10" /></td>
         <td><input type="email" class="cust-email" value="${email}" /></td>
+        <td><input type="text" class="cust-regno" value="${regNo}" /></td>
         <td>
           <button type="button" class="btn btn-small executive-save-customer-btn">Save</button>
           <button type="button" class="btn btn-small btn-danger-outline executive-delete-customer-btn">Delete</button>
@@ -888,25 +891,25 @@
 
   async function loadCustomers() {
     const tbody = document.getElementById("customers-table-body");
-    tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Loading…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Loading…</td></tr>`;
 
     if (!db) {
-      tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Firebase isn't initialized.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Firebase isn't initialized.</td></tr>`;
       return;
     }
 
     try {
       const snap = await db.ref("users").once("value");
       if (!snap.exists()) {
-        tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">No customer accounts yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">No customer accounts yet.</td></tr>`;
         return;
       }
       const users = snap.val();
-      const keys = Object.keys(users).sort((a, b) => String(users[a].name || "").localeCompare(String(users[b].name || "")));
+      const keys = Object.keys(users).sort((a, b) => String(users[b].regNo || "").localeCompare(String(users[a].regNo || ""), undefined, { numeric: true }));
       tbody.innerHTML = keys.map((key) => customerRowHTML(key, users[key])).join("");
     } catch (err) {
       console.error("Could not load customers:", err);
-      tbody.innerHTML = `<tr><td colspan="4" class="executive-empty">Couldn't load customers — try refreshing.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Couldn't load customers — try refreshing.</td></tr>`;
     }
   }
 
@@ -931,7 +934,7 @@
         showToast("Customer removed");
         row.remove();
         if (!document.querySelector("#customers-table-body tr[data-key]")) {
-          document.getElementById("customers-table-body").innerHTML = `<tr><td colspan="4" class="executive-empty">No customer accounts yet.</td></tr>`;
+          document.getElementById("customers-table-body").innerHTML = `<tr><td colspan="5" class="executive-empty">No customer accounts yet.</td></tr>`;
         }
       } catch (err) {
         console.error("Could not delete customer:", err);
@@ -945,6 +948,7 @@
     const name = row.querySelector(".cust-name").value.trim();
     const phone = row.querySelector(".cust-phone").value.trim();
     const email = row.querySelector(".cust-email").value.trim();
+    const regNo = row.querySelector(".cust-regno").value.trim();
     if (!name || !email) {
       showToast("Name and email are required");
       return;
@@ -956,8 +960,8 @@
     saveBtn.textContent = "Saving…";
     try {
       if (newKey === originalKey) {
-        // Email unchanged — just update name/phone; password untouched.
-        await db.ref("users/" + originalKey).update({ name, phone, updatedAt: Date.now() });
+        // Email unchanged — just update name/phone/regNo; password untouched.
+        await db.ref("users/" + originalKey).update({ name, phone, regNo, updatedAt: Date.now() });
         showToast("Customer updated");
       } else {
         // Email changed — refuse to silently overwrite a different
@@ -1043,13 +1047,14 @@
         // Write every new copy first — nothing old is removed until
         // all of this has succeeded.
         // Spread the existing record first so fields this form doesn't
-        // edit (regNo, semester, photoUrl, photoOriginalUrl, ...)
-        // carry over instead of being dropped by this .set().
+        // edit (semester, photoUrl, photoOriginalUrl, ...) carry over
+        // instead of being dropped by this .set().
         await db.ref("users/" + newKey).set({
           ...existingUser,
           name,
           phone,
           email,
+          regNo,
           password: existingUser.password || "",
           updatedAt: now,
         });
