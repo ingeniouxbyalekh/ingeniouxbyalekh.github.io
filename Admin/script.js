@@ -197,7 +197,7 @@ const visitorInfoPromise = resolveVisitorInfo();
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       language: navigator.language || null,
       referrer: document.referrer || 'direct',
-      page: location.href,
+      page: (location.hostname + location.pathname).replace(/\/$/, '') + location.search,
       createdAt: serverTimestamp()
     }), 10000);
 
