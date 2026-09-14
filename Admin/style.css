@@ -195,8 +195,8 @@ body{min-height:100vh;}
   color-scheme:dark; /* keeps the native date-picker / dropdown popups dark instead of white */
 }
 .visitor-filter-row input[type="text"]{flex:1 1 160px;min-width:130px;}
-.visitor-filter-row input[type="date"]{flex:1 1 150px;}
-.visitor-filter-row select{flex:1 1 140px;}
+.visitor-filter-row input[type="date"]{flex:1 1 147px;}
+.visitor-filter-row select{flex:1 1 147px;}
 .visitor-filter-bar input:focus,.visitor-filter-bar select:focus{outline:none;border-color:var(--ember);background:#282d3b;}
 .filter-count{font-family:var(--font-mono);font-size:11.5px;color:var(--text-faint);white-space:nowrap;}
 

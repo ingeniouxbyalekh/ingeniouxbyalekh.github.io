@@ -244,6 +244,7 @@ const visitorPostalList = document.getElementById('visitorPostalList');
 const visitorDateFrom = document.getElementById('visitorDateFrom');
 const visitorDateTo = document.getElementById('visitorDateTo');
 const visitorDeviceFilter = document.getElementById('visitorDeviceFilter');
+const visitorReferrerFilter = document.getElementById('visitorReferrerFilter');
 const visitorFilterSearch = document.getElementById('visitorFilterSearch');
 const visitorFilterReset = document.getElementById('visitorFilterReset');
 const visitorFilterCount = document.getElementById('visitorFilterCount');
@@ -864,11 +865,18 @@ function populateFilterSuggestions(){
   const regions = uniqueSorted(allVisitorsCache.map(v => v.region));
   const cities = uniqueSorted(allVisitorsCache.map(v => v.city));
   const postals = uniqueSorted(allVisitorsCache.map(v => v.postal));
+  const referrers = uniqueSorted(allVisitorsCache.map(v => referrerLabel(v.referrer)));
 
   visitorIpList.innerHTML = ips.map(i => `<option value="${escapeHtml(i)}"></option>`).join('');
   visitorRegionList.innerHTML = regions.map(r => `<option value="${escapeHtml(r)}"></option>`).join('');
   visitorCityList.innerHTML = cities.map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
   visitorPostalList.innerHTML = postals.map(p => `<option value="${escapeHtml(p)}"></option>`).join('');
+
+  // Rebuild the Referrer <select> from live Firebase data, keeping the current pick if it's still there.
+  const currentReferrer = visitorReferrerFilter.value;
+  visitorReferrerFilter.innerHTML = '<option value="">All referrers</option>' +
+    referrers.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+  if(referrers.includes(currentReferrer)) visitorReferrerFilter.value = currentReferrer;
 }
 
 // Each field checks only its own data. When more than one field has a value,
@@ -881,6 +889,7 @@ function applyVisitorFilters(){
   const from = visitorDateFrom.value ? new Date(visitorDateFrom.value + 'T00:00:00').getTime() : null;
   const to = visitorDateTo.value ? new Date(visitorDateTo.value + 'T23:59:59').getTime() : null;
   const device = visitorDeviceFilter.value;
+  const referrer = visitorReferrerFilter.value;
 
   let filtered = allVisitorsCache;
   if(ip) filtered = filtered.filter(v => (v.ip || '').toLowerCase().includes(ip));
@@ -890,8 +899,9 @@ function applyVisitorFilters(){
   if(from) filtered = filtered.filter(v => v.createdAt && v.createdAt >= from);
   if(to) filtered = filtered.filter(v => v.createdAt && v.createdAt <= to);
   if(device) filtered = filtered.filter(v => v.deviceType === device);
+  if(referrer) filtered = filtered.filter(v => referrerLabel(v.referrer) === referrer);
 
-  const isFiltering = ip || region || city || postal || from || to || device;
+  const isFiltering = ip || region || city || postal || from || to || device || referrer;
   visitorFilterCount.textContent = isFiltering ? `Showing ${filtered.length} of ${allVisitorsCache.length}` : '';
   renderVisitorTable(filtered);
 }
@@ -939,7 +949,7 @@ function renderVisitorTable(list){
     if(e.key === 'Enter'){ e.preventDefault(); applyVisitorFilters(); }
   });
 });
-[visitorDateFrom, visitorDateTo, visitorDeviceFilter].forEach(el=>{
+[visitorDateFrom, visitorDateTo, visitorDeviceFilter, visitorReferrerFilter].forEach(el=>{
   el.addEventListener('change', applyVisitorFilters);
 });
 
@@ -953,6 +963,7 @@ visitorFilterReset.addEventListener('click', ()=>{
   visitorDateFrom.value = '';
   visitorDateTo.value = '';
   visitorDeviceFilter.value = '';
+  visitorReferrerFilter.value = '';
   applyVisitorFilters();
 });
 
