@@ -38,7 +38,7 @@
     {
       selector: "#profileToggle",
       title: "Your profile",
-      text: "View or edit your details.",
+      text: "Manage your profile, password, and queries.",
     },
     {
       selector: ".search-container",
@@ -64,15 +64,8 @@
     {
       selector: 'nav.sidebar a[href="../../contacts.html"]',
       title: "Contact Us",
-      text: "Need help? Reach out anytime.",
-      desktopOnly: true,
-    },
-    {
-      selector: 'nav.bottom-nav a[href="../../contacts.html"]',
-      title: "Contact Us",
-      text: "Need help? Reach out anytime.",
-      mobileOnly: true,
-    },
+      text: "Meet the people behind it.",
+    }
   ];
 
   const MOBILE_QUERY = "(max-width: 768px)";
