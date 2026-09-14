@@ -393,6 +393,29 @@
     signedOutEl.style.display = "block";
     document.querySelector(".dashboard-heading").style.display = "none";
   }
+
+  /* ---------------------------------------------------------------
+     Homepage visitor count — /visitorCount/home in Firebase, bumped
+     by exactly 1 every time this page (index.html, and only this
+     page) loads, then shown in the footer. Runs regardless of
+     sign-in state, since every visit should count.
+     A transaction is used instead of a plain read-then-write so two
+     visitors landing at the same moment can't clobber each other's
+     increment.
+  --------------------------------------------------------------- */
+  (function () {
+    const countEl = document.getElementById("visitor-count-value");
+    if (!countEl || typeof db === "undefined" || !db) return;
+
+    db.ref("visitorCount/home")
+      .transaction((current) => (current || 0) + 1)
+      .then((result) => {
+        if (result.committed && result.snapshot.exists()) {
+          countEl.textContent = Number(result.snapshot.val()).toLocaleString();
+        }
+      })
+      .catch((err) => console.error("Could not update visitor count:", err));
+  })();
 </script>
 </body>
 </html>

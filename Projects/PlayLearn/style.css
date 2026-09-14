@@ -752,6 +752,7 @@ a { color: inherit; }
   justify-content: space-between;
 }
 .site-footer p { margin: 0; font-size: 12px; color: var(--text-faint); }
+.visitor-count { font-family: var(--font-mono); }
 .footer-links { display: flex; gap: 16px; }
 .footer-links a { font-size: 12px; color: var(--text-dim); text-decoration: none; }
 .footer-links a:hover { color: var(--accent); }
