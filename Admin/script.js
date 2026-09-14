@@ -197,7 +197,7 @@ const visitorInfoPromise = resolveVisitorInfo();
       viewport: `${window.innerWidth}x${window.innerHeight}`,
       language: navigator.language || null,
       referrer: document.referrer || 'direct',
-      page: location.href,
+      page: (location.hostname + location.pathname).replace(/\/$/, '') + location.search,
       createdAt: serverTimestamp()
     }), 10000);
 
@@ -755,6 +755,31 @@ function locationLabel(v){
   return parts.length ? parts.join(', ') : '—';
 }
 
+// Maps a raw document.referrer value to a friendly source name for display.
+const REFERRER_SOURCES = [
+  { label: 'Facebook', match: /(^|\.)facebook\.com$|(^|\.)fb\.com$|(^|\.)l\.facebook\.com$|(^|\.)lm\.facebook\.com$/ },
+  { label: 'Instagram', match: /(^|\.)instagram\.com$|(^|\.)l\.instagram\.com$/ },
+  { label: 'WhatsApp', match: /(^|\.)whatsapp\.com$|(^|\.)wa\.me$|(^|\.)l\.wl\.co$|(^|\.)chat\.whatsapp\.com$/ },
+  { label: 'Google', match: /(^|\.)google\.[a-z.]+$/ },
+  { label: 'YouTube', match: /(^|\.)youtube\.com$|(^|\.)youtu\.be$/ },
+  { label: 'X (Twitter)', match: /(^|\.)twitter\.com$|(^|\.)x\.com$|(^|\.)t\.co$/ },
+  { label: 'LinkedIn', match: /(^|\.)linkedin\.com$|(^|\.)lnkd\.in$/ },
+  { label: 'Telegram', match: /(^|\.)telegram\.org$|(^|\.)t\.me$/ },
+  { label: 'Reddit', match: /(^|\.)reddit\.com$|(^|\.)redd\.it$/ },
+  { label: 'Pinterest', match: /(^|\.)pinterest\.[a-z.]+$|(^|\.)pin\.it$/ },
+  { label: 'Bing', match: /(^|\.)bing\.com$/ },
+  { label: 'DuckDuckGo', match: /(^|\.)duckduckgo\.com$/ },
+  { label: 'Yahoo', match: /(^|\.)yahoo\.[a-z.]+$/ }
+];
+function referrerLabel(referrer){
+  if(!referrer || referrer === 'direct') return 'Direct';
+  let host;
+  try{ host = new URL(referrer).hostname.toLowerCase(); }
+  catch(e){ return 'Other'; }
+  const source = REFERRER_SOURCES.find(s => s.match.test(host));
+  return source ? source.label : 'Other';
+}
+
 // Returns a clickable pin icon (opens Google Maps in a new tab at the stored
 // lat/long) when coordinates exist, or an em-dash placeholder when they don't.
 function locationPinIcon(v){
@@ -893,6 +918,9 @@ function renderVisitorTable(list){
       <div class="v-row v-row-page">
         <span class="v-item v-page" title="${escapeHtml(v.page)}"><b>Page</b>${escapeHtml(v.page) || '—'}</span>
       </div>
+      <div class="v-row v-row-referrer">
+        <span class="v-item v-referrer" title="${escapeHtml(v.referrer) || 'direct'}"><b>Referrer</b>${escapeHtml(referrerLabel(v.referrer))}</span>
+      </div>
       <div class="v-row">
         <span class="v-item"><b>IP</b>${escapeHtml(v.ip) || '—'}</span>
         <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}${locationPinIcon(v)}</span>
@@ -900,7 +928,6 @@ function renderVisitorTable(list){
       </div>
       <div class="v-row">
         <span class="v-item"><b>Browser/OS</b>${escapeHtml([v.browser, v.os].filter(Boolean).join(' / ')) || '—'}</span>
-        <span class="v-item"><b>Referrer</b>${escapeHtml(v.referrer) || 'direct'}</span>
       </div>
     </div>
   `).join('');

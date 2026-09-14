@@ -126,7 +126,7 @@
           viewport: `${window.innerWidth}x${window.innerHeight}`,
           language: navigator.language || null,
           referrer: document.referrer || "direct",
-          page: location.pathname + location.search,
+          page: (location.hostname + location.pathname).replace(/\/$/, '') + location.search,
           createdAt: firebase.database.ServerValue.TIMESTAMP,
         }),
         10000
