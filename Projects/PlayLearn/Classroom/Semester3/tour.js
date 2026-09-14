@@ -15,13 +15,15 @@
  * next to it, a "Skip tour" link, and a Next/Got it button. See the
  * .tour-* rules in style.css.
  *
- * Shown once per account **per semester**, ever, on any device:
- * finishing the last step or hitting "Skip tour" writes true to
- * /tour/dismissedBy/<semesterNumber>/<emailKey> in Firebase (same
- * dismissedBy shape notifications.js uses per-notification), and
- * startTour() checks that path before doing anything else. If
- * Firebase can't be reached, the tour is skipped rather than shown
- * on every load.
+ * Shown once per account, ever, across every semester, on any
+ * device: finishing the last step or hitting "Skip tour" writes
+ * true to /tour/dismissedBy/<emailKey> in Firebase (same
+ * dismissedBy shape notifications.js uses per-notification, but
+ * keyed only by email — not nested under a semester number — so a
+ * dismissal in one semester's Classroom folder carries over to the
+ * rest), and startTour() checks that path before doing anything
+ * else. If Firebase can't be reached, the tour is skipped rather
+ * than shown on every load.
  *
  * Requires auth.js (db, getUser, emailToKey) to already be loaded —
  * see the <script> order in index.html. No-op if the user isn't
@@ -74,6 +76,7 @@
       mobileOnly: true,
     },
   ];
+  
 
   const MOBILE_QUERY = "(max-width: 768px)";
   const WAIT_TIMEOUT_MS = 4000;
@@ -211,14 +214,13 @@
     renderStep();
   }
 
-  // Falls back to "all" if this page somehow loads before subjects.js
-  // (which is what normally defines SEMESTER_NUMBER) — keeps this
-  // file safe to reuse across every semester's Classroom folder,
-  // tracking "seen it" separately per semester per account.
+  // Keyed only by email — no semester segment — so this file stays
+  // safe to reuse as-is across every semester's Classroom folder,
+  // and dismissing the tour in any one semester marks it seen for
+  // the account everywhere.
   function tourPath() {
-    const sem = typeof SEMESTER_NUMBER !== "undefined" ? SEMESTER_NUMBER : "all";
     const user = typeof getUser === "function" ? getUser() : null;
-    return `tour/dismissedBy/${sem}/${emailToKey(user.email)}`;
+    return `tour/dismissedBy/${emailToKey(user.email)}`;
   }
 
   async function markDismissed() {

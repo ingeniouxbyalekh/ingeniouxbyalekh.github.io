@@ -1718,6 +1718,9 @@ a { color: inherit; }
   overflow-wrap: anywhere;
 }
 #device-info-table td:last-child { width: 12%; }
+/* Customer name reads heavier than the rest of the row at this
+   weight/size combo — force it to plain, non-bold text. */
+#device-info-table td:nth-child(1) { font-weight: 400; }
 
 /* Customers table — Name/Email get 2x the width of Phone/Reg No.,
    with the Save/Delete actions column keeping enough room for both
