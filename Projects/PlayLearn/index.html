@@ -103,7 +103,7 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>© 2026 PlayLearn by Alekh.</p>
+    <p>© 2026 PlayLearn by Alekh</p>
     <div class="footer-links">
       <a href="executive.html">Executive Login</a>
       <a href="admin.html">Admin Login</a>
@@ -272,7 +272,7 @@
         <p>${escapeHTML(p.blurb)}</p>
         <div class="card-footer">
           <span class="price ${p.price === 0 ? "price-free" : ""}">${p.price === 0 ? "Free" : p.price.toLocaleString("en-IN")}</span>
-          <a class="btn btn-primary" href="${href}">View</a>
+          <a class="btn btn-primary" href="${href}">Get It</a>
         </div>
       </article>`;
   }
@@ -281,8 +281,17 @@
     const paid = PlayLearn_PRODUCTS.find((p) => p.id === `cse-sem${semesterNumber}`);
     const cards = [paid].filter(Boolean).map(suggestionCardHTML).join("");
     suggestionsEl.innerHTML = cards
-      ? `<p class="dashboard-suggestions-heading"> </p><div class="product-grid dashboard-suggestions-grid">${cards}</div>`
+      ? `<div class="product-grid dashboard-suggestions-grid">${cards}</div>`
       : "";
+  }
+
+  // "Good morning/afternoon/evening, <first name>" — replaces the old
+  // "Your study material — Semester N" heading, based on local time.
+  function greetingFor(fullName) {
+    const firstName = (fullName || "").trim().split(/\s+/)[0] || "there";
+    const hour = new Date().getHours();
+    const timeOfDay = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening";
+    return `Good ${timeOfDay}, ${escapeHTML(firstName)}`;
   }
 
   const loadingEl = document.getElementById("dashboard-loading");
@@ -351,7 +360,7 @@
           }
 
           const semesterNumber = Number(user.semester) || 1;
-          document.getElementById("dashboard-heading-title").textContent = `Your study material — Semester ${semesterNumber}`;
+          document.getElementById("dashboard-heading-title").textContent = greetingFor(user.name);
 
           const subjects = SUBJECTS_BY_SEMESTER[semesterNumber] || [];
           const block = subjects.length ? semesterBlockHTML(semesterNumber, subjects, purchasedIds) : null;
@@ -381,6 +390,7 @@
   } else {
     loadingEl.style.display = "none";
     signedOutEl.style.display = "block";
+    document.querySelector(".dashboard-heading").style.display = "none";
   }
 </script>
 </body>
