@@ -65,8 +65,16 @@
       selector: 'nav.sidebar a[href="../../contacts.html"]',
       title: "Contact Us",
       text: "Meet the people behind it.",
-    }
+      desktopOnly: true,
+    },
+    {
+      selector: 'nav.bottom-nav a[href="../../contacts.html"]',
+      title: "Contact Us",
+      text: "Meet the people behind it.",
+      mobileOnly: true,
+    },
   ];
+  
 
   const MOBILE_QUERY = "(max-width: 768px)";
   const WAIT_TIMEOUT_MS = 4000;
