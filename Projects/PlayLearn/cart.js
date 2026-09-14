@@ -631,7 +631,15 @@ document.getElementById("close-checkout-btn").addEventListener("click", closeChe
 checkoutOverlay.addEventListener("click", (e) => {
   if (e.target === checkoutOverlay) closeCheckout();
 });
-document.getElementById("checkout-done-btn").addEventListener("click", closeCheckout);
+document.getElementById("checkout-done-btn").addEventListener("click", () => {
+  closeCheckout();
+  // After a successful purchase on product.html, send the shopper
+  // back to the main PlayLearn site rather than leaving them on the
+  // now-purchased product page.
+  if (/product\.html$/.test(window.location.pathname)) {
+    window.location.href = "https://ingenioux.in/Projects/PlayLearn/index.html";
+  }
+});
 if (downloadReceiptBtn) {
   downloadReceiptBtn.addEventListener("click", () => downloadReceiptPDF(lastCompletedOrder));
 }
