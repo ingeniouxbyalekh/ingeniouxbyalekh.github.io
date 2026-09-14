@@ -925,8 +925,7 @@ function renderVisitorTable(list){
         <span class="v-item"><b>IP</b>${escapeHtml(v.ip) || '—'}</span>
         <span class="v-item"><b>Location</b>${escapeHtml(locationLabel(v))}${locationPinIcon(v)}</span>
         <span class="v-item"><b>Postal</b>${escapeHtml(v.postal) || '—'}</span>
-      </div>
-      <div class="v-row">
+        <span class="v-item"><b>ISP</b>${escapeHtml(v.isp) || '—'}</span>
         <span class="v-item"><b>Browser/OS</b>${escapeHtml([v.browser, v.os].filter(Boolean).join(' / ')) || '—'}</span>
       </div>
     </div>
