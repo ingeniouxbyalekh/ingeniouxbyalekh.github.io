@@ -258,7 +258,36 @@
       const originalLabel = personalInfoBtn.textContent;
       personalInfoBtn.textContent = "Saving…";
       try {
-        await db.ref("users/" + emailToKey(user.email)).update({ name, phone, regNo, semester, updatedAt: Date.now() });
+        const emailKey = emailToKey(user.email);
+
+        // Before overwriting the /users record, snapshot what's there
+        // now and — if Name, Phone, or Registration No. actually changed
+        // (Semester doesn't count) — archive that snapshot to
+        // /user-history/<email(n)> with a "changes" note listing which
+        // fields changed.
+        const beforeSnap = await db.ref("users/" + emailKey).once("value");
+        const previousDetails = beforeSnap.exists() ? beforeSnap.val() : {};
+        const changedFields = [];
+        if ((previousDetails.name || "") !== name) changedFields.push("Name");
+        if ((previousDetails.phone || "") !== phone) changedFields.push("Phone");
+        if ((previousDetails.regNo || "") !== regNo) changedFields.push("Registration No.");
+        if (changedFields.length > 0) {
+          const historySnap = await db
+            .ref("user-history")
+            .orderByKey()
+            .startAt(emailKey + "(")
+            .endAt(emailKey + "(\uf8ff")
+            .once("value");
+          const existingCount = historySnap.exists() ? Object.keys(historySnap.val()).length : 0;
+          const historyKey = `${emailKey}(${existingCount + 1})`;
+          await db.ref("user-history/" + historyKey).set({
+            ...previousDetails,
+            changes: changedFields.join(", "),
+            changedAt: Date.now(),
+          });
+        }
+
+        await db.ref("users/" + emailKey).update({ name, phone, regNo, semester, updatedAt: Date.now() });
         const merged = { ...(getUser() || {}), name, email: user.email, phone, regNo, semester };
         setUser(merged);
         paint(merged);
