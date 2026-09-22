@@ -140,6 +140,95 @@
   </div>
 </div>
 
+<script>
+  /* ---------------------------------------------------------------
+     "Add to Home Screen" popup — appears on every visit to this
+     page (no dismissal is remembered), but only for mobile
+     browsers, and never when already running as an installed PWA.
+     Kept in its own <script> tag, independent of everything else
+     on the page, so an error anywhere else can't stop it from
+     running. Also self-tests via a small on-screen banner if
+     something looks wrong (remove once confirmed working).
+  --------------------------------------------------------------- */
+  (function () {
+    function debugBanner(msg) {
+      const d = document.createElement("div");
+      d.textContent = "[A2HS debug] " + msg;
+      d.style.cssText =
+        "position:fixed;bottom:0;left:0;right:0;z-index:99999;background:#c1443a;color:#fff;font:12px monospace;padding:8px;text-align:center";
+      document.body.appendChild(d);
+    }
+
+    try {
+      const isStandalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      if (isStandalone) {
+        debugBanner("hidden — page thinks it's already installed (standalone display-mode)");
+        return;
+      }
+
+      const ua = navigator.userAgent || "";
+      const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
+      const isAndroid = /Android/i.test(ua);
+      if (!isIOS && !isAndroid) {
+        debugBanner("hidden — desktop user agent detected (popup is mobile-only by design)");
+        return;
+      }
+
+      const overlay = document.getElementById("a2hsOverlay");
+      if (!overlay) {
+        debugBanner("popup markup not found in the page (#a2hsOverlay missing)");
+        return;
+      }
+      const closeBtn = document.getElementById("a2hsClose");
+      const dismissBtn = document.getElementById("a2hsDismiss");
+      const installBtn = document.getElementById("a2hsInstall");
+      const iosSteps = document.getElementById("a2hsIosSteps");
+      const sub = document.getElementById("a2hsSub");
+
+      let deferredPrompt = null;
+
+      function hide() { overlay.classList.remove("is-visible"); }
+      function show() { overlay.classList.add("is-visible"); }
+
+      closeBtn.addEventListener("click", hide);
+      dismissBtn.addEventListener("click", hide);
+      overlay.addEventListener("click", (e) => { if (e.target === overlay) hide(); });
+
+      if (isIOS) {
+        iosSteps.style.display = "flex";
+        sub.textContent = "Add PlayLearn to your home screen for one-tap access.";
+        setTimeout(show, 1200);
+      } else {
+        window.addEventListener("beforeinstallprompt", (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          installBtn.style.display = "inline-flex";
+          setTimeout(show, 1200);
+        });
+        installBtn.addEventListener("click", async () => {
+          if (!deferredPrompt) return hide();
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          hide();
+        });
+        // Chrome only fires beforeinstallprompt if a manifest.json +
+        // registered service worker are present over https. If
+        // neither shows up shortly, say so instead of staying silent.
+        setTimeout(() => {
+          if (!deferredPrompt) {
+            debugBanner("Android: beforeinstallprompt never fired — needs manifest.json + a registered service worker served over https (not file://)");
+          }
+        }, 3000);
+      }
+    } catch (err) {
+      debugBanner("script error — " + err.message);
+    }
+  })();
+</script>
+
 <script src="products.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
@@ -441,71 +530,6 @@
         }
       })
       .catch((err) => console.error("Could not update visitor count:", err));
-  })();
-
-  /* ---------------------------------------------------------------
-     "Add to Home Screen" popup — appears on every visit to this
-     page (no dismissal is remembered), but only for mobile
-     browsers, and never when already running as an installed PWA.
-  --------------------------------------------------------------- */
-  (function () {
-    const isStandalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      window.navigator.standalone === true;
-    if (isStandalone) return; // already installed — never show
-
-    const ua = navigator.userAgent || "";
-    const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
-    const isAndroid = /Android/i.test(ua);
-    if (!isIOS && !isAndroid) return; // desktop — skip entirely
-
-    const overlay = document.getElementById("a2hsOverlay");
-    const closeBtn = document.getElementById("a2hsClose");
-    const dismissBtn = document.getElementById("a2hsDismiss");
-    const installBtn = document.getElementById("a2hsInstall");
-    const iosSteps = document.getElementById("a2hsIosSteps");
-    const sub = document.getElementById("a2hsSub");
-
-    let deferredPrompt = null;
-
-    function hide() {
-      overlay.classList.remove("is-visible");
-    }
-    function show() {
-      overlay.classList.add("is-visible");
-    }
-
-    closeBtn.addEventListener("click", hide);
-    dismissBtn.addEventListener("click", hide);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) hide();
-    });
-
-    if (isIOS) {
-      // No native install prompt on iOS Safari — show manual steps.
-      iosSteps.style.display = "flex";
-      sub.textContent = "Add PlayLearn to your home screen for one-tap access.";
-      window.addEventListener("load", () => setTimeout(show, 1200));
-    } else {
-      // Android/Chrome — wait for the real install prompt so the
-      // button actually works; fall back to hiding if it never fires
-      // (e.g. criteria not met, or already dismissed this session by
-      // the browser itself).
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installBtn.style.display = "inline-flex";
-        setTimeout(show, 1200);
-      });
-
-      installBtn.addEventListener("click", async () => {
-        if (!deferredPrompt) return hide();
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-        hide();
-      });
-    }
   })();
 </script>
 </body>
