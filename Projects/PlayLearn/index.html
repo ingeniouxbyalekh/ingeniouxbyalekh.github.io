@@ -103,16 +103,42 @@
 
 <footer class="site-footer">
   <div class="wrap">
-    <p>© 2026 PlayLearn by Alekh. Digital goods, delivered by email.</p>
     <div class="footer-links">
       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfoUJfoeikx4drvxfdN2adlir4LQevErfG5WDkpHPeIaBhlDQ/viewform?usp=header">Need Help?</a>
       <a href="executive.html">Executive Login</a>
       <a href="admin.html">Admin Login</a>
     </div>
+    <p>© 2026 PlayLearn by Alekh. Digital goods, delivered by email.</p>
   </div>
 </footer>
 
 <div class="toast" id="toast"></div>
+
+<!-- Add to Home Screen popup -->
+<div class="a2hs-overlay" id="a2hsOverlay" role="dialog" aria-modal="true" aria-labelledby="a2hsTitle">
+  <div class="a2hs-card">
+    <div class="a2hs-top">
+      <img class="a2hs-icon" src="logo.png" alt="" />
+      <div>
+        <p class="a2hs-title" id="a2hsTitle">Install PlayLearn</p>
+        <p class="a2hs-sub" id="a2hsSub">Add it to your home screen for one-tap access.</p>
+      </div>
+      <button class="a2hs-close" id="a2hsClose" aria-label="Close">✕</button>
+    </div>
+
+    <!-- iOS instructions (no native install prompt exists on iOS Safari) -->
+    <ol class="a2hs-steps" id="a2hsIosSteps" style="display:none">
+      <li><span class="a2hs-num">1</span>Tap the <b>Share</b> icon in Safari's toolbar</li>
+      <li><span class="a2hs-num">2</span>Scroll down and tap <b>Add to Home Screen</b></li>
+      <li><span class="a2hs-num">3</span>Tap <b>Add</b> to confirm</li>
+    </ol>
+
+    <div class="a2hs-actions">
+      <button class="btn" id="a2hsDismiss">Not now</button>
+      <button class="btn btn-primary" id="a2hsInstall" style="display:none">Install</button>
+    </div>
+  </div>
+</div>
 
 <script src="products.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -415,6 +441,71 @@
         }
       })
       .catch((err) => console.error("Could not update visitor count:", err));
+  })();
+
+  /* ---------------------------------------------------------------
+     "Add to Home Screen" popup — appears on every visit to this
+     page (no dismissal is remembered), but only for mobile
+     browsers, and never when already running as an installed PWA.
+  --------------------------------------------------------------- */
+  (function () {
+    const isStandalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    if (isStandalone) return; // already installed — never show
+
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.MSStream;
+    const isAndroid = /Android/i.test(ua);
+    if (!isIOS && !isAndroid) return; // desktop — skip entirely
+
+    const overlay = document.getElementById("a2hsOverlay");
+    const closeBtn = document.getElementById("a2hsClose");
+    const dismissBtn = document.getElementById("a2hsDismiss");
+    const installBtn = document.getElementById("a2hsInstall");
+    const iosSteps = document.getElementById("a2hsIosSteps");
+    const sub = document.getElementById("a2hsSub");
+
+    let deferredPrompt = null;
+
+    function hide() {
+      overlay.classList.remove("is-visible");
+    }
+    function show() {
+      overlay.classList.add("is-visible");
+    }
+
+    closeBtn.addEventListener("click", hide);
+    dismissBtn.addEventListener("click", hide);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) hide();
+    });
+
+    if (isIOS) {
+      // No native install prompt on iOS Safari — show manual steps.
+      iosSteps.style.display = "flex";
+      sub.textContent = "Add PlayLearn to your home screen for one-tap access.";
+      window.addEventListener("load", () => setTimeout(show, 1200));
+    } else {
+      // Android/Chrome — wait for the real install prompt so the
+      // button actually works; fall back to hiding if it never fires
+      // (e.g. criteria not met, or already dismissed this session by
+      // the browser itself).
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = "inline-flex";
+        setTimeout(show, 1200);
+      });
+
+      installBtn.addEventListener("click", async () => {
+        if (!deferredPrompt) return hide();
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        hide();
+      });
+    }
   })();
 </script>
 </body>
