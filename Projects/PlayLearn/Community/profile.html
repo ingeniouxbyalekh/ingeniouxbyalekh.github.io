@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile · OUTR-Community</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="css/style.css">
+<style>
+#pf{max-width:1040px;margin:0 auto;padding:16px 16px 48px}
+.hero{background:none}
+.cover{position:relative;height:clamp(140px,24vw,250px);border-radius:24px;background-size:cover;background-position:center}
+.btn.cbtn{position:absolute;z-index:3;right:14px;bottom:14px;background:var(--panel);color:var(--ink);box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.id{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 22px;padding:0 10px 12px;margin-top:-60px;position:relative}
+.id{pointer-events:none}.id>*{pointer-events:auto}
+.avwrap{position:relative}
+.pav{width:148px;height:148px;font-size:56px;border-radius:50%;border:6px solid var(--bg);border-radius:50%}
+.pav img{border-radius:50%}
+.pav .dot{right:6px;bottom:6px;width:22px;height:22px;border:4px solid var(--bg)}
+.cam{position:absolute;right:-4px;bottom:-4px;width:38px;height:38px;border-radius:50%;border:3px solid var(--bg);background:var(--panel);cursor:pointer}
+.nm{flex:1;min-width:220px;align-self:flex-start;padding-top:72px}
+.nm h1{font-size:clamp(26px,4vw,36px);line-height:1.05;margin:0 0 6px;letter-spacing:-.02em}
+.nm p{margin:2px 0}
+.pact{display:flex;gap:8px;flex-wrap:wrap;align-items:center;align-self:flex-start;margin-top:76px}
+.tabs{position:sticky;top:56px;z-index:4;display:flex;gap:6px;padding:8px 0;background:var(--bg);overflow:visible}
+.tabs button{flex:none;padding:9px 20px;border:0;border-radius:999px;background:var(--panel);box-shadow:0 0 0 1px var(--line);color:var(--muted);font-weight:600;cursor:pointer;transition:background .15s,color .15s}
+.tabs button:hover{color:var(--ink)}
+.tabs button.on{background:var(--accent);color:var(--on);box-shadow:none}
+@media(max-width:600px){.tabs{gap:4px}.tabs button{flex:1 1 0;min-width:0;padding:9px 2px;font-size:13px;text-align:center;white-space:nowrap}}
+.cols{display:grid;grid-template-columns:330px minmax(0,1fr);gap:20px;margin-top:12px;align-items:start}
+.intro{position:sticky;top:124px;margin:0}
+.bio{margin:0 0 12px;font-size:16px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap}
+.facts{list-style:none;margin:14px 0 0;padding:0;display:grid;gap:8px;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.stats div{text-align:center;color:var(--muted);font-size:13px;border-left:1px solid var(--line)}
+.stats div:first-child{border-left:0}
+.stats b{display:block;font-family:var(--hf);font-size:24px;line-height:1.1;color:var(--ink)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-flow:dense;gap:8px}
+.pgrid a{display:block;aspect-ratio:1;border-radius:16px;overflow:hidden}
+.pgrid a:first-child{grid-column:span 2;grid-row:span 2;aspect-ratio:auto}
+.pgrid img{display:block;width:100%;height:100%;object-fit:cover}
+.dl{display:grid;grid-template-columns:150px 1fr;margin:0}
+.dl dt,.dl dd{margin:0;padding:13px 0;border-top:1px solid var(--line)}
+.dl dt:first-of-type,.dl dt:first-of-type+dd{border-top:0}
+.dl dt{color:var(--muted)}.dl dd{font-weight:600;overflow-wrap:anywhere}
+.cropc{max-width:460px;text-align:left}
+.stage{position:relative;overflow:hidden;margin:14px 0;border-radius:14px;background:#000}
+.stage canvas{display:block;width:100%;height:auto;cursor:grab;touch-action:none}
+.stage.sq::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 999px rgba(0,0,0,.5);pointer-events:none}
+.zoom{display:flex;align-items:center;gap:12px;color:var(--muted);font-weight:600}.zoom input{flex:1}
+.cropc .row{margin-top:14px}
+.lnk{cursor:pointer}.lnk:hover{text-decoration:underline}
+.likes{margin-top:12px;color:var(--muted);font-weight:600}
+@media(max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}.intro{position:static}.pav{width:112px;height:112px;font-size:44px;border-radius:50%}.id{margin-top:-48px}.nm{padding-top:58px}.pact{margin-top:0}#pf{padding:10px 12px 40px}.dl{grid-template-columns:110px 1fr}}
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="index.html">Community</a>
+  <div class="hr">
+    <a class="ib" href="chat.html" aria-label="Messenger"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg></a>
+    <button class="ib" id="gear" type="button" aria-label="Settings" style="font-size:20px">⚙</button>
+    <a class="av" id="me-av" href="profile.html" aria-label="My profile"></a>
+  </div>
+  <div id="menu" class="menu" hidden>
+    <a href="index.html">Home feed</a>
+    <a href="profile.html">My profile</a>
+    <a href="chat.html">Messenger</a>
+    <hr>
+    <button type="button" id="m-blocked">Blocked users</button>
+    <button type="button" data-theme-toggle></button>
+    <hr>
+    <a href="../index.html">Back to PlayLearn</a>
+  </div>
+</header>
+<p id="boot" class="muted pad">Loading profile…</p>
+<main id="pf" hidden>
+  <section class="hero">
+    <div class="cover" id="cover"><button class="btn sm cbtn" id="cover-btn" hidden>Change cover</button></div>
+    <div class="id">
+      <div class="avwrap"><span class="av pav" id="pav"></span><button class="cam" id="av-btn" hidden aria-label="Change profile photo">📷</button></div>
+      <div class="nm"><h1 id="name"></h1><p class="muted" id="sub"></p><p class="muted" id="stat"></p></div>
+      <div class="pact" id="pact"></div>
+    </div>
+    <nav class="tabs" id="tabs"><button data-t="posts" class="on">Posts</button><button data-t="about">About</button><button data-t="friends">Friends</button><button data-t="photos">Photos</button><button data-t="stories" hidden>Stories</button></nav>
+  </section>
+  <div class="cols"><aside class="sbox intro" id="intro"></aside><section id="pane"></section></div>
+</main>
+<div id="crop" class="overlay" hidden>
+  <div class="card cropc" role="dialog" aria-modal="true" aria-labelledby="c-title">
+    <h2 id="c-title">Adjust photo</h2>
+    <p class="muted" style="margin:0">Drag to reposition. Use the slider to zoom.</p>
+    <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+    <label class="zoom">Zoom <input id="zm" type="range" min="1" max="3" step="0.01" value="1"></label>
+    <div class="row"><button class="btn sm ghost" id="rot" type="button">⟳ Rotate</button><span class="grow"></span><button class="btn sm ghost" id="c-cancel" type="button">Cancel</button><button class="btn sm" id="c-save" type="button">Save</button></div>
+  </div>
+</div>
+<input id="f-av" type="file" accept="image/*" hidden>
+<input id="f-cv" type="file" accept="image/*" hidden>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/safety.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/stories.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const { db, shopDb, https } = Auth;
+  const TS = firebase.database.ServerValue.TIMESTAMP;
+  const COLORS = ["#2743e0", "#c2410c", "#db2777", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
+  const colorFor = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; };
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x != null) e.textContent = x; return e; };
+  const btn = (x, fn, c) => { const b = el("button", c || "btn sm", x); b.onclick = fn; return b; };
+  const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 60 ? "just now" : s < 3600 ? ((s / 60) | 0) + "m ago" : s < 86400 ? ((s / 3600) | 0) + "h ago" : ((s / 86400) | 0) + "d ago"; };
+  const go = (id) => (location.href = id === me.id ? "profile.html" : "profile.html?u=" + Auth.pubId(id));
+  const run = (u) => db.ref().update(u).catch(() => alert("Something went wrong. Check your connection and try again."));
+  function face(e, name, photo) {
+    e.style.background = colorFor(name); e.textContent = "";
+    const src = https(photo), letter = String(name || "?")[0].toUpperCase();
+    if (!src) { e.textContent = letter; return; }
+    const i = new Image(); i.alt = ""; i.referrerPolicy = "no-referrer";
+    i.onerror = () => { i.remove(); e.textContent = letter; };
+    i.src = src; e.append(i);
+  }
+  const avatar = (m, c) => { const a = el("span", c || "av"); face(a, m.username, m.photoUrl); return a; };
+
+  let me, uid, people = {}, posts = [], likes = {}, fr = new Set(), myFr = new Set(), inc = new Set(), sent = new Set();
+  let online = false, tab = "posts", editBio = false, raf = 0, last = {};
+  const render = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
+
+  function friendBtns(box) {
+    if (uid === me.id) return box.append(btn("Edit bio", () => { editBio = true; intro(); }, "btn sm ghost"));
+    if (myFr.has(uid)) {
+      const m = el("a", "btn sm", "💬 Message"); m.href = "chat.html";
+      box.append(el("span", "tag", "✓ Friends"), m, btn("Unfriend", () => confirm("Remove this friend?") && run({ [`friends/${me.id}/${uid}`]: null, [`friends/${uid}/${me.id}`]: null }), "btn sm ghost"));
+    } else if (inc.has(uid)) {
+      box.append(btn("Accept", () => run({ [`friends/${me.id}/${uid}`]: TS, [`friends/${uid}/${me.id}`]: TS, [`requests/${me.id}/${uid}`]: null, [`sent/${uid}/${me.id}`]: null })),
+        btn("Decline", () => run({ [`requests/${me.id}/${uid}`]: null, [`sent/${uid}/${me.id}`]: null }), "btn sm ghost"));
+    } else if (sent.has(uid)) box.append(btn("Requested ✕", () => run({ [`requests/${uid}/${me.id}`]: null, [`sent/${me.id}/${uid}`]: null }), "btn sm ghost"));
+    else box.append(btn("Add friend", () => run({ [`requests/${uid}/${me.id}`]: TS, [`sent/${me.id}/${uid}`]: true })));
+  }
+
+  function more(name) {                               // "..." menu on someone else's profile
+    const w = el("div"), menu = el("div", "menu"), b = btn("⋯", () => { menu.hidden = !menu.hidden; w.style.zIndex = menu.hidden ? "" : "6"; }, "btn sm ghost");
+    w.style.position = "relative"; menu.hidden = true; menu.style.cssText = "right:0;left:auto;width:170px;top:calc(100% + 6px);z-index:7";
+    document.addEventListener("click", (e) => { if (!w.contains(e.target)) { menu.hidden = true; w.style.zIndex = ""; } });
+    menu.append(btn("Report", () => { menu.hidden = true; w.style.zIndex = ""; Safety.report({ type: "user", uid, name }); }, "mi"),
+      btn("Block", () => { menu.hidden = true; w.style.zIndex = ""; Safety.block(uid, name); }, "mi"));
+    w.append(b, menu); return w;
+  }
+
+  function intro() {
+    const m = people[uid] || {}, mine = uid === me.id, b = $("intro");
+    b.textContent = ""; b.append(el("h3", "", "Intro"));
+    if (editBio) {
+      const ta = el("textarea"), r = el("div", "row");
+      ta.value = m.bio || ""; ta.maxLength = 200; ta.placeholder = "Say something about yourself";
+      const close = () => { editBio = false; intro(); };
+      r.append(btn("Save", () => { const t = ta.value.trim(); editBio = false; run({ [`users/${me.id}/bio`]: t || null, [`users/${me.id}/updatedAt`]: TS }); intro(); }), btn("Cancel", close, "btn sm ghost"));
+      b.append(ta, r); ta.focus(); return;
+    }
+    if (m.bio) b.append(el("p", "bio", m.bio));
+    else if (mine) b.append(el("p", "bio muted", "Add a short bio so people know who you are."));
+    if (mine) b.append(btn("Edit bio", () => { editBio = true; intro(); }, "btn sm ghost full"));
+    const facts = el("ul", "facts");
+    [["🎓", m.semester && "Semester " + m.semester], ["🪪", m.regNo && "Reg. no. " + m.regNo], ["📅", m.joinedAt && "Joined " + new Date(m.joinedAt).toLocaleDateString(undefined, { month: "long", year: "numeric" })], ["🟢", online && "Active now"]]
+      .forEach(([i, t]) => t && facts.append(el("li", "", i + "  " + t)));
+    const got = posts.reduce((n, [k]) => n + Object.keys(likes[k] || {}).length, 0), st = el("div", "stats");
+    [[posts.length, "Posts"], [fr.size, "Friends"], [got, "Likes"]].forEach(([n, l]) => { const d = el("div"); d.append(el("b", "", n), l); st.append(d); });
+    b.append(facts, st);
+  }
+
+  function pane() {
+    const m = people[uid] || {}, mine = uid === me.id, root = $("pane"); root.textContent = "";
+    const empty = (t) => root.append(el("p", "muted", t));
+    if (!mine && Safety.isBlocked(uid)) return empty("You've blocked this person. Unblock them to see their posts and friends.");
+    if (tab === "stories" && mine) return Stories.pane(root);
+    if (tab === "about") {
+      const box = el("div", "box nomt"), dl = el("dl", "dl"); box.append(el("h3", "", "About"));
+      [["Name", m.username], ["Registration no.", m.regNo], ["Semester", m.semester], ["Member since", m.joinedAt && new Date(m.joinedAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })], ["Bio", m.bio]]
+        .forEach(([k, v]) => { if (v) { dl.append(el("dt", "", k), el("dd", "", v)); } });
+      dl.style.marginTop = "14px"; box.append(dl); root.append(box);
+    } else if (tab === "friends") {
+      const list = [...fr].map((id) => ({ id, ...(people[id] || {}) })).filter((f) => f.username && !Safety.hidden(f.id)).sort((a, b) => a.username.localeCompare(b.username));
+      if (!list.length) return empty(mine ? "No friends yet. Find people from the community feed." : "No friends to show yet.");
+      const g = el("div", "fgrid");
+      list.forEach((f) => {
+        const c = el("div", "pc lnk"), im = el("div", "pimg"), b = el("div", "pb");
+        face(im, f.username, f.photoUrl); b.append(el("b", "", f.username), el("small", "", f.regNo || "\u00a0"));
+        if (f.id !== me.id && !mine && myFr.has(f.id)) b.append(el("small", "tag", "Your friend"));
+        c.onclick = () => go(f.id); c.append(im, b); g.append(c);
+      });
+      root.append(g);
+    } else if (tab === "photos") {
+      const ph = posts.filter(([, p]) => p.mediaType === "image" && https(p.mediaUrl));
+      if (!ph.length) return empty("No photos yet.");
+      const g = el("div", "pgrid");
+      ph.forEach(([, p]) => { const a = el("a"), i = new Image(); a.href = https(p.mediaUrl); a.target = "_blank"; a.rel = "noopener"; i.src = a.href; i.alt = ""; i.loading = "lazy"; i.referrerPolicy = "no-referrer"; a.append(i); g.append(a); });
+      root.append(g);
+    } else {
+      if (!posts.length) return empty(mine ? "You haven't posted yet. Share something from the community feed." : "No posts yet.");
+      posts.forEach(([k, p]) => {
+        const d = el("article", "box"), h = el("div", "ph"), w = el("div", "grow");
+        w.append(el("b", "", m.username || p.username), el("small", "", ago(p.ts) + (p.editedAt ? " · edited" : "")));
+        h.append(avatar(m), w); d.append(h);
+        if (p.caption) d.append(el("p", "cap", p.caption));
+        const u = https(p.mediaUrl);
+        if (u) {
+          const v = p.mediaType === "video", x = document.createElement(v ? "video" : "img");
+          x.className = "media"; x.src = u;
+          if (v) { x.controls = true; x.preload = "metadata"; x.playsInline = true; } else { x.loading = "lazy"; x.alt = ""; x.referrerPolicy = "no-referrer"; }
+          d.append(x);
+        }
+        const n = Object.keys(likes[k] || {}).length;
+        d.append(el("div", "likes", "👍 " + n + (n === 1 ? " like" : " likes")));
+        root.append(d);
+      });
+    }
+  }
+
+  function draw() {
+    const m = people[uid] || {}, mine = uid === me.id, name = m.username || "?";
+    document.title = name + " · OUTR-Community";
+    const av = name + "|" + m.photoUrl + "|" + online;
+    if (last.av !== av) { last.av = av; face($("pav"), name, m.photoUrl); if (online) $("pav").append(el("i", "dot")); }
+    const cv = https(m.coverUrl);
+    if (last.cv !== cv + name) {
+      last.cv = cv + name;
+      $("cover").style.backgroundImage = cv ? `url("${cv.replace(/["\\\n\r]/g, (c) => "%" + c.charCodeAt(0).toString(16))}")` : `linear-gradient(135deg, ${colorFor(name)}, ${colorFor(name + "x")})`;
+    }
+    $("name").textContent = name;
+    $("sub").textContent = [m.regNo, m.semester && "Semester " + m.semester].filter(Boolean).join(" · ");
+    const mutual = mine ? 0 : [...fr].filter((id) => myFr.has(id)).length;
+    $("stat").textContent = fr.size + (fr.size === 1 ? " friend" : " friends") + (mine ? "" : " · " + mutual + " mutual");
+    $("cover-btn").hidden = $("av-btn").hidden = !mine;
+    Stories.ring($("pav"), uid); document.querySelector('#tabs [data-t="stories"]').hidden = !mine;
+    if (!mine && tab === "stories") tab = "posts";
+    const pa = $("pact"); pa.textContent = "";
+    if (!mine && Safety.isBlocked(uid)) pa.append(btn("Unblock", () => Safety.unblock(uid)));
+    else { friendBtns(pa); if (!mine) pa.append(more(name)); }
+    document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
+    if (!editBio) intro();
+    const key = tab + (!mine && Safety.isBlocked(uid)) + (tab === "friends" ? [...fr].join() + [...myFr].join() : "") + (tab === "about" ? JSON.stringify(m) : "") + (tab === "stories" ? Stories.sig() : "");
+    if (last.pane !== key) { last.pane = key; pane(); }
+  }
+
+  /* ---- photo + cover upload ---- */
+  function edit(file, W, H, title) {                  // crop/zoom/rotate dialog; resolves a JPEG blob or null
+    return new Promise(async (resolve) => {
+      let img;
+      try { img = await createImageBitmap(file); } catch (e) { alert("Couldn't read that image."); return resolve(null); }
+      const m = $("crop"), cv = $("cv"), ctx = cv.getContext("2d"), zm = $("zm"), sq = W === H;
+      cv.width = sq ? 400 : 600; cv.height = Math.round(cv.width * H / W);
+      $("stage").classList.toggle("sq", sq); $("c-title").textContent = title;
+      let rot = 0, ox = 0, oy = 0, drag = null; zm.value = 1;
+      const dims = () => (rot % 2 ? [img.height, img.width] : [img.width, img.height]);
+      const sc = () => { const [rw, rh] = dims(); return Math.max(cv.width / rw, cv.height / rh) * +zm.value; };
+      const clamp = () => {
+        const [rw, rh] = dims(), s = sc(), mx = Math.max(0, (rw * s - cv.width) / 2), my = Math.max(0, (rh * s - cv.height) / 2);
+        ox = Math.min(mx, Math.max(-mx, ox)); oy = Math.min(my, Math.max(-my, oy));
+      };
+      const paint = (c, cw, ch, k) => {
+        c.save(); c.translate(cw / 2 + ox * k, ch / 2 + oy * k); c.rotate(rot * Math.PI / 2); c.scale(sc() * k, sc() * k);
+        c.drawImage(img, -img.width / 2, -img.height / 2); c.restore();
+      };
+      const draw = () => { clamp(); ctx.clearRect(0, 0, cv.width, cv.height); paint(ctx, cv.width, cv.height, 1); };
+      const esc = (e) => e.key === "Escape" && done(null);
+      const done = (blob) => { m.hidden = true; document.removeEventListener("keydown", esc); resolve(blob); };
+      cv.onpointerdown = (e) => { drag = { x: e.clientX, y: e.clientY, ox, oy }; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; };
+      cv.onpointermove = (e) => {
+        if (!drag) return;
+        const r = cv.width / cv.getBoundingClientRect().width;
+        ox = drag.ox + (e.clientX - drag.x) * r; oy = drag.oy + (e.clientY - drag.y) * r; draw();
+      };
+      cv.onpointerup = cv.onpointercancel = () => { drag = null; cv.style.cursor = "grab"; };
+      zm.oninput = draw;
+      $("rot").onclick = () => { rot = (rot + 1) % 4; ox = oy = 0; draw(); };
+      $("c-cancel").onclick = () => done(null);
+      $("c-save").onclick = () => {
+        clamp(); const o = document.createElement("canvas"); o.width = W; o.height = H;
+        paint(o.getContext("2d"), W, H, W / cv.width); o.toBlob((b) => done(b), "image/jpeg", 0.9);
+      };
+      document.addEventListener("keydown", esc);
+      m.hidden = false; draw();
+    });
+  }
+  async function upload(blob, name) {
+    const f = new FormData(); f.append("file", blob, name + ".jpg"); f.append("upload_preset", CFG.cloud.preset);
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${CFG.cloud.name}/image/upload`, { method: "POST", body: f });
+    if (!r.ok) throw new Error("Upload failed (" + r.status + "). Try again.");
+    return (await r.json()).secure_url;
+  }
+  function wire(input, button, w, h, field) {
+    button.onclick = () => input.click();
+    input.onchange = async () => {
+      const f = input.files[0]; input.value = "";
+      if (!f) return;
+      if (!f.type.startsWith("image/")) return alert("Please choose an image file.");
+      if (f.size > 8 * 1048576) return alert("Image must be under 8 MB.");
+      const blob = await edit(f, w, h, field === "coverUrl" ? "Adjust cover photo" : "Adjust profile photo");
+      if (!blob) return;
+      const old = button.textContent; button.disabled = true; button.textContent = "…";
+      try {
+        const url = await upload(blob, me.email.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + field + "-" + Date.now());
+        await db.ref("users/" + me.id).update({ [field]: url, updatedAt: TS });
+        if (field === "photoUrl") {                       // the shop record is the source of truth for the photo
+          try { await shopDb.ref("users/" + me.id).update({ photoUrl: url, updatedAt: Date.now() }); } catch (e) {}
+          face($("me-av"), me.username, url);
+        }
+      } catch (e) { alert(e.message || "Upload failed. Try again."); }
+      button.disabled = false; button.textContent = old;
+    };
+  }
+
+  /* ---- boot ---- */
+  (async function () {
+    const p = await Auth.profile();
+    if (!p) { $("boot").textContent = "Please log in to see profiles…"; setTimeout(() => location.replace(CFG.loginUrl), 700); return; }
+    if (!p.photoUrl) { try { p.photoUrl = https((await db.ref("users/" + p.id + "/photoUrl").once("value")).val()); } catch (e) {} }
+    if (!p.photoUrl) return location.replace("index.html");   // join the community (add a photo) first
+    me = p; uid = me.id;
+    const raw = new URLSearchParams(location.search).get("u");   // public id (or an old email-key link)
+    try { (await db.ref("users").once("value")).forEach((c) => { people[c.key] = c.val(); if (raw && (c.key === raw || Auth.pubId(c.key) === raw)) uid = c.key; }); }
+    catch (e) { $("boot").textContent = "Couldn't load this profile. Check your connection and reload."; return; }
+    if (raw && uid === me.id && raw !== me.id && raw !== Auth.pubId(me.id)) uid = raw;   // unknown id -> "doesn't exist"
+    if (raw) history.replaceState(null, "", uid === me.id ? "profile.html" : "profile.html?u=" + Auth.pubId(uid));   // never leave the email in the address bar
+    face($("me-av"), p.username, p.photoUrl);
+    Safety.start(p, render); await Safety.ready;
+    if (uid !== me.id && Safety.blockedMe(uid)) { $("boot").textContent = "This profile isn't available."; return; }
+    $("gear").onclick = () => ($("menu").hidden = !$("menu").hidden);
+    $("m-blocked").onclick = () => { $("menu").hidden = true; Safety.list(); };
+    document.addEventListener("click", (e) => { if (!e.target.closest("#menu,#gear")) $("menu").hidden = true; });
+    try {
+      const [ps, ls, rs] = await Promise.all([db.ref("posts").limitToLast(300).once("value"), db.ref("likes").once("value"), db.ref("reactions").once("value")]);
+      ps.forEach((c) => { const v = c.val(); if (v.uid === uid) posts.unshift([c.key, v]); });
+      likes = ls.val() || {}; const rx = rs.val() || {};
+      for (const k in rx) likes[k] = Object.assign({}, likes[k], ...Object.keys(rx[k]).map((u) => ({ [u]: true })));
+    } catch (e) { $("boot").textContent = "Couldn't load this profile. Check your connection and reload."; return; }
+    if (!people[uid]) { $("boot").textContent = "This profile doesn't exist."; return; }
+    $("boot").hidden = true; $("pf").hidden = false;
+    const on = (path, fn) => db.ref(path).on("value", (s) => { fn(s.val()); render(); });
+    const ids = (v) => new Set(Object.keys(v || {}));
+    on("users/" + uid, (v) => { if (v) people[uid] = v; });
+    on("friends/" + uid, (v) => (fr = ids(v)));
+    on("friends/" + me.id, (v) => (myFr = ids(v)));
+    on("requests/" + me.id, (v) => (inc = ids(v)));
+    on("sent/" + me.id, (v) => (sent = ids(v)));
+    on("presence/" + uid, (v) => (online = !!v));
+    document.querySelectorAll("#tabs button").forEach((b) => (b.onclick = () => { tab = b.dataset.t; render(); }));
+    Notify.as(me); Stories.start(me, { friends: () => myFr, member: (id) => (id === me.id ? me : people[id]) }); Stories.on(render);
+    wire($("f-av"), $("av-btn"), 512, 512, "photoUrl");
+    wire($("f-cv"), $("cover-btn"), 1500, 500, "coverUrl");
+  })();
+})();
+</script>
+</body>
+</html>

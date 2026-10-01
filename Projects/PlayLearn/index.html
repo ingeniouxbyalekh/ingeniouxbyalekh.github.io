@@ -42,6 +42,23 @@
   "sameAs": ["https://ingenioux.in/"]
 }
 </script>
+<style>
+/* Community banner — highlighted link to the OUTR Community */
+.pl-community-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 24px;padding:18px 22px;border-radius:16px;background:linear-gradient(135deg,#1f7a5c,#145c44);color:#fff;text-decoration:none;box-shadow:0 10px 26px -12px rgba(20,92,68,.6);position:relative;overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
+.pl-community-banner:hover{transform:translateY(-2px);box-shadow:0 14px 30px -12px rgba(20,92,68,.6)}
+.pl-community-banner::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 1px,transparent 1px 14px);pointer-events:none}
+.pl-community-left{display:flex;align-items:center;gap:14px;min-width:0;position:relative;z-index:1}
+.pl-community-icon{flex-shrink:0;width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center}
+.pl-community-icon svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.pl-community-text strong{display:block;font-size:16px;font-weight:600;line-height:1.3;color:#fff}
+.pl-community-text>span{display:block;font-size:12.5px;line-height:1.4;color:rgba(255,255,255,.88);margin-top:2px}
+.pl-community-badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:999px;background:#fff;color:#145c44;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;vertical-align:middle;animation:plPulse 2s ease-in-out infinite}
+.pl-community-cta{flex-shrink:0;position:relative;z-index:1;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;background:#fff;color:#145c44;font-size:13px;font-weight:600;white-space:nowrap}
+.pl-community-cta .arrow{transition:transform .2s ease}
+.pl-community-banner:hover .pl-community-cta .arrow{transform:translateX(3px)}
+@keyframes plPulse{0%,100%{opacity:1}50%{opacity:.6}}
+@media (max-width:620px){.pl-community-banner{flex-direction:column;align-items:flex-start;padding:16px}.pl-community-cta{align-self:stretch;justify-content:center}}
+</style>
 </head>
 <body>
 
@@ -80,6 +97,17 @@
 
     <!-- Signed-in view -->
     <div id="dashboard-content" style="display:none">
+
+<a class="pl-community-banner" href="Community/index.html" target="_blank" rel="noopener">
+  <div class="pl-community-left">
+    <div class="pl-community-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    <div class="pl-community-text">
+      <strong>OUTR Community<span class="pl-community-badge">New</span></strong>
+      <span>Connect with classmates, join groups, share posts and chat.</span>
+    </div>
+  </div>
+  <span class="pl-community-cta">Join the Community <span class="arrow">&rarr;</span></span>
+</a>
 
       <!-- E-classroom hero — shown once the shopper's semester has a
            paid Full Course unlocked; see the script block for the

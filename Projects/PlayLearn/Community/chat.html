@@ -3,36 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-<title>ZippLine</title>
+<title>OUTR-Community</title>
+<script src="js/theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #e9eef2;
+    --bg: #f4f4fb;
     --panel: #ffffff;
-    --ink: #16202e;
-    --muted: #6b7788;
-    --line: #d8e0e8;
-    --accent: #2743e0;
+    --ink: #14152b;
+    --muted: #62647f;
+    --line: #e3e4f1;
+    --accent: #4f46e5;
     --accent-ink: #ffffff;
     --theirs: #ffffff;
-    --ok: #1e9e6a;
-    --danger: #c8382e;
+    --ok: #16a06a;
+    --danger: #c93a2f;
     --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --font-head: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
+    --font-head: "Fraunces", Georgia, serif;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1520;
-      --panel: #171f2d;
-      --ink: #e8edf5;
-      --muted: #8d99ab;
-      --line: #263042;
-      --accent: #5a74ff;
-      --theirs: #1f293a;
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+      --bg: #0d0e1a;
+      --panel: #151728;
+      --ink: #ebecf8;
+      --muted: #9496b5;
+      --line: #25273d;
+      --accent: #8b93ff;
+      --accent-ink: #0f1030;
+      --theirs: #1e2040;
+    } }
+  :root[data-theme="dark"] {
+      --bg: #0d0e1a;
+      --panel: #151728;
+      --ink: #ebecf8;
+      --muted: #9496b5;
+      --line: #25273d;
+      --accent: #8b93ff;
+      --accent-ink: #0f1030;
+      --theirs: #1e2040;
     }
-  }
   * { box-sizing: border-box; }
   html, body { height: 100%; margin: 0; }
   body {
@@ -151,6 +161,8 @@
     border: 2px solid var(--panel);
   }
   .avatar .dot.on { background: var(--ok); }
+  .avatar.sring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4.5px var(--accent); cursor: pointer; }
+  .avatar.sring-seen { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4.5px color-mix(in srgb, var(--muted) 45%, transparent); }
   .contact .name { font-weight: 600; }
   .contact > div:last-child { flex: 1; min-width: 0; }
   .contact .name, .contact .status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -210,7 +222,7 @@
   }
   .msg .txt { display: block; }
   .meta { display: flex; justify-content: flex-end; gap: 8px; font-size: 11px; opacity: .7; margin-top: 2px; }
-  .msg.mine .tick.seen { opacity: 1; font-weight: 600; color: #b8ffd9; }
+  .msg.mine .tick.seen { opacity: 1; font-weight: 600; color: #dfe1ff; }
   .status.typing { color: var(--accent); font-weight: 500; }
   .msg.typing { display: inline-flex; gap: 4px; padding: 13px 14px; width: fit-content; }
   .msg.typing span {
@@ -238,6 +250,19 @@
   }
   form.composer input { flex: 1; border-radius: 22px; padding: 11px 16px; }
   form.composer .btn { border-radius: 22px; padding: 11px 22px; }
+
+  /* ---------- Image messages ---------- */
+  .attach { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+  .attach:hover { background: var(--bg); color: var(--accent); }
+  .attach svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .img-prev { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel); }
+  .img-prev img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+  .img-prev span { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; }
+  .img-prev button { border: 0; background: var(--bg); color: var(--ink); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+  .msg img.pic { display: block; width: auto; max-width: min(300px, 60vw); max-height: 320px; border-radius: 10px; cursor: zoom-in; margin: 0 0 4px; background: rgba(0,0,0,.08); }
+  .msg .txt:empty { display: none; }
+  .lightbox { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0,0,0,.92); cursor: zoom-out; }
+  .lightbox img { max-width: 96vw; max-height: 94vh; object-fit: contain; }
 
   /* ---------- Video call ---------- */
   .call-actions { margin-left: auto; display: flex; gap: 8px; }
@@ -513,7 +538,7 @@
 <!-- Shown while the shop session is checked; if nobody is signed in, the page redirects to the shop's login page -->
 <section id="boot">
   <div>
-    <strong>ZippLine</strong>
+    <strong>OUTR-Community</strong>
     <span id="boot-msg">Loading your account…</span>
   </div>
 </section>
@@ -524,7 +549,6 @@
     <div class="me-bar">
       <div class="avatar" id="me-avatar"></div>
       <div class="who"><strong id="me-name"></strong><span>Signed in</span></div>
-      <button class="btn ghost" id="logout-btn" type="button">Sign out</button>
     </div>
     <div class="contacts" id="contacts"></div>
   </aside>
@@ -563,7 +587,9 @@
         </div>
         <button class="reply-bar-close" id="reply-bar-close" type="button" aria-label="Cancel reply">✕</button>
       </div>
+      <div class="img-prev hidden" id="img-prev"><img id="img-prev-img" alt=""><span>Add a caption below (optional), then press Send.</span><button type="button" id="img-prev-x" aria-label="Remove image">✕</button></div>
       <form class="composer" id="composer" autocomplete="off">
+        <button class="attach" id="attach-btn" type="button" aria-label="Send an image" title="Send an image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
         <input type="text" id="msg-input" placeholder="Write a message" maxlength="2000" aria-label="Message">
         <button class="btn" type="submit">Send</button>
       </form>
@@ -643,6 +669,7 @@
 </div>
 
 <div id="toast" role="status"></div>
+<input type="file" id="img-file" accept="image/*" hidden>
 
 <!-- Shop session (same files the shop pages use). Community/ sits inside the playlearn folder, so auth.js is one level up. -->
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
@@ -654,7 +681,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, onChildChanged, onChildRemoved, query,
-    limitToLast, serverTimestamp, onDisconnect
+    limitToLast, orderByChild, startAt, serverTimestamp, onDisconnect
   } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
   // Community chat database (separate from the shop's own Firebase project that auth.js talks to).
@@ -677,7 +704,7 @@
   // auth.js's toasts (e.g. "Logged out — this account signed in on another device") go through this page's toast.
   window.showToast = (msg) => toast(msg);
 
-  const COLORS = ["#2743e0", "#c2410c", "#0f766e", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
+  const COLORS = ["#4f46e5", "#c2410c", "#db2777", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
   function colorFor(str) {
     let h = 0;
     for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
@@ -711,8 +738,11 @@
   }
 
   let me = null;           // {id, username, photoUrl, isSpecial}  — built from the shop session
-  let users = {};          // id -> {id, username, photoUrl}  — everyone who has opened the community
-  let usersLoaded = false;
+  let users = {};          // id -> {id, username, photoUrl}  — me + my friends only (what the chat list shows)
+  let allUsers = {};       // id -> {id, username, photoUrl}  — everyone who has opened the community
+  let friendSet = new Set(); // ids of my friends
+  let blockedMine = new Set(), blockedMe = new Set(); // people I blocked / who blocked me (never listed)
+  let usersLoaded = false, friendsLoaded = false;
   let presence = {};       // id -> true
   let lastSeen = {};       // id -> timestamp (ms) of when they last went offline
   let lastMsg = {};        // contact id -> {key, text, mine, ts} latest message in that chat
@@ -771,26 +801,6 @@
     await Promise.race([shutdown(), new Promise(r => setTimeout(r, 1500))]);
     location.replace(LOGIN_URL);
   }
-  // auth.js calls syncAccountLink() whenever it clears the session (other-device login, logout) — hook in.
-  {
-    const original = window.syncAccountLink;
-    window.syncAccountLink = function () {
-      if (typeof original === "function") original.apply(this, arguments);
-      if (me && !getUser()) sessionEnded();
-    };
-  }
-  // Signed out from another tab on the same site.
-  window.addEventListener("storage", () => { if (me && !getUser()) sessionEnded(); });
-
-  // Sign out: ends the shop session (it is shared site-wide), then goes to the login page.
-  $("logout-btn").addEventListener("click", async () => {
-    if (leaving) return;
-    leaving = true;
-    await Promise.race([shutdown(), new Promise(r => setTimeout(r, 1500))]);
-    logoutUser();
-    location.replace(LOGIN_URL);
-  });
-
   /* ---------------- App ---------------- */
   function startApp(session) {
     me = session;
@@ -829,15 +839,66 @@
 
     // Everyone who has opened the community (each person's record is written on load, see boot below).
     unsubs.push(onValue(ref(db, "users"), (s) => {
-      users = {};
+      allUsers = {};
       s.forEach(c => {
         const v = c.val() || {};
         if (!v.username) return;
-        users[c.key] = { id: c.key, username: v.username, photoUrl: safePhoto(v.photoUrl) };
+        allUsers[c.key] = { id: c.key, username: v.username, photoUrl: safePhoto(v.photoUrl) };
       });
       usersLoaded = true;
-      onUsersChanged();
+      rebuildUsers();
     }));
+
+    // Only friends can be chatted with: keep my own record plus the people I'm friends with.
+    unsubs.push(onValue(ref(db, "friends/" + me.id), (s) => {
+      friendSet = new Set(Object.keys(s.val() || {}));
+      friendsLoaded = true;
+      rebuildUsers();
+    }));
+    unsubs.push(onValue(ref(db, "blocks/" + me.id), (s) => { blockedMine = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
+    unsubs.push(onValue(ref(db, "blockedBy/" + me.id), (s) => { blockedMe = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
+    unsubs.push(onValue(query(ref(db, "stories"), orderByChild("ts"), startAt(Date.now() - STORY_DAY)), (s) => {
+      storyData = s.val() || {};
+      if (usersLoaded) { renderContacts(); updateHeadStatus(); ringAvatar($("me-avatar"), me.id); }
+    }));
+  }
+
+  /* ---------------- Story rings ---------------- */
+  // A ring around a friend's avatar means they have a story from the last 24 h. Tapping it opens that story on the home page.
+  const STORY_SEEN_KEY = "OUTR_seen_stories", STORY_DAY = 864e5;
+  let storyData = {};
+  function seenStories() { try { return new Set(JSON.parse(localStorage.getItem(STORY_SEEN_KEY)) || []); } catch (e) { return new Set(); } }
+  function storyOf(uid) {   // { id: story to open, seen: all watched } or null
+    if (!me || !(uid === me.id || users[uid])) return null;
+    const list = [];
+    for (const id in storyData) {
+      const s = storyData[id];
+      if (s && s.uid === uid && Date.now() - s.ts < STORY_DAY && (s.mediaType === "text" ? s.text : safePhoto(s.mediaUrl))) list.push([id, s]);
+    }
+    if (!list.length) return null;
+    list.sort((a, b) => a[1].ts - b[1].ts);
+    const seen = seenStories(), fresh = list.find(([id]) => !seen.has(id));
+    return { id: (fresh || list[0])[0], seen: !fresh };
+  }
+  function ringAvatar(el, uid) {
+    const st = storyOf(uid);
+    el.classList.toggle("sring", !!st);
+    el.classList.toggle("sring-seen", !!st && st.seen);
+    el._story = st ? st.id : "";
+    if (!el._ringOn) {
+      el._ringOn = true;
+      el.addEventListener("click", (ev) => {
+        if (!el._story) return;
+        ev.stopPropagation();
+        location.href = "index.html?s=" + encodeURIComponent(el._story);
+      });
+    }
+  }
+
+  function rebuildUsers() {
+    users = {};
+    for (const id in allUsers) if (id === me.id || (friendSet.has(id) && !blockedMine.has(id) && !blockedMe.has(id))) users[id] = allUsers[id];
+    onUsersChanged();
   }
 
   function onUsersChanged() {
@@ -847,6 +908,7 @@
       me.photoUrl = users[me.id].photoUrl;
       $("me-name").textContent = me.username;
       paintFace($("me-avatar"), me.username, me.photoUrl);
+      ringAvatar($("me-avatar"), me.id);
     }
     if (active) {
       if (!users[active.id]) { active = null; showNoChat(); }
@@ -869,9 +931,11 @@
     if (!list.length) {
       const d = document.createElement("div");
       d.className = "empty";
-      d.textContent = usersLoaded
-        ? "No one else is here yet. People show up once they open the community while signed in."
-        : "Loading people…";
+      if (usersLoaded && friendsLoaded) {
+        d.append("No friends to chat with yet. Add friends in the ");
+        const a = document.createElement("a"); a.href = "index.html"; a.textContent = "community";
+        d.append(a, " and they'll show up here.");
+      } else d.textContent = "Loading friends…";
       box.append(d);
       return;
     }
@@ -885,6 +949,7 @@
       const av = document.createElement("div");
       av.className = "avatar";
       setAvatar(av, u.username, online, u.photoUrl);
+      ringAvatar(av, u.id);
       const info = document.createElement("div");
       const n = document.createElement("div"); n.className = "name"; n.textContent = u.username;
       const s = document.createElement("div"); s.className = "status"; const typing = isTyping(u.id);
@@ -974,7 +1039,7 @@
       el.classList.remove("swiping");
       el.style.transform = "";
       if (icon) icon.style.opacity = 0;
-      if (dx >= SWIPE_THRESHOLD) setReplyTarget(key, rec.text, rec.mine ? "You" : rec.fromName);
+      if (dx >= SWIPE_THRESHOLD) setReplyTarget(key, rec.text || (rec.img ? "📷 Photo" : ""), rec.mine ? "You" : rec.fromName);
     }
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointermove", onMove);
@@ -1120,7 +1185,7 @@
       const setLast = (snap) => {
         const m = snap.val();
         if (!m) return;
-        lastMsg[id] = { key: snap.key, text: m.text || "", mine: !!me && m.from === me.id, ts: m.ts || Date.now() };
+        lastMsg[id] = { key: snap.key, text: m.text || (m.imageUrl ? "📷 Photo" : ""), mine: !!me && m.from === me.id, ts: m.ts || Date.now() };
         renderContacts();
       };
       const w1 = onChildAdded(lq, (snap) => {
@@ -1164,6 +1229,7 @@
     st.textContent = typing ? "typing…" : online ? "Online" : lastSeenText(lastSeen[active.id]);
     st.classList.toggle("typing", typing);
     setAvatar($("ch-avatar"), active.username, online, active.photoUrl);
+    ringAvatar($("ch-avatar"), active.id);
   }
 
   function fmtTime(ts) {
@@ -1285,8 +1351,16 @@
         el.append(quote);
       }
 
+      if (typeof m.imageUrl === "string" && /^https:\/\//i.test(m.imageUrl)) {
+        const im = document.createElement("img");
+        im.className = "pic"; im.alt = "Photo"; im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.src = m.imageUrl;
+        im.addEventListener("load", () => { box.scrollTop = box.scrollHeight; });
+        im.addEventListener("click", () => openLightbox(m.imageUrl));
+        im.addEventListener("pointerdown", (ev) => ev.stopPropagation());   // don't start swipe/long-press on the picture
+        el.append(im);
+      }
       const txt = document.createElement("span");
-      txt.className = "txt"; txt.textContent = m.text;
+      txt.className = "txt"; txt.textContent = m.text || "";
       const meta = document.createElement("div");
       meta.className = "meta";
       const time = document.createElement("time");
@@ -1297,7 +1371,7 @@
         tag.className = "tag-edited"; tag.textContent = "edited";
         meta.append(tag);
       }
-      const rec = { ts, mine, timeEl: time, tick: null, text: m.text, el, fromName };
+      const rec = { ts, mine, timeEl: time, tick: null, text: m.text || "", img: !!m.imageUrl, el, fromName };
       if (mine) {
         rec.tick = document.createElement("span");
         meta.append(rec.tick);
@@ -1351,11 +1425,60 @@
 
   $("back-btn").addEventListener("click", showNoChat);
 
+  /* ---------- permanentChat: write-once copy of every message. "Clear chat" only touches /chats, never this. ---------- */
+  function sendMsg(chatId, payload) {                   // one atomic write to both places, same message id
+    const key = push(ref(db, "chats/" + chatId + "/messages")).key;
+    return update(ref(db), {
+      ["chats/" + chatId + "/messages/" + key]: payload,
+      ["permanentChat/" + chatId + "/messages/" + key]: payload
+    });
+  }
+
+  /* ---------- Send image ---------- */
+  const CLOUD = (window.CFG && CFG.cloud) || { name: "fygvclvm", preset: "PlayLearn" };
+  let pendingImg = null;
+  function openLightbox(url) {
+    const o = document.createElement("div"); o.className = "lightbox";
+    const i = document.createElement("img"); i.alt = ""; i.referrerPolicy = "no-referrer"; i.src = url; o.append(i);
+    const close = () => { o.remove(); document.removeEventListener("keydown", esc); };
+    const esc = (ev) => { if (ev.key === "Escape") close(); };
+    o.addEventListener("click", close); document.addEventListener("keydown", esc); document.body.append(o);
+  }
+  function clearImg() {
+    pendingImg = null; $("img-file").value = ""; $("img-prev").classList.add("hidden");
+    const p = $("img-prev-img"); if (p.src.startsWith("blob:")) URL.revokeObjectURL(p.src); p.removeAttribute("src");
+  }
+  async function shrink(file) {                         // max 1600px JPEG; GIFs are sent untouched
+    if (file.type === "image/gif") return file;
+    try {
+      const bmp = await createImageBitmap(file), k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85));
+      return blob && blob.size < file.size ? blob : file;
+    } catch (e) { return file; }
+  }
+  async function uploadImg(file) {
+    const fd = new FormData(); fd.append("file", await shrink(file)); fd.append("upload_preset", CLOUD.preset);
+    const r = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD.name + "/image/upload", { method: "POST", body: fd });
+    if (!r.ok) throw new Error("upload");
+    return (await r.json()).secure_url;
+  }
+  $("attach-btn").addEventListener("click", () => { if (!active) { toast("Open a chat first."); return; } $("img-file").click(); });
+  $("img-file").addEventListener("change", () => {
+    const f = $("img-file").files[0]; if (!f) return;
+    if (!f.type.startsWith("image/")) { toast("Please choose an image."); $("img-file").value = ""; return; }
+    if (f.size > 10 * 1048576) { toast("Image must be under 10 MB."); $("img-file").value = ""; return; }
+    pendingImg = f; $("img-prev-img").src = URL.createObjectURL(f); $("img-prev").classList.remove("hidden"); $("msg-input").focus();
+  });
+  $("img-prev-x").addEventListener("click", clearImg);
+
   $("composer").addEventListener("submit", async (e) => {
     e.preventDefault();
     const input = $("msg-input");
     const text = input.value.trim();
-    if (!text || !active) return;
+    if ((!text && !pendingImg) || !active) return;
+    const sendBtn = e.target.querySelector('button[type="submit"]'), file = pendingImg;
     input.value = "";
     stopTyping();
     const chatId = chatIdFor(active.id);
@@ -1368,12 +1491,18 @@
     if (pendingReply) payload.replyTo = { id: pendingReply.id, text: pendingReply.text, fromName: pendingReply.fromName };
     clearReplyTarget();
     try {
-      await push(ref(db, "chats/" + chatId + "/messages"), payload);
+      if (file) {
+        sendBtn.disabled = true; sendBtn.textContent = "Sending…";
+        payload.imageUrl = await uploadImg(file);
+        clearImg();
+      }
+      await sendMsg(chatId, payload);
     } catch (ex) {
       input.value = text;
       if (pendingReply) setReplyTarget(pendingReply.id, pendingReply.text, pendingReply.fromName);
-      alert("Message not sent. Check your connection and try again.");
+      alert(file ? "Image not sent. Check your connection and try again." : "Message not sent. Check your connection and try again.");
     }
+    sendBtn.disabled = false; sendBtn.textContent = "Send";
   });
 
   /* ---------------- Video call (WebRTC, signaling via Realtime Database) ---------------- */
@@ -1426,7 +1555,7 @@
       : status === "declined"
         ? "Declined " + t + " call"
         : (t === "audio" ? "Audio" : "Video") + " call · " + fmtDuration(seconds);
-    push(ref(db, "chats/" + chatIdFor(peerId) + "/messages"), {
+    sendMsg(chatIdFor(peerId), {
       from: me.id, kind: "call", callType: t, status,
       duration: status === "completed" ? (seconds || 0) : 0,
       text, ts: serverTimestamp()
@@ -2051,17 +2180,16 @@
 
   /* ---------------- Boot ---------------- */
   (async function boot() {
-    // Whoever is signed in to the shop (auth.js) can use the community; everyone else goes to the login page.
-    let user = null;
-    try { user = getUser(); } catch (e) { /* auth.js not loaded */ }
-    if (!user || !user.email) {
-      $("boot-msg").textContent = "Please log in to use the community. Taking you to the login page…";
-      setTimeout(goLogin, 600);
+    // No login or photo check here: index.html does that once and saves the result for this tab.
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem("OUTR_community_session")); } catch (e) { /* unreadable */ }
+    if (!saved || !saved.id) {                       // opened directly, so let index.html set things up first
+      $("boot-msg").textContent = "Opening the community…";
+      location.replace("index.html");
       return;
     }
-
-    const id = emailToKey(user.email);
-    const profile = await loadProfile(user);
+    const id = saved.id;
+    const profile = { name: saved.username, photoUrl: safePhoto(saved.photoUrl) };
     me = { id, username: profile.name, photoUrl: profile.photoUrl, isSpecial: false };
 
     // Publish this person's name + picture so everyone else's contact list shows them.

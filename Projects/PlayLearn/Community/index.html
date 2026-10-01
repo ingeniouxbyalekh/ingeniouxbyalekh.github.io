@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>OUTR Community · PlayLearn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="js/theme.js"></script>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="hl">
+    <a class="brand" href="index.html">Community</a>
+    <button id="sback" class="sb" aria-label="Close search">←</button>
+    <button id="sopen" class="ib mob-s" aria-label="Search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+    <input id="hq" type="search" placeholder="Search people by name or reg. no." autocomplete="off">
+    <ul id="sres" class="list sres" hidden></ul>
+  </div>
+  <nav class="nav" id="nav">
+    <button class="ib" data-go="home" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></button>
+    <button class="ib" data-go="fr-home" aria-label="My friends"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></button>
+    <button class="ib" data-go="groups" aria-label="Groups"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><b class="badge" id="b-grp" hidden></b></button>
+    <button class="ib" data-go="fr-req" aria-label="Friend requests"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><b class="badge" id="b-req" hidden></b></button>
+    <button class="ib" data-go="saved" aria-label="Saved posts"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></button>
+  </nav>
+  <div class="hr">
+    <button class="ib" id="bell" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><b class="badge" id="b-bell" hidden></b></button>
+    <a class="ib" href="chat.html" aria-label="Messenger"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg></a>
+    <button class="ib" data-menu aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    <div class="me" id="me" data-menu hidden><span class="av" id="me-av"></span></div>
+  </div>
+  <div id="npanel" class="npanel" hidden></div>
+  <div id="menu" class="menu" hidden>
+    <a href="profile.html">Edit profile &amp; photo</a>
+    <button type="button" data-go="groups">Groups</button>
+    <button type="button" data-go="saved">Saved posts</button>
+    <a href="chat.html">Messenger</a>
+    <hr>
+    <button type="button" id="m-blocked">Blocked users</button>
+    <button type="button" data-theme-toggle></button>
+    <hr>
+    <a href="../index.html">Back to PlayLearn</a>
+  </div>
+</header>
+
+<p id="boot" class="muted pad">Loading…</p>
+<div id="home" class="layout" hidden>
+  <aside class="side left">
+    <div id="sb-me" class="it"></div>
+    <button class="it" data-go="home"><i><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></i>Home feed</button>
+    <button class="it" data-go="fr-home"><i><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></i>Friends</button>
+    <button class="it" data-go="fr-req"><i><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></i>Friend requests</button>
+    <button class="it" data-go="groups"><i><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></i>Groups</button>
+    <button class="it" data-go="saved"><i><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></i>Saved posts</button>
+    <a class="it" href="chat.html"><i><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg></i>Messenger</a>
+    <a class="it" href="profile.html"><i><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></i>Edit profile</a>
+  </aside>
+
+  <main class="feedcol">
+    <div id="stories" class="stories" hidden></div>
+    <div id="ghead" hidden></div>
+    <section class="box nomt" id="comp">
+      <textarea id="pcap" maxlength="2000" placeholder="What's on your mind?"></textarea>
+      <div id="ppv"></div>
+      <div class="row">
+        <label class="filebtn" for="pfile">Photo / video</label>
+        <input id="pfile" type="file" accept="image/*,video/*" hidden>
+        <span id="perr" class="err grow" role="alert"></span>
+        <button id="ppost" class="btn sm" disabled>Post</button>
+      </div>
+    </section>
+
+    <section id="sugg-m-wrap" class="mob" hidden>
+      <h2 class="sec">People you may know</h2>
+      <div id="sugg-m" class="sugg"></div>
+    </section>
+
+    <h2 class="sec" id="feed-title">Friends' posts</h2>
+    <div id="feed"></div>
+    <p id="feed-empty" class="muted" hidden></p>
+  </main>
+
+  <aside class="side right">
+    <div id="rq-wrap" class="sbox" hidden>
+      <div class="sh"><h3>Friend requests</h3><button class="link" data-go="fr-req">See all</button></div>
+      <ul id="rq" class="list"></ul>
+    </div>
+    <div id="sg-wrap" class="sbox" hidden>
+      <h3>People you may know</h3>
+      <ul id="sugg" class="list"></ul>
+    </div>
+    <div class="sbox">
+      <h3>Contacts</h3>
+      <ul id="contacts" class="list"></ul>
+      <p id="contacts-empty" class="muted" hidden>Your friends will appear here.</p>
+    </div>
+  </aside>
+</div>
+
+<div id="friends" class="fpage" hidden>
+  <aside class="fside">
+    <h1>Friends</h1>
+    <button class="it" data-s="home"><i><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></i>Home</button>
+    <button class="it" data-s="req"><i><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></i>Friend requests</button>
+    <button class="it" data-s="sugg"><i><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></i>Suggestions</button>
+    <button class="it" data-s="all"><i><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3.5"/><circle cx="17" cy="9" r="2.5"/><path d="M2 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1M16 14h1.5a4.5 4.5 0 0 1 4.5 4.5V20"/></svg></i>All friends</button>
+  </aside>
+  <section id="fmain" class="fmain"></section>
+</div>
+
+<div id="groups" class="feedcol" style="padding:20px 12px" hidden></div>
+
+<!-- Join gate: cannot be dismissed until a profile picture exists -->
+<div id="gate" class="overlay" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="g-title">
+    <h2 id="g-title">Add a profile picture to join</h2>
+    <p class="muted">A profile picture is required to enter the community. Upload one to continue.</p>
+    <label class="pick" for="file"><img id="prev" alt="" hidden><span id="pick-t">Choose a photo</span></label>
+    <input id="file" type="file" accept="image/*" hidden>
+    <p id="err" class="err" role="alert"></p>
+    <button id="go" class="btn" disabled>Upload &amp; join</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="js/config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/safety.js"></script>
+<script src="js/notify.js"></script>
+<script src="js/stories.js"></script>
+<script src="js/social.js"></script>
+<script src="js/community.js"></script>
+</body>
+</html>
