@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "users": {
+      ".read": true,
+      "$id": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['username', 'photoUrl'])",
+        "username": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80" },
+        "photoUrl": { ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.+/)" },
+        "regNo": { ".validate": "newData.isString() && newData.val().length <= 40" }
+      }
+    },
+    "$other": { ".read": true, ".write": true }
+  }
+}

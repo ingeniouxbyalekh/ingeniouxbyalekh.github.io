@@ -1,7 +1,7 @@
 (function () {
   const $ = (id) => document.getElementById(id);
   const { db, shopDb, https } = Auth;
-  const COLORS = ["#2743e0", "#c2410c", "#db2777", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
+  const COLORS = ["#2743e0", "#c2410c", "#0f766e", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
   const colorFor = (s) => { let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORS[h % COLORS.length]; };
   let me = null;
 
@@ -34,44 +34,22 @@
   }
   function needPhoto(p) {                            // resolves with the new photo URL
     return new Promise((resolve) => {
-      let orig = null, blob = null, prevUrl = null;   // orig = chosen file, blob = cropped/edited result
+      let pick = null;
       $("gate").hidden = false;
-
-      async function crop(file) {                     // open the crop & edit dialog; true if a result was applied
-        $("err").textContent = "";
-        try {
-          const out = window.Cropper ? await Cropper.open(file) : await square(file);
-          if (!out) return false;                     // cancelled
-          blob = out;
-          if (prevUrl) URL.revokeObjectURL(prevUrl);
-          prevUrl = URL.createObjectURL(blob);
-          $("prev").src = prevUrl; $("prev").hidden = false; $("pick-t").hidden = true;
-          $("edit").hidden = !window.Cropper;
-          $("go").disabled = false;
-          return true;
-        } catch (e) {
-          $("err").textContent = (e && e.message) || "Couldn't read this image. Try a JPG or PNG.";
-          return false;
-        }
-      }
-
-      $("file").onchange = async () => {
-        const f = $("file").files[0]; $("err").textContent = "";
+      $("file").onchange = () => {
+        const f = $("file").files[0]; $("err").textContent = ""; $("go").disabled = true;
         if (!f) return;
-        if (!f.type.startsWith("image/")) { $("err").textContent = "Please choose an image file."; $("file").value = ""; return; }
-        if (f.size > 8 * 1024 * 1024) { $("err").textContent = "Image must be under 8 MB."; $("file").value = ""; return; }
-        const prev = orig; orig = f;
-        if (!(await crop(f))) orig = prev;            // cancelled: keep whatever was chosen before
-        $("file").value = "";                         // lets the same file be picked again
+        if (!f.type.startsWith("image/")) { $("err").textContent = "Please choose an image file."; return; }
+        if (f.size > 8 * 1024 * 1024) { $("err").textContent = "Image must be under 8 MB."; return; }
+        pick = f;
+        $("prev").src = URL.createObjectURL(f); $("prev").hidden = false; $("pick-t").hidden = true;
+        $("go").disabled = false;
       };
-      $("edit").onclick = () => { if (orig) crop(orig); };
-
       $("go").onclick = async () => {
-        if (!blob) return;
         $("go").disabled = true; $("go").textContent = "Uploading…"; $("err").textContent = "";
         try {
           const slug = p.email.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-          const url = await upload(blob, slug + "-" + Date.now());
+          const url = await upload(await square(pick), slug + "-" + Date.now());
           // Also save to the shop profile so the picture shows on the main site too.
           try { await shopDb.ref("users/" + p.id).update({ photoUrl: url, updatedAt: Date.now() }); } catch (e) {}
           $("gate").hidden = true;
@@ -94,8 +72,47 @@
     await r.child("joinedAt").transaction((v) => v || Date.now());
   }
 
+  /* ---------- Realtime listeners ---------- */
+  const members = new Map(), online = new Set();
+  let raf = 0;
+  const paint = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(render); };
+
+  function listen() {
+    const u = db.ref("users");
+    u.on("child_added", (s) => { members.set(s.key, s.val()); paint(); });
+    u.on("child_changed", (s) => { members.set(s.key, s.val()); paint(); });
+    u.on("child_removed", (s) => { members.delete(s.key); paint(); });
+    const pr = db.ref("presence");
+    pr.on("child_added", (s) => { online.add(s.key); paint(); });
+    pr.on("child_removed", (s) => { online.delete(s.key); paint(); });
+    db.ref(".info/connected").on("value", (s) => {
+      if (!s.val()) return;
+      const mine = db.ref("presence/" + me.id);
+      mine.onDisconnect().remove(); mine.set(true);
+    });
+  }
+
+  function render() {
+    const q = $("q").value.trim().toLowerCase();
+    const all = [...members].map(([id, m]) => ({ id, ...m })).filter((m) => m.username && https(m.photoUrl));
+    const rows = all
+      .filter((m) => !q || (m.username + " " + (m.regNo || "")).toLowerCase().includes(q))
+      .sort((a, b) => (online.has(b.id) - online.has(a.id)) || a.username.localeCompare(b.username));
+    $("count").textContent = all.length + " members · " + all.filter((m) => online.has(m.id)).length + " online";
+    $("empty").hidden = rows.length > 0;
+    const ul = $("list"); ul.textContent = "";
+    for (const m of rows) {                           // textContent only: DB values are untrusted
+      const li = document.createElement("li"); li.className = "member";
+      const av = document.createElement("span"); av.className = "av"; face(av, m.username, m.photoUrl);
+      if (online.has(m.id)) { const d = document.createElement("i"); d.className = "dot"; av.append(d); }
+      const box = document.createElement("div");
+      const n = document.createElement("b"); n.textContent = m.username + (m.id === me.id ? " (you)" : "");
+      const s = document.createElement("small"); s.textContent = [m.regNo, m.semester].filter(Boolean).join(" · ");
+      box.append(n, s); li.append(av, box); ul.append(li);
+    }
+  }
+
   /* ---------- Boot ---------- */
-  window.UI = { face };
   (async function () {
     const p = await Auth.profile();
     if (!p) {
@@ -112,11 +129,9 @@
       $("boot").textContent = "Couldn't join the community right now. Check your connection and reload.";
       return;
     }
-    face($("me-av"), p.username, p.photoUrl); $("me").hidden = false;
-    $("boot").hidden = true; $("home").hidden = false;
-    try {                                            // chat.html reads this instead of checking login again
-      sessionStorage.setItem("OUTR_community_session", JSON.stringify({ id: p.id, username: p.username, photoUrl: p.photoUrl, regNo: p.regNo, semester: p.semester }));
-    } catch (e) {}
-    Social.start(p);
+    face($("me-av"), p.username, p.photoUrl); $("me-name").textContent = p.username; $("me").hidden = false;
+    $("boot").hidden = true; $("hub").hidden = false;
+    $("q").addEventListener("input", paint);
+    listen();
   })();
 })();

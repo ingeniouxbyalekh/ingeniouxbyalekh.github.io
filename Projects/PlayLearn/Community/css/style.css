@@ -353,3 +353,38 @@ h1,h2,h3,.brand,.member b,.ph b,.gt{font-family:var(--hf);font-optical-sizing:au
   .nav .ib.on::after{top:-7px;bottom:auto;left:30%;right:30%;border-radius:0 0 3px 3px}
   .nav .badge{right:calc(50% - 22px);top:2px}
 }
+
+/* ---- friends tabs: compact pills on mobile/tablet ---- */
+@media(max-width:899px){
+  .fside{gap:6px;padding:8px 12px;align-items:center;scrollbar-width:none}
+  .fside::-webkit-scrollbar{display:none}
+  .fside .it{width:auto;flex:none;gap:6px;padding:6px 14px 6px 10px;border-radius:999px;background:var(--bg);font-size:13.5px;line-height:1.2;min-height:0}
+  .fside .it i{width:16px;height:16px;border-radius:0;background:none}
+  .fside .it i svg{width:16px;height:16px}
+  .fside .it.on{background:var(--tint)}
+  .fmain{padding:12px 14px}
+  .fpage{grid-template-rows:auto minmax(0,1fr)}
+  .fside{align-self:start;align-items:center;flex-wrap:nowrap}
+}
+
+/* ---- profile picture crop & edit ---- */
+.crp-ov{z-index:20;overflow:auto}
+.card.crp{max-width:400px;padding:20px;max-height:calc(100dvh - 24px);overflow:auto}
+.crp h2{margin:0 0 2px}
+.crp-hint{margin:0 0 12px;font-size:13px}
+.crp-stage{position:relative;width:100%;max-width:300px;aspect-ratio:1;margin:0 auto;background:#000;border-radius:14px;overflow:hidden;touch-action:none;cursor:grab;user-select:none}
+.crp-stage.drag{cursor:grabbing}
+.crp-cv{display:block;width:100%;height:100%}
+.crp-stage::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle closest-side,transparent calc(100% - 2px),#fff calc(100% - 2px),#fff 100%,rgba(0,0,0,.55) 100%)}
+.crp-tools{display:flex;justify-content:center;gap:8px;margin:12px 0 6px}
+.crp-ic{width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);cursor:pointer}
+.crp-ic:hover{background:var(--tint);color:var(--accent)}
+.crp-ic svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.crp-sl{display:grid;gap:4px;text-align:left}
+.crp-sl label{display:grid;grid-template-columns:84px 1fr;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--muted)}
+.crp-sl input[type=range]{width:100%;accent-color:var(--accent);margin:0}
+.crp-act{display:flex;gap:10px;margin-top:14px}
+.crp-act .btn{flex:1}
+.crp-edit{margin:0 auto 10px}
+.pick.has{border-style:solid;border-color:var(--accent)}
+@media(max-width:420px){.card.crp{padding:16px}.crp-stage{max-width:260px}}
