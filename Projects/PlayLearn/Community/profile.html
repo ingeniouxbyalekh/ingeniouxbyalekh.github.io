@@ -55,6 +55,16 @@
 .lnk{cursor:pointer}.lnk:hover{text-decoration:underline}
 .likes{margin-top:12px;color:var(--muted);font-weight:600}
 @media(max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}.intro{position:static}.pav{width:112px;height:112px;font-size:44px;border-radius:50%}.id{margin-top:-48px}.nm{padding-top:58px}.pact{margin-top:0}#pf{padding:10px 12px 40px}.dl{grid-template-columns:110px 1fr}}
+.pnav{display:none}
+@media(max-width:760px){
+  .top .brand{flex:1;min-width:0}
+  .top .hr{flex:none;gap:0}
+  .top .hr .ib{width:40px;height:40px}
+  .top .hr .ib svg{width:22px;height:22px}
+  #me-av{display:grid;place-items:center;width:40px;height:40px;margin-left:2px}
+  #me-av.av{width:36px;height:36px;margin:0 2px 0 4px}
+  .pnav{display:flex}
+}
 </style>
 </head>
 <body>
@@ -62,7 +72,7 @@
   <a class="brand" href="index.html">Community</a>
   <div class="hr">
     <a class="ib" href="chat.html" aria-label="Messenger"><svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 8.5 8.5 0 0 1-3.8-.9L3 21l2-5.2A8.4 8.4 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/></svg></a>
-    <button class="ib" id="gear" type="button" aria-label="Settings" style="font-size:20px">⚙</button>
+    <button class="ib" id="gear" type="button" aria-label="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
     <a class="av" id="me-av" href="profile.html" aria-label="My profile"></a>
   </div>
   <div id="menu" class="menu" hidden>
@@ -77,6 +87,13 @@
   </div>
 </header>
 <p id="boot" class="muted pad">Loading profile…</p>
+<nav class="nav pnav" aria-label="Community">
+  <a class="ib" href="index.html" aria-label="Home"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg></a>
+  <a class="ib" href="index.html?v=fr-home" aria-label="My friends"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></a>
+  <a class="ib" href="index.html?v=groups" aria-label="Groups"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></a>
+  <a class="ib" href="index.html?v=fr-req" aria-label="Friend requests"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></a>
+  <a class="ib" href="index.html?v=saved" aria-label="Saved posts"><svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg></a>
+</nav>
 <main id="pf" hidden>
   <section class="hero">
     <div class="cover" id="cover"><button class="btn sm cbtn" id="cover-btn" hidden>Change cover</button></div>

@@ -36,6 +36,7 @@
     if (online.has(m.id)) a.append(el("i", "dot"));
     if (stack) { const bar = el("div", "stk"); bar.append(...extra); box.append(bar); li.append(a, box); }
     else li.append(a, box, ...extra);
+    if (!li.onclick) { li.classList.add("lnk"); li.onclick = (e) => { if (!e.target.closest("button,a")) location.href = "profile.html?u=" + Auth.pubId(m.id); }; }
     return li;
   }
 
@@ -85,7 +86,9 @@
     UI.face(im, m.username, m.photoUrl);
     const info = [m.regNo, m.semester].filter(Boolean).join(" · ") + (online.has(m.id) ? " · Active now" : "");
     b.append(el("b", "", m.username), el("small", "", info || "\u00a0"), ...btns);
-    c.append(im, b); return c;
+    c.append(im, b);
+    c.classList.add("lnk"); c.onclick = (e) => { if (!e.target.closest("button,a")) location.href = "profile.html?u=" + Auth.pubId(m.id); };
+    return c;
   }
   function fpage() {
     if (view !== "friends") return;
@@ -125,7 +128,8 @@
     const side = $("sugg"), mob = $("sugg-m"); side.textContent = mob.textContent = "";
     r.forEach((m) => {
       side.append(row(m, [action(m)], true));
-      const c = el("div", "sc"); c.append(ava(m, "av big"), el("b", "", m.username), el("small", "", m.regNo || m.semester || ""), action(m)); mob.append(c);
+      const c = el("div", "sc lnk"); c.append(ava(m, "av big"), el("b", "", m.username), el("small", "", m.regNo || m.semester || ""), action(m));
+      c.onclick = (e) => { if (!e.target.closest("button,a")) location.href = "profile.html?u=" + Auth.pubId(m.id); }; mob.append(c);
     });
   }
 
@@ -467,7 +471,7 @@
     composer(); mark();
     Notify.start(me, (n) => (n.postId ? openPost(n.postId) : n.type === "story" ? (n.sid && Stories.openStory(n.sid)) || go("home") : n.type === "group" ? go("groups") : go(n.type === "request" ? "fr-req" : "fr-home")));
     Stories.start(me, { friends: () => friends, member: (id) => members.get(id), openPost });
-    const qs = new URLSearchParams(location.search), pp = qs.get("p"), gg = qs.get("g"); if (pp) openPost(pp); else if (gg) go("g:" + gg);   // opened from a shared link
+    const qs = new URLSearchParams(location.search), pp = qs.get("p"), gg = qs.get("g"); const vv = qs.get("v"); if (pp) openPost(pp); else if (gg) go("g:" + gg); else if (["home", "saved", "groups", "fr-home", "fr-req"].includes(vv)) go(vv);   // opened from a shared link
     watch(db.ref("users"), (k, v) => members.set(k, v), (k) => members.delete(k));
     watch(db.ref("presence"), (k) => online.add(k), (k) => online.delete(k));
     watch(db.ref("friends/" + me.id), (k) => friends.add(k), (k) => friends.delete(k));

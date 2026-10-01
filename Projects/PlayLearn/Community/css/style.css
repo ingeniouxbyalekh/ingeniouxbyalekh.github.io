@@ -388,3 +388,8 @@ h1,h2,h3,.brand,.member b,.ph b,.gt{font-family:var(--hf);font-optical-sizing:au
 .crp-edit{margin:0 auto 10px}
 .pick.has{border-style:solid;border-color:var(--accent)}
 @media(max-width:420px){.card.crp{padding:16px}.crp-stage{max-width:260px}}
+
+/* profile: bio editor (was white box with near-white text in dark mode) */
+.sbox textarea{display:block;width:100%;min-height:96px;margin:12px 0 10px;padding:11px 14px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:12px;font-size:15px;line-height:1.45;resize:vertical}
+.sbox textarea::placeholder{color:var(--muted);opacity:1}
+.sbox textarea:focus{outline:0;border-color:var(--accent);background:var(--panel)}
