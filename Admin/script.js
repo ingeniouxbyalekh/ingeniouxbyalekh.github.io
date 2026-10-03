@@ -264,6 +264,8 @@ const clearSessionsBtn = document.getElementById('clearSessionsBtn');
 let currentFilter = 'all';
 let allMessages = [];
 let allVisitorsCache = [];
+let totalVisitorCount = 0;          // from TotalVisitors/count — survives clearing the visitor table
+let todayOffset = { date: '', count: 0 }; // today's visitors that were cleared from the table
 let allSessionsCache = [];
 let expandedSessionIds = new Set();
 let messagesListenerAttached = false;
@@ -724,9 +726,30 @@ filterBtns.forEach(btn=>{
 });
 
 // ---------- visitors ----------
+const VISITOR_STATS_PATH = 'visitorStats/todayOffset';
+
+function localDateKey(d = new Date()){
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 function startVisitorsListener(){
   if(visitorsListenerAttached) return;
   visitorsListenerAttached = true;
+
+  // Lifetime counter (bumped on every visit) — independent of the visitors table.
+  onValue(ref(dbVisitor, 'TotalVisitors/count'), (snap)=>{
+    totalVisitorCount = snap.val() || 0;
+    updateVisitorStats();
+  }, (err)=> console.warn('Total visitors listener error:', err));
+
+  // Today's visits that were already cleared from the table (saved at clear time).
+  onValue(ref(dbVisitor, VISITOR_STATS_PATH), (snap)=>{
+    const v = snap.val();
+    todayOffset = v && v.date ? { date: v.date, count: v.count || 0 } : { date: '', count: 0 };
+    updateVisitorStats();
+  }, (err)=> console.warn('Visitor stats listener error:', err));
 
   visitorsLoading.style.display = 'block';
   visitorsLoading.classList.remove('is-error');
@@ -798,10 +821,15 @@ function locationPinIcon(v){
 }
 
 function updateVisitorStats(){
-  statVisitors.textContent = allVisitorsCache.length;
+  // Total = lifetime counter, so clearing the table never changes it.
+  // Fall back to the table size only if the counter doesn't exist yet.
+  statVisitors.textContent = totalVisitorCount || allVisitorsCache.length;
+
   const todayStart = new Date();
   todayStart.setHours(0,0,0,0);
-  statVisitorsToday.textContent = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+  const inTable = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+  const cleared = todayOffset.date === localDateKey() ? todayOffset.count : 0;
+  statVisitorsToday.textContent = inTable + cleared;
 }
 
 // ---------- top blogs ----------
@@ -971,6 +999,14 @@ clearVisitorsBtn.addEventListener('click', async ()=>{
   if(!confirm('Delete all visitor logs permanently?')) return;
   clearVisitorsBtn.disabled = true;
   try{
+    // Remember today's count first, so "Visitors today" doesn't drop to 0 after the clear.
+    const todayStart = new Date();
+    todayStart.setHours(0,0,0,0);
+    const inTable = allVisitorsCache.filter(v => v.createdAt && v.createdAt >= todayStart.getTime()).length;
+    const cleared = todayOffset.date === localDateKey() ? todayOffset.count : 0;
+    await withTimeout(set(ref(dbVisitor, VISITOR_STATS_PATH), { date: localDateKey(), count: inTable + cleared }), 10000);
+
+    // Only the visitors table is removed — TotalVisitors/count, blogs, messages, sessions, login logs stay untouched.
     await withTimeout(remove(ref(dbVisitor, VISITORS_PATH)), 10000);
     logActivity('Cleared all visitor logs');
   }catch(err){
