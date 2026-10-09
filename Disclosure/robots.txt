@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /Disclosure/
+Disallow: /Disclosure/Admin/
+Disallow: /Disclosure/login.html
+Disallow: /Disclosure/profile.html
+
+Sitemap: https://ingenioux.in/Disclosure/sitemap.xml

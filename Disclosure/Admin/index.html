@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="keywords" content="Disclosure, Ingenioux">
+  <meta name="description" content="Disclosure admin panel by Ingenioux.">
+  <link rel="icon" type="image/svg+xml" href="../logo.svg">
+  <link rel="apple-touch-icon" href="../logo.svg">
+  <title>Admin – Disclosure</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+<!-- LOGIN / FIRST-TIME PASSWORD -->
+<section id="login" hidden>
+  <div class="lcard">
+    <h2 id="ltitle">Admin login</h2>
+    <p class="hint" id="lsub"></p>
+    <div id="lmsg" class="lmsg" role="alert"></div>
+    <form id="setup" hidden>
+      <label for="np">New password (min. 8 characters)</label><input id="np" type="password" autocomplete="new-password" required minlength="8">
+      <label for="np2">Confirm password</label><input id="np2" type="password" autocomplete="new-password" required>
+      <button type="submit">Create password</button>
+    </form>
+    <form id="lform" hidden>
+      <label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" required>
+      <label for="capIn">Security check</label>
+      <div class="cap">
+        <canvas id="capCv" width="170" height="54" aria-label="CAPTCHA image"></canvas>
+        <button type="button" id="capNew" title="New code" aria-label="Get a new code">↻</button>
+      </div>
+      <input id="capIn" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="5" placeholder="Type the characters above" required>
+      <button type="submit">Log in</button>
+    </form>
+  </div>
+</section>
+
+<!-- APP -->
+<div id="app" hidden>
+  <aside>
+    <div class="brand">Disclosure<i>.</i><small>Admin panel</small></div>
+    <nav id="nav"></nav>
+    <div class="side-foot"><a href="../index.html">View live site ↗</a><button id="out">Sign out</button></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="toast"></div>
+
+<!-- ANOTHER LOGIN FOUND -->
+<div id="dlg" class="ovl" hidden role="dialog" aria-modal="true" aria-labelledby="dlgt">
+  <div class="dtile">
+    <div class="ti">!</div>
+    <h3 id="dlgt">Another login found</h3>
+    <p id="dlgp"></p>
+    <div class="acts"><button type="button" class="ghost" id="dlgNo">Cancel</button><button type="button" id="dlgOk">OK</button></div>
+  </div>
+</div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

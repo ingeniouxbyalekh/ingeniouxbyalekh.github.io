@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Disclosure logo">
+  <title>Disclosure</title>
+  <rect width="512" height="512" rx="112" fill="#FFFFFF"/>
+  <path fill="#0A0A0A" fill-rule="evenodd" d="M104 96h130c88 0 148 52 148 160s-60 160-148 160H104zM170 154v204h58c50 0 86-30 86-102s-36-102-86-102z"/>
+  <circle cx="414" cy="378" r="38" fill="#E11D48"/>
+</svg>

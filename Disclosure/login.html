@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="logo.svg">
+  <link rel="apple-touch-icon" href="logo.svg">
+  <title>Login – Disclosure</title>
+  <meta name="description" content="Sign in to Disclosure by Ingenioux to vote in polls and follow Alekh Chandra Sahoo's independent journal.">
+  <meta name="keywords" content="Disclosure, Ingenioux">
+  <meta name="robots" content="noindex,follow">
+  <link rel="canonical" href="https://ingenioux.in/Disclosure/login.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { background: #fff; }
+    .stage { min-height: calc(100vh - 69px - 90px); display: grid; place-items: center; padding: 32px 0; }
+    .card-login {
+      width: min(100%, 400px); background: #fff; border: 1.5px solid var(--line); border-radius: 24px;
+      padding: 36px 38px 32px; box-shadow: 0 20px 50px -18px rgba(15, 23, 42, .18);
+    }
+    .card-login h2 { margin: 0 0 26px; text-align: center; font: 800 2rem Sora, sans-serif; letter-spacing: -0.03em; }
+
+    .field { position: relative; margin: 0 0 24px; }
+    .field input {
+      width: 100%; margin: 0; padding: 22px 52px 8px 4px; background: transparent; color: var(--ink);
+      border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; font: 500 1rem Sora, sans-serif;
+    }
+    .field input:focus { border-bottom-color: var(--accent); }
+    .field label {
+      position: absolute; left: 4px; top: 20px; margin: 0; pointer-events: none;
+      font: 600 .95rem Sora, sans-serif; color: var(--mut); transition: all .18s ease;
+    }
+    .field input:focus + label, .field input:not(:placeholder-shown) + label {
+      top: 0; font-size: .72rem; color: var(--ink-secondary);
+    }
+    .field input:focus + label { color: var(--accent); }
+    .field .toggle { position: absolute; right: 0; bottom: 8px; padding: 3px 11px; font-size: .72rem; background: var(--line-subtle); color: var(--ink); border: 0; }
+    .field .toggle:hover { background: var(--ink); color: #fff; transform: none; }
+
+    .row2 { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: -4px 0 22px; font: 500 .82rem Sora, sans-serif; }
+    .row2 label { display: flex; align-items: center; gap: 7px; cursor: pointer; color: var(--ink-secondary); }
+    .row2 input { width: 16px; height: 16px; margin: 0; padding: 0; accent-color: var(--ink); }
+    .linkbtn { background: none; color: var(--ink); padding: 0; border-radius: 0; font: 700 .82rem Sora, sans-serif; }
+    .linkbtn:hover { background: none; color: var(--accent); transform: none; }
+
+    .submit { width: 100%; padding: 14px; font-size: .95rem; }
+    .submit:disabled { opacity: .6; cursor: wait; transform: none; }
+    .swap { margin: 22px 0 0; text-align: center; font: 500 .85rem Sora, sans-serif; color: var(--ink-secondary); }
+    .swap .linkbtn { font-size: .85rem; }
+
+    .msg { display: none; border-radius: var(--radius-md); padding: 11px 14px; font: 500 .82rem/1.45 Sora, sans-serif; margin-bottom: 18px; }
+    .msg.err { display: block; background: var(--accent-soft); color: #9F1239; }
+    .msg.ok { display: block; background: #ECFDF5; color: #047857; }
+
+    .captcha { display: flex; align-items: center; gap: 10px; margin: 0 0 8px; }
+    .captcha canvas { width: 200px; height: 52px; flex: none; border: 1.5px solid var(--line); border-radius: 12px; background: #F8FAFC; user-select: none; }
+    .captcha .refresh { padding: 8px 12px; font-size: .75rem; background: var(--line-subtle); color: var(--ink); border: 0; }
+    .captcha .refresh:hover { background: var(--ink); color: #fff; transform: none; }
+    .or { display: flex; align-items: center; gap: 12px; margin: 20px 0; font: 600 .75rem Sora, sans-serif; color: var(--mut); text-transform: uppercase; letter-spacing: .08em; }
+    .or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+    .field select {
+      width: 100%; margin: 0; padding: 22px 26px 8px 4px; background: transparent; color: var(--ink);
+      border: 0; border-bottom: 2px solid var(--ink); border-radius: 0; font: 500 1rem Sora, sans-serif;
+      appearance: none; -webkit-appearance: none; cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%230F172A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 4px center; background-size: 12px;
+    }
+    .field select:focus { border-bottom-color: var(--accent); outline: none; }
+    .field.sel label { top: 0; font-size: .72rem; color: var(--ink-secondary); }
+    .field.sel select:focus + label { color: var(--accent); }
+    .gbtn { gap: 10px; }
+    .gbtn svg { width: 18px; height: 18px; flex: none; }
+    .sub { margin: -10px 0 22px; text-align: center; font: 500 .85rem/1.5 Sora, sans-serif; color: var(--ink-secondary); }
+    [hidden] { display: none !important; }
+    @media (max-width: 480px) { .card-login { padding: 28px 22px 26px; border-radius: 20px; } }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="navin">
+    <a href="index.html"><h1 class="logo">Disclosure<span>.</span></h1></a>
+    <div class="links"><a href="index.html">← Back to site</a></div>
+  </div>
+</nav>
+
+<main class="wrap stage">
+  <section class="card-login">
+    <h2 id="title">Login</h2>
+    <div id="msg" class="msg" role="alert"></div>
+
+    <!-- LOGIN: username + password, then Google below -->
+    <form id="formIn" novalidate>
+      <div class="field">
+        <input id="inUser" type="text" placeholder=" " autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <label for="inUser">Username or Gmail</label>
+      </div>
+      <div class="field">
+        <input id="inPass" type="password" placeholder=" " autocomplete="current-password" required>
+        <label for="inPass">Password</label>
+        <button type="button" class="toggle" data-t="inPass">Show</button>
+      </div>
+      <div class="captcha">
+        <canvas id="capCanvas" width="400" height="104" role="img" aria-label="Captcha code"></canvas>
+        <button type="button" class="refresh" id="capNew" aria-label="New code">New code</button>
+      </div>
+      <div class="field">
+        <input id="inCaptcha" type="text" placeholder=" " autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="6" required>
+        <label for="inCaptcha">Type the code shown above</label>
+      </div>
+      <button class="submit" type="submit">Log in</button>
+
+      <div class="or">or</div>
+      <button type="button" class="submit alt gbtn gbtn-go" id="gBtnIn">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.7-9.9 6.7-16.9z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.7 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Continue with Google
+      </button>
+      <p class="swap">Don't have an account? <button type="button" class="linkbtn" id="toUp">Register</button></p>
+    </form>
+
+    <!-- REGISTER STEP 1: GOOGLE -->
+    <div id="stepUp" hidden>
+      <button type="button" class="submit alt gbtn gbtn-go" id="gBtnUp">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.1 5.5c4.3-4 6.7-9.9 6.7-16.9z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.4-4.7 2.3-8.8 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        Sign up with Google
+      </button>
+      <p class="swap">Already have an account? <button type="button" class="linkbtn" id="toIn">Log in</button></p>
+    </div>
+
+    <!-- REGISTER STEP 2: PROFILE (asked once, after the first Google sign-in) -->
+    <form id="formProfile" novalidate hidden>
+      <p class="sub">One last step. Tell us a little about you.</p>
+      <div class="field">
+        <input id="pName" type="text" placeholder=" " autocomplete="name" maxlength="80" required>
+        <label for="pName">Name</label>
+      </div>
+      <div class="field">
+        <input id="pPhone" type="tel" inputmode="tel" placeholder=" " autocomplete="tel" maxlength="20" required>
+        <label for="pPhone" id="lPhone">Mobile number (10 digits)</label>
+      </div>
+      <div class="field sel">
+        <select id="pCountry" autocomplete="country" required></select>
+        <label for="pCountry">Country</label>
+      </div>
+      <div class="field sel" id="fRegionSel">
+        <select id="pRegionSel" autocomplete="address-level1"></select>
+        <label for="pRegionSel">Region / State</label>
+      </div>
+      <div class="field" id="fRegionTxt" hidden>
+        <input id="pRegionTxt" type="text" placeholder=" " autocomplete="address-level1" maxlength="80">
+        <label for="pRegionTxt">Region / State (optional)</label>
+      </div>
+      <div class="field">
+        <input id="pZip" type="text" placeholder=" " autocomplete="postal-code" maxlength="12" required>
+        <label for="pZip">Zip / Postal code</label>
+      </div>
+      <div class="field" id="fPass">
+        <input id="pPass" type="password" placeholder=" " autocomplete="new-password" minlength="6" required>
+        <label for="pPass">Password (min. 6 characters)</label>
+        <button type="button" class="toggle" data-t="pPass">Show</button>
+      </div>
+      <button class="submit" type="submit">Save and continue</button>
+      <p class="swap"><button type="button" class="linkbtn" id="other">Use a different account</button></p>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <p>© Disclosure by <a href="https://ingenioux.in/" rel="noopener">Ingenioux</a> · Independent Journal</p>
+</footer>
+
+<script type="module">
+  import { auth, db } from "./firebase-init.js";
+  import {
+    GoogleAuthProvider, EmailAuthProvider, signInWithPopup, signInWithRedirect, signInWithEmailAndPassword,
+    linkWithCredential, onAuthStateChanged, setPersistence,
+    browserLocalPersistence, updateProfile, signOut, deleteUser
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+  import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+  /* ---- settings ---- */
+  const GMAIL_ONLY = true;                       // true: only @gmail.com Google accounts can register. false: any Google account.
+  const ADMIN_EMAIL = "admin@ingenioux.in";      // admin uses /Admin, never this page
+  const DEFAULT_DOMAIN = "@gmail.com";           // "username" without an @ is treated as username@gmail.com
+
+  import { GEO } from "./geo.js";
+
+  const $ = id => document.getElementById(id);
+  let user = null, existing = true, checking = false, hasPwd = false;
+  let intent = location.hash === "#signup" ? "up" : "in";   // which screen the visitor started Google from
+  let pendingUser = null;                                      // Google-authenticated but registration not finished (NOT a login)
+
+  /* ---- helpers ---- */
+  function setMsg(text, type = "err") {
+    const m = $("msg");
+    m.className = "msg" + (text ? " " + type : "");
+    m.textContent = text || "";
+  }
+  const errors = {
+    "auth/operation-not-allowed": "This sign-in method is not enabled. Turn on Google and Email/Password in Firebase Console → Authentication → Sign-in method.",
+    "auth/unauthorized-domain": "This domain is not authorised for Google sign-in. Add it in Firebase Console → Authentication → Settings → Authorized domains.",
+    "auth/account-exists-with-different-credential": "An account with this email already exists with a different sign-in method.",
+    "auth/invalid-email": "That username or email doesn't look right. Check it and try again.",
+    "auth/invalid-credential": "incorrect Username or password",
+    "auth/user-not-found": "No account uses that username. Register first.",
+    "auth/wrong-password": "Username or password is incorrect.",
+    "auth/weak-password": "Choose a password with at least 6 characters.",
+    "auth/provider-already-linked": "This account already has a password.",
+    "auth/credential-already-in-use": "This password login is already linked to another account.",
+    "auth/email-already-in-use": "This email already has a password login. Log in instead.",
+    "auth/requires-recent-login": "Please continue with Google again, then save your profile.",
+    "auth/network-request-failed": "Network error. Check your connection and try again.",
+    "auth/too-many-requests": "Too many attempts. Wait a few minutes and try again.",
+    "auth/user-disabled": "This account has been disabled.",
+    "permission-denied": "Firestore blocked saving your profile. Update your Firestore rules."
+  };
+  const fail = e => setMsg(errors[e.code] || "Something went wrong (" + (e.code || e.message) + ").");
+  const goHome = () => { location.href = "index.html"; };
+  /* Debug aid: prints exactly what Firestore rules see for this user (open DevTools -> Console). */
+  async function logClaims(u) {
+    try {
+      const r = await u.getIdTokenResult(true);
+      console.warn("Token claims seen by Firestore rules:", { provider: r.signInProvider, email: r.claims.email, email_verified: r.claims.email_verified, identities: r.claims.firebase && r.claims.firebase.identities });
+    } catch (e) { console.warn("claims unavailable", e); }
+  }
+  const toEmail = v => { v = v.trim().toLowerCase(); return v.includes("@") ? v : v + DEFAULT_DOMAIN; };
+
+  /* ---- views: in (login) / up (register step 1) / profile (register step 2) ---- */
+  function show(mode) {
+    if (mode === "in" || mode === "up") intent = mode;
+    $("formIn").hidden = mode !== "in";
+    $("stepUp").hidden = mode !== "up";
+    $("formProfile").hidden = mode !== "profile";
+    const t = mode === "in" ? "Login" : mode === "up" ? "Register" : "Complete profile";
+    $("title").textContent = t; document.title = t + " – Disclosure";
+    document.querySelectorAll(".gbtn-go").forEach(b => b.disabled = false);
+    if (mode !== "profile") history.replaceState(null, "", mode === "up" ? "#signup" : "#signin");
+  }
+  $("toUp").onclick = () => { setMsg(); show("up"); };
+  $("toIn").onclick = () => { setMsg(); if (pendingUser) { pendingUser = null; signOut(auth).catch(() => {}); } show("in"); };
+
+  function showProfile() {
+    show("profile");
+    const email = user.email || "";
+    hasPwd = user.providerData.some(p => p.providerId === "password");
+    $("fPass").hidden = hasPwd; $("pPass").required = !hasPwd; $("pPass").value = "";
+    $("pName").value = (user.displayName || email.split("@")[0].replace(/[._-]+/g, " ").replace(/\b\w/g, c => c.toUpperCase())).trim();
+    $("pName").focus();
+  }
+
+  document.querySelectorAll(".toggle").forEach(b => b.onclick = () => {
+    const i = $(b.dataset.t), reveal = i.type === "password";
+    i.type = reveal ? "text" : "password"; b.textContent = reveal ? "Hide" : "Show";
+  });
+
+  /* ---- country / region ---- */
+  const cSel = $("pCountry"), rSel = $("pRegionSel");
+  GEO.c.forEach(([code, name]) => cSel.add(new Option(name, code)));
+  cSel.value = "IN";                             // India by default
+  function fillRegions() {
+    const list = GEO.s[cSel.value];
+    $("fRegionSel").hidden = !list; $("fRegionTxt").hidden = !!list;
+    rSel.innerHTML = ""; $("pRegionTxt").value = "";
+    if (!list) return;
+    const ph = new Option("Select state / region", ""); ph.disabled = true; ph.selected = true; rSel.add(ph);
+    list.forEach(n => rSel.add(new Option(n, n)));
+  }
+  const phoneLabel = () => { $("lPhone").textContent = cSel.value === "IN" ? "Mobile number (10 digits)" : "Phone number (with +country code)"; };
+  cSel.onchange = () => { fillRegions(); phoneLabel(); };
+  fillRegions(); phoneLabel();
+  /* India: 10-digit mobile (6-9...), stored as +91XXXXXXXXXX. Elsewhere: international format +<country code><number>. */
+  function normPhone(code, raw) {
+    let v = String(raw).replace(/[\s\-().]/g, "");
+    if (code === "IN") {
+      v = v.replace(/^(\+91|0091|91|0)(?=\d{10}$)/, "");
+      return /^[6-9]\d{9}$/.test(v) ? "+91" + v : null;
+    }
+    return /^\+[1-9]\d{6,14}$/.test(v) ? v : null;
+  }
+
+  const zipRules = {
+    IN: [/^[1-9]\d{5}$/, "Enter a valid 6-digit PIN code."],
+    US: [/^\d{5}(-\d{4})?$/, "Enter a valid ZIP code (12345 or 12345-6789)."],
+    CA: [/^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/, "Enter a valid postal code (A1A 1A1)."],
+    GB: [/^[A-Za-z]{1,2}\d[A-Za-z\d]? ?\d[A-Za-z]{2}$/, "Enter a valid UK postcode."]
+  };
+  const zipDefault = [/^[A-Za-z0-9][A-Za-z0-9 \-]{1,10}[A-Za-z0-9]$/, "Enter a valid zip / postal code."];
+
+  /* ---- after any sign-in (Google or password): decide where the user goes ---- */
+  async function afterAuth(u) {
+    const email = (u.email || "").toLowerCase();
+    if (email === ADMIN_EMAIL) return goHome();
+    const viaGoogle = u.providerData.some(p => p.providerId === "google.com");
+    let snap = null, readErr = null;
+    try { snap = await getDoc(doc(db, "users", u.uid)); } catch (e) { console.error(e); readErr = e; }
+    existing = snap ? snap.exists() : true;      // if the read failed, never overwrite role/createdAt
+
+    if (GMAIL_ONLY && viaGoogle && !email.endsWith("@gmail.com")) {
+      if (snap && !snap.exists()) { try { await deleteUser(u); } catch {} }
+      await signOut(auth);
+      setMsg("Please continue with a Gmail address (@gmail.com).");
+      return;
+    }
+    if (readErr) {
+      // We could not check whether this account exists. Do NOT call it a new user or a login: stop and say why.
+      pendingUser = null;
+      await logClaims(u);
+      try { await signOut(auth); } catch {}
+      setMsg(readErr.code === "permission-denied"
+        ? "Google sign-in worked, but Firestore refused to read your account (permission-denied). The rules for the users collection are not allowing it. Publish the Firestore rules in Firebase Console, then try again."
+        : "Could not reach the database (" + (readErr.code || readErr.message) + "). If Brave Shields or an ad blocker is on, turn it off for this site and try again.");
+      return;
+    }
+    if (snap && snap.exists() && snap.data().profileComplete) {
+      try { await setDoc(doc(db, "users", u.uid), { lastLogin: serverTimestamp() }, { merge: true }); } catch {}
+      return goHome();
+    }
+    // New user, or registration step 2 not finished: this is NOT a successful login.
+    user = u;
+    if (intent === "in") {
+      // They pressed Continue with Google on the Login screen -> send them to the Sign-up screen.
+      pendingUser = u;
+      show("up");
+      setMsg("No Disclosure account found for " + email + ". Please sign up to continue.");
+      return;
+    }
+    pendingUser = null; setMsg(); showProfile();
+  }
+
+  onAuthStateChanged(auth, async u => {
+    if (!u) { user = null; pendingUser = null; if (!$("formProfile").hidden) show(location.hash === "#signup" ? "up" : "in"); return; }
+    if (checking) return;
+    checking = true;
+    try { await afterAuth(u); } finally { checking = false; }
+  });
+  show(location.hash === "#signup" ? "up" : "in");
+
+  /* ---- captcha (login form) ---- */
+  let capCode = "";
+  function newCaptcha() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", n = 5, rnd = new Uint32Array(n * 8);
+    crypto.getRandomValues(rnd);
+    capCode = Array.from({ length: n }, (_, i) => chars[rnd[i] % chars.length]).join("");
+    const cv = $("capCanvas"), g = cv.getContext("2d"), W = cv.width, H = cv.height, r = i => rnd[n + i] / 4294967296;
+    g.clearRect(0, 0, W, H);
+    for (let i = 0; i < 90; i++) { g.fillStyle = "rgba(15,23,42," + (.12 + r(i % 30) * .25) + ")"; g.fillRect(Math.random() * W, Math.random() * H, 3, 3); }
+    for (let i = 0; i < 5; i++) {
+      g.strokeStyle = "rgba(225,29,72," + (.35 + Math.random() * .3) + ")"; g.lineWidth = 2 + Math.random() * 2;
+      g.beginPath(); g.moveTo(Math.random() * W * .3, Math.random() * H);
+      g.bezierCurveTo(W * .35, Math.random() * H, W * .65, Math.random() * H, W * (.7 + Math.random() * .3), Math.random() * H); g.stroke();
+    }
+    const step = W / (n + 1);
+    for (let i = 0; i < n; i++) {
+      g.save();
+      g.translate(step * (i + 1), H / 2 + (Math.random() - .5) * 14);
+      g.rotate((Math.random() - .5) * .7);
+      g.font = "800 " + (52 + Math.random() * 14) + "px Sora, sans-serif";
+      g.fillStyle = "#0F172A"; g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(capCode[i], 0, 0); g.restore();
+    }
+    $("inCaptcha").value = "";
+  }
+  $("capNew").onclick = () => { newCaptcha(); $("inCaptcha").focus(); };
+  newCaptcha();
+
+  /* ---- Log in with username/email + password ---- */
+  $("formIn").addEventListener("submit", async e => {
+    e.preventDefault(); setMsg();
+    const id = $("inUser").value.trim(), pass = $("inPass").value;
+    if (!id || !pass) return setMsg("Enter your username and password.");
+    if ($("inCaptcha").value.trim().toUpperCase() !== capCode) { newCaptcha(); return setMsg("The code doesn't match."); }
+    const btn = e.target.querySelector("button.submit:not(.gbtn)"); btn.disabled = true;
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, toEmail(id), pass);   // afterAuth() redirects
+    } catch (err) { fail(err); newCaptcha(); }
+    btn.disabled = false;
+  });
+
+  /* ---- Continue with Google (login + register) ---- */
+  async function google() {
+    setMsg(); document.querySelectorAll(".gbtn-go").forEach(b => b.disabled = true);
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithPopup(auth, provider);
+    } catch (err) {
+      if (err.code === "auth/popup-blocked") { try { return await signInWithRedirect(auth, provider); } catch (e2) { err = e2; } }
+      if (err.code !== "auth/popup-closed-by-user" && err.code !== "auth/cancelled-popup-request") fail(err);
+      document.querySelectorAll(".gbtn-go").forEach(b => b.disabled = false);
+    }
+  }
+  $("gBtnIn").onclick = google;
+  $("gBtnUp").onclick = () => {
+    // Already verified with Google on the Login screen: go straight to step 2 (no second popup).
+    if (pendingUser && auth.currentUser && auth.currentUser.uid === pendingUser.uid) { user = pendingUser; pendingUser = null; setMsg(); showProfile(); }
+    else google();
+  };
+
+  /* ---- write users/<uid>: create (role + createdAt) for a new user, update (no role/createdAt) for an existing one.
+     Re-reads the document here so a failed read earlier can never send the wrong kind of write. ---- */
+  async function saveProfile(data) {
+    const ref = doc(db, "users", user.uid);
+    let snap = null;
+    try { snap = await getDoc(ref); } catch (e) { console.warn("profile re-read failed", e); }
+    if (snap && snap.exists()) return setDoc(ref, data, { merge: true });
+    try {
+      return await setDoc(ref, { ...data, role: "user", createdAt: serverTimestamp() }, { merge: true });
+    } catch (e) {
+      if (e.code !== "permission-denied") throw e;
+      return await setDoc(ref, data, { merge: true });   // document already existed: plain update
+    }
+  }
+  /* ---- save profile (+ set password) ---- */
+  $("formProfile").addEventListener("submit", async e => {
+    e.preventDefault(); setMsg();
+    const name = $("pName").value.trim(), code = cSel.value, country = cSel.options[cSel.selectedIndex].text;
+    const hasList = !!GEO.s[code];
+    const region = (hasList ? rSel.value : $("pRegionTxt").value).trim();
+    const zip = $("pZip").value.trim(), pw = $("pPass").value;
+    if (name.length < 2) return setMsg("Enter your name.");
+    const phone = normPhone(code, $("pPhone").value);
+    if (!phone) return setMsg(code === "IN" ? "Enter a valid 10-digit mobile number." : "Enter your phone number with country code, e.g. +1 555 123 4567.");
+    if (!code) return setMsg("Select your country.");
+    if (hasList && !region) return setMsg("Select your state / region.");
+    const [re, zmsg] = zipRules[code] || zipDefault;
+    if (!re.test(zip)) return setMsg(zmsg);
+    if (!hasPwd && pw.length < 6) return setMsg("Choose a password with at least 6 characters.");
+
+    const btn = e.target.querySelector(".submit"); btn.disabled = true;
+    try {
+      // The password is handed to Firebase Auth only (hashed there). It is never written to Firestore.
+      if (!hasPwd) await linkWithCredential(user, EmailAuthProvider.credential(user.email, pw));
+      await updateProfile(user, { displayName: name });
+      const data = {
+        uid: user.uid, name, email: user.email, provider: "google",
+        phone, country, countryCode: code, region, zip, hasPassword: true,
+        profileComplete: true, lastLogin: serverTimestamp()
+      };
+      await saveProfile(data);
+      pendingUser = null; goHome();
+    } catch (err) { logClaims(user); fail(err); btn.disabled = false; }
+  });
+
+  /* ---- use a different account ---- */
+  $("other").onclick = async () => { setMsg(); await signOut(auth); };
+</script>
+<script type="module" src="/datalake.js"></script>
+</body>
+</html>

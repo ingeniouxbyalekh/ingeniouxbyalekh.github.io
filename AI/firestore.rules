@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // analytics data written by /datalake.js and read by /AI/
+    match /ai_events/{d}       { allow create, read: if true; }
+    match /ai_sessions/{d}     { allow create, read: if true; }
+    match /ai_db_mutations/{d} { allow create, read: if true; }
+    match /ai_db_reads/{d}     { allow create, read: if true; }
+    // admin login no longer uses Firestore (it lives in Realtime Database)
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "nextprint-functions",
+  "description": "Cloud Functions for NextPrint (Cloudinary file deletion)",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^6.0.1"
+  }
+}

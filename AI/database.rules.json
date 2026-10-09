@@ -1,0 +1,9 @@
+{
+  "rules": {
+    "ai_config": {
+      "access":  { ".read": true, ".write": true },
+      "session": { ".read": true, ".write": true },
+      "ai":      { ".read": true, ".write": true }
+    }
+  }
+}

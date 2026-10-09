@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light}html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>TraceMark · DCT Watermark Embedder</title>
+<style>
+/* Layout: masthead and tab switch on top; below it an image stage on the left and note, strength and receipt on the right. */
+:root {
+  --bg: #E7EAEE;
+  --surface: #F5F6F8;
+  --stage: #D6DAE1;
+  --ink: #10141B;
+  --ink-2: #465061;
+  --line: #BFC7D2;
+  --accent: #2B3BE8;
+  --on-accent: #FFFFFF;
+  --ok: #0B7A4B;
+  --ok-bg: #DCF0E6;
+  --warn: #8F5400;
+  --warn-bg: #F5E7CC;
+  --bad: #B3261E;
+  --bad-bg: #F7DEDC;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1016; --surface: #141A22; --stage: #090C11; --ink: #E8ECF2; --ink-2: #9AA5B5; --line: #283140;
+    --accent: #8C99FF; --on-accent: #0C1016; --ok: #47D693; --ok-bg: #12261E; --warn: #F2B552; --warn-bg: #2B2212;
+    --bad: #FF8A80; --bad-bg: #2C1816; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1016; --surface: #141A22; --stage: #090C11; --ink: #E8ECF2; --ink-2: #9AA5B5; --line: #283140;
+  --accent: #8C99FF; --on-accent: #0C1016; --ok: #47D693; --ok-bg: #12261E; --warn: #F2B552; --warn-bg: #2B2212;
+  --bad: #FF8A80; --bad-bg: #2C1816; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); padding-inline: 16px; padding-block: 28px 56px; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.label { font: 500 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+
+/* masthead */
+.mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { width: 26px; height: 26px; flex: none; }
+.brand .on { fill: var(--ink); }
+.brand .off { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.brand .hot { fill: var(--accent); }
+h1 { margin: 0; font: 700 20px/1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.lead { margin: 0; max-width: 46ch; color: var(--ink-2); text-wrap: pretty; }
+
+.tabs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; margin-bottom: 22px; max-width: 100%; }
+.tabs button { border: 0; background: transparent; padding: 9px 16px; border-radius: 4px; font-weight: 600; color: var(--ink-2); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.tabs button:not([aria-selected="true"]):hover { color: var(--ink); }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+/* stage */
+.stage { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 6px; padding: 12px; min-height: 220px; display: grid; place-items: center; }
+.stage.drag { outline: 2px dashed var(--accent); outline-offset: -6px; }
+.stage img, .stage canvas { display: block; max-width: 100%; height: auto; border-radius: 2px; }
+#viewPat { width: 100%; image-rendering: pixelated; }
+.tag { position: absolute; top: 20px; left: 20px; z-index: 1; background: var(--ink); color: var(--bg); padding: 4px 8px; border-radius: 3px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.meta .mono { font-size: 12.5px; color: var(--ink-2); min-width: 0; overflow-wrap: anywhere; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.btn { border: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 10px 16px; border-radius: 4px; font-weight: 600; }
+.btn:hover { background: var(--surface); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.btn.small { padding: 6px 12px; font-size: 13px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* form */
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 11px 12px; font-size: 16px; }
+input[type="text"]:focus-visible { outline-offset: 0; border-color: var(--accent); }
+.hint { margin: 0; font-size: 13px; color: var(--ink-2); }
+.count.over { color: var(--bad); }
+.clock { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font-size: 13.5px; }
+
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.opts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.opt { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 2px 12px; align-items: start; padding: 11px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.opt .dot { grid-row: 1 / span 2; width: 16px; height: 16px; margin-top: 3px; border: 1.5px solid var(--ink-2); border-radius: 50%; }
+.opt b { font-weight: 700; }
+.opt span.d { grid-column: 2; font-size: 13px; color: var(--ink-2); }
+.opt:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opt:has(input:checked) .dot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 42%, transparent 46%); }
+.opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.msg { margin: 0; padding: 10px 12px; border-radius: 4px; font-size: 14px; }
+.msg.bad { background: var(--bad-bg); color: var(--bad); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); }
+
+/* receipt and results */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.stamp { display: flex; align-items: center; gap: 10px; font: 800 26px/1 var(--font-display); font-stretch: 62%; letter-spacing: .04em; text-transform: uppercase; }
+.stamp svg { width: 26px; height: 26px; flex: none; }
+.stamp.ok { color: var(--ok); }
+.stamp.bad { color: var(--bad); }
+.note { margin: 0; font: 500 17px/1.4 var(--font-mono); overflow-wrap: anywhere; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+.kv { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 6px 14px; margin: 0; }
+.kv dt { color: var(--ink-2); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.kv dd .sub { display: block; font: 12.5px/1.4 var(--font-mono); color: var(--ink-2); }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.check { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
+.check .ico { width: 18px; height: 18px; margin-top: 1px; }
+.check[data-s="ok"] { color: var(--ok); }
+.check[data-s="bad"] { color: var(--bad); }
+.check[data-s="run"] .ico { border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+.check .why { display: block; color: var(--ink-2); font-size: 13px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12px/1 var(--font-mono); padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); }
+.meter { display: flex; gap: 3px; margin-top: 4px; }
+.meter i { width: 14px; height: 14px; border: 1.5px solid var(--ink-2); border-radius: 1px; }
+.meter i.on { background: var(--accent); border-color: var(--accent); }
+
+/* read tab */
+.drop { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; min-height: 260px; padding: 24px 16px; border: 1.5px dashed var(--ink-2); border-radius: 6px; background: var(--surface); }
+.drop.drag { border-color: var(--accent); background: var(--stage); }
+.drop h2 { margin: 0; font: 800 28px/1 var(--font-display); font-stretch: 62%; text-transform: uppercase; letter-spacing: .02em; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.thumb { display: grid; place-items: center; background: var(--stage); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+.thumb img { max-width: 100%; max-height: 360px; border-radius: 2px; }
+
+details { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 16px; }
+summary { cursor: pointer; font-weight: 700; }
+details .twocol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; margin-top: 14px; }
+details h3 { margin: 0 0 6px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+.foot { margin-top: 24px; font-size: 13px; color: var(--ink-2); }
+
+@media (max-width: 820px) {
+  .cols { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  details .twocol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check[data-s="run"] .ico { animation: none; border-top-color: var(--ink-2); }
+  .bar > div { transition: none; }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <svg viewBox="0 0 33 33" aria-hidden="true">
+        <rect class="on" x="0" y="0" width="9" height="9"/><rect class="off" x="12.75" y="0.75" width="7.5" height="7.5"/><rect class="on" x="24" y="0" width="9" height="9"/>
+        <rect class="off" x="0.75" y="12.75" width="7.5" height="7.5"/><rect class="hot" x="12" y="12" width="9" height="9"/><rect class="off" x="24.75" y="12.75" width="7.5" height="7.5"/>
+        <rect class="on" x="0" y="24" width="9" height="9"/><rect class="on" x="12" y="24" width="9" height="9"/><rect class="off" x="24.75" y="24.75" width="7.5" height="7.5"/>
+      </svg>
+      <h1>TraceMark</h1>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" id="tabSeal" aria-selected="true" aria-controls="panelSeal">Embed watermark</button>
+    <button type="button" role="tab" id="tabRead" aria-selected="false" aria-controls="panelRead" tabindex="-1">Extract watermark</button>
+  </div>
+
+  <!-- SEAL -->
+  <section id="panelSeal" role="tabpanel" aria-labelledby="tabSeal" class="cols">
+    <div class="col">
+      <div class="stage" id="stage">
+        <span class="tag" id="viewTag">Sample image</span>
+        <img id="viewImg" alt="Source image">
+        <canvas id="viewPat" hidden aria-label="Amplified view of the hidden pattern"></canvas>
+      </div>
+      <div class="meta">
+        <span class="mono" id="stageMeta">Loading sample…</span>
+        <div class="row">
+          <div class="seg" id="viewSeg" hidden role="group" aria-label="Preview">
+            <button type="button" data-view="orig" aria-pressed="false">Original</button>
+            <button type="button" data-view="sealed" aria-pressed="true">Watermarked</button>
+            <button type="button" data-view="pattern" aria-pressed="false">Pattern</button>
+          </div>
+          <button type="button" class="btn small" id="pickSeal">Choose image</button>
+        </div>
+      </div>
+      <p class="hint" id="patNote" hidden>Pattern shows the difference between the original and the watermarked image, a 280 × 210 px crop from the middle, amplified 8 times. This is where the data lives.</p>
+      <p class="hint" id="dropHint">Drop an image on the picture, paste one with Ctrl+V, or choose a file. Nothing leaves your browser.</p>
+    </div>
+
+    <div class="col">
+      <div class="field">
+        <div class="field-head">
+          <label class="label" for="note">Payload text</label>
+          <span class="label mono count" id="count">0 / 57 bytes</span>
+        </div>
+        <input type="text" id="note" value="Owned by Your Name, ref 0042" autocomplete="off" spellcheck="false" placeholder="Owner, project, reference number">
+        <p class="hint">Plain letters and digits take one byte each. Other scripts and emoji take two to four.</p>
+      </div>
+
+      <div class="field">
+        <div class="field-head">
+          <label class="label" for="tag">Short tag (redundant micro-marks)</label>
+          <span class="label mono count" id="tagCount">0 / 8 bytes</span>
+        </div>
+        <input type="text" id="tag" value="Ref0042" autocomplete="off" spellcheck="false" placeholder="Short owner or ref code">
+        <p class="hint">Micro-marks are tiled across the whole frame, so even a tight crop keeps this tag and the timestamp. The full payload text is embedded once in a high-amplitude block at the centre.</p>
+      </div>
+
+      <div class="field">
+        <span class="label">Timestamp</span>
+        <span class="clock mono" id="clock" aria-live="off"></span>
+        <p class="hint">Read from this device's clock at the moment you press Embed.</p>
+      </div>
+
+      <fieldset>
+        <legend class="label">Strength</legend>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="str" value="18"><span class="dot"></span><b>Light</b><span class="d">Invisible. Survives screenshots and ordinary JPEG.</span></label>
+          <label class="opt"><input type="radio" name="str" value="28" checked><span class="dot"></span><b>Standard</b><span class="d">Survives heavy JPEG, crops and resizing.</span></label>
+          <label class="opt"><input type="radio" name="str" value="44"><span class="dot"></span><b>Strong</b><span class="d">Survives the most. Faint texture can show in smooth areas.</span></label>
+        </div>
+      </fieldset>
+
+      <p class="msg bad" id="sealMsg" role="alert" hidden></p>
+      <div class="row"><button type="button" class="btn primary" id="sealBtn" disabled>Embed watermark</button></div>
+
+      <div class="card" id="receipt" hidden aria-live="polite">
+        <div class="stamp ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Embedded</div>
+        <p class="note" id="rNote"></p>
+        <dl class="kv">
+          <dt>Time</dt><dd id="rTime"></dd>
+          <dt>Redundancy</dt><dd id="rRep"></dd>
+        </dl>
+        <ul class="checks" id="checks">
+          <li class="check" data-s="run" id="chk1"><span class="ico"></span><span>Reads back from the saved PNG</span></li>
+          <li class="check" data-s="run" id="chk2"><span class="ico"></span><span>Survives JPEG at quality 70</span></li>
+        </ul>
+        <div class="row">
+          <button type="button" class="btn primary" id="saveBtn">Save watermarked PNG</button>
+          <button type="button" class="btn" id="readThis">Read this image</button>
+        </div>
+        <p class="hint" id="saveHint">Keep the PNG. Sharing it as a JPEG or through apps that shrink pictures can weaken the watermark, though screenshots of it should still read. You can also press and hold the Watermarked preview to save it.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- READ -->
+  <section id="panelRead" role="tabpanel" aria-labelledby="tabRead" class="cols" hidden>
+    <div class="col">
+      <div class="drop" id="drop">
+        <h2>Drop an image to analyse</h2>
+        <p class="hint">Or paste one with Ctrl+V. Resized, cropped and compressed copies are fine.</p>
+        <button type="button" class="btn primary" id="pickRead">Choose image</button>
+      </div>
+      <div class="thumb" id="thumb" hidden><img id="thumbImg" alt="Image being checked"></div>
+      <p class="mono hint" id="thumbMeta" hidden></p>
+    </div>
+
+    <div class="col" id="readOut" aria-live="polite">
+      <div class="card" id="scanCard" hidden>
+        <span class="label">Scanning</span>
+        <div id="scanText">Checking original size…</div>
+        <div class="bar" aria-hidden="true"><div id="scanBar"></div></div>
+        <div class="row"><button type="button" class="btn small" id="scanCancel">Stop</button></div>
+      </div>
+
+      <div class="card" id="foundCard" hidden>
+        <div class="stamp ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Watermark detected</div>
+        <div class="field"><span class="label" id="fLabel">Payload</span><p class="note" id="fNote"></p></div>
+        <dl class="kv">
+          <dt>Embedded</dt><dd id="fTime"></dd>
+          <dt>Signal</dt><dd><div class="meter" id="fMeter" aria-hidden="true"></div><span class="sub mono" id="fSignal" style="display:block;font-size:12.5px;color:var(--ink-2);margin-top:6px"></span></dd>
+          <dt>Image</dt><dd><div class="chips" id="fChips"></div></dd>
+        </dl>
+        <p class="hint">The CRC-32 inside the watermark matches, so this note and time were read exactly as written.</p>
+      </div>
+
+      <div class="card" id="missCard" hidden>
+        <div class="stamp bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>No watermark detected</div>
+        <p id="missText" style="margin:0"></p>
+        <div class="row" id="deepRow">
+          <button type="button" class="btn" id="deepBtn">Search more sizes</button>
+          <span class="hint">Checks about 400 sizes. Can take up to a minute.</span>
+        </div>
+      </div>
+
+      <p class="hint" id="readIdle">Results appear here. The scan tries the image as it is first, then common screenshot sizes.</p>
+    </div>
+  </section>
+
+  <details>
+    <summary>How it works, and what it cannot do</summary>
+    <div class="twocol">
+      <div>
+        <h3>Method</h3>
+        <p>The image is cut into 8 × 8 pixel blocks. Each block stores one bit in the brightness pattern of its two lowest-frequency textures. A 66-byte frame (note, time and a CRC-32 checksum) is spread over a 24 × 22 block tile, and that tile repeats across the picture. A crop still holds every bit, and the reader votes across all the repeats before checking the checksum.</p>
+      </div>
+      <div>
+        <h3>Limits</h3>
+        <p>Rotation, perspective and photographing a screen will usually destroy the watermark. The payload is not encrypted or signed: anyone can extract it with this page, and anyone can overwrite it by re-embedding.  Treat it as a marker, not as proof.</p>
+      </div>
+    </div>
+  </details>
+  <p class="foot">All processing happens in this page. Images are never uploaded.</p>
+</div>
+
+<input type="file" id="fileSeal" accept="image/*" hidden>
+<input type="file" id="fileRead" accept="image/*" hidden>
+
+<script>
+/* Watermark engine
+ * Frame: 66 bytes = [len][time u32 BE][57 text bytes][crc32 u32 BE], XOR-whitened.
+ * Frame bits are scattered over a 24x22 tile of 8x8 blocks; the tile repeats across the image.
+ * Each block stores one bit as the sign of (coef(2,1) - coef(1,2)) of the DCT of its luminance.
+ * Decoder: tries all 64 pixel offsets, accumulates soft votes per tile cell,
+ * then tries all 528 tile phases and accepts the one whose CRC32 matches.
+ */
+(function (root) {
+  'use strict';
+  /* Two layers share every 8x8 block but use different DCT coefficient pairs, so they do not disturb each other.
+   * S = small seals: tiny 16x8-block tile (128x64 px) holding time + short tag, repeated over the WHOLE image.
+   * F = strong seal: full note + time, higher strength, in the centre region (central 60% x 60%). */
+  var SOFT = 20;
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var CRC_T = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(b, len) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < len; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  var B1 = [];
+  for (var u = 0; u < 8; u++) {
+    var row = new Float64Array(8), a0 = u === 0 ? Math.sqrt(1 / 8) : 0.5;
+    for (var x = 0; x < 8; x++) row[x] = a0 * Math.cos(((2 * x + 1) * u * Math.PI) / 16);
+    B1.push(row);
+  }
+
+  // pa / pb = [horizontal u, vertical v] of the two coefficients whose difference carries the bit
+  function mk(tw, th, frame, maxtext, crcn, pa, pb, s1, s2) {
+    var L = { TW: tw, TH: th, NB: tw * th, FRAME: frame, MAXTEXT: maxtext, CRCN: crcn, pa: pa, pb: pb };
+    var r = mulberry32(s1), p = new Uint16Array(L.NB), i, j, t;
+    for (i = 0; i < L.NB; i++) p[i] = i;
+    for (i = L.NB - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = p[i]; p[i] = p[j]; p[j] = t; }
+    L.PERM = p;
+    r = mulberry32(s2); L.KEY = new Uint8Array(frame);
+    for (i = 0; i < frame; i++) L.KEY[i] = Math.floor(r() * 256);
+    L.A = new Float64Array(64); L.B = new Float64Array(64); L.D = new Float64Array(64);
+    for (var y = 0; y < 8; y++) for (var xx = 0; xx < 8; xx++) {
+      var k = y * 8 + xx;
+      L.A[k] = B1[pa[0]][xx] * B1[pa[1]][y]; L.B[k] = B1[pb[0]][xx] * B1[pb[1]][y]; L.D[k] = L.A[k] - L.B[k];
+    }
+    return L;
+  }
+  var F = mk(24, 22, 66, 57, 4, [2, 0], [0, 2], 0x5EEDC0DE, 0xA11CE5);
+  var S = mk(16, 8, 16, 8, 3, [2, 1], [1, 2], 0x1CEB00DA, 0xBEEF123);
+
+  function encodeFrame(L, text, timeSec) {
+    var enc = new TextEncoder().encode(String(text));
+    var cut = Math.min(enc.length, L.MAXTEXT);
+    while (cut > 0 && cut < enc.length && (enc[cut] & 0xC0) === 0x80) cut--;
+    var f = new Uint8Array(L.FRAME), t = Math.floor(timeSec) >>> 0, i;
+    f[0] = cut;
+    f[1] = (t >>> 24) & 255; f[2] = (t >>> 16) & 255; f[3] = (t >>> 8) & 255; f[4] = t & 255;
+    f.set(enc.subarray(0, cut), 5);
+    var c = crc32(f, L.FRAME - L.CRCN);
+    for (i = 0; i < L.CRCN; i++) f[L.FRAME - L.CRCN + i] = (c >>> (8 * (3 - i))) & 255;
+    for (i = 0; i < L.FRAME; i++) f[i] ^= L.KEY[i];
+    return { bytes: f };
+  }
+  function byteLength(text) { return new TextEncoder().encode(String(text)).length; }
+
+  /** Embed one layer in place. reg = block rectangle {x0,y0,x1,y1} or null for the whole image. */
+  function embedLayer(rgba, w, h, L, text, timeSec, M, reg) {
+    var fr = encodeFrame(L, text, timeSec).bytes, tb = new Uint8Array(L.NB), i;
+    for (i = 0; i < L.NB; i++) { var pos = L.PERM[i]; tb[i] = (fr[pos >> 3] >> (7 - (pos & 7))) & 1; }
+    var nbx = Math.floor(w / 8), nby = Math.floor(h / 8);
+    var bx0 = reg ? reg.x0 : 0, by0 = reg ? reg.y0 : 0, bx1 = reg ? reg.x1 : nbx, by1 = reg ? reg.y1 : nby;
+    var DMAX = 4 * M, embedded = 0;
+    for (var by = by0; by < by1; by++) {
+      for (var bx = bx0; bx < bx1; bx++) {
+        var ca = 0, cb = 0, k = 0;
+        for (var y = 0; y < 8; y++) {
+          var p = ((by * 8 + y) * w + bx * 8) * 4;
+          for (var x = 0; x < 8; x++, k++, p += 4) {
+            var l = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+            ca += l * L.A[k]; cb += l * L.B[k];
+          }
+        }
+        var s = tb[(by % L.TH) * L.TW + (bx % L.TW)] ? 1 : -1;
+        var d = ca - cb, need = s * d;
+        if (need >= M) { embedded++; continue; }
+        if (need < -DMAX) continue;
+        var half = (s * M - d) / 2;
+        k = 0;
+        for (var y2 = 0; y2 < 8; y2++) {
+          var q = ((by * 8 + y2) * w + bx * 8) * 4;
+          for (var x2 = 0; x2 < 8; x2++, k++, q += 4) {
+            var v = half * L.D[k];
+            rgba[q] += v; rgba[q + 1] += v; rgba[q + 2] += v;
+          }
+        }
+        embedded++;
+      }
+    }
+    return (bx1 - bx0) * (by1 - by0);
+  }
+
+  /** note = full text for the strong centre seal, tag = short text for the small seals everywhere. */
+  function embed(rgba, w, h, note, tag, timeSec, M) {
+    var blocks = embedLayer(rgba, w, h, S, tag, timeSec, M, null);
+    var nbx = Math.floor(w / 8), nby = Math.floor(h / 8), center = false;
+    if (nbx >= F.TW && nby >= F.TH) {
+      var rw = Math.min(nbx, Math.max(F.TW, Math.round(nbx * 0.6))), rh = Math.min(nby, Math.max(F.TH, Math.round(nby * 0.6)));
+      var x0 = (nbx - rw) >> 1, y0 = (nby - rh) >> 1;
+      embedLayer(rgba, w, h, F, note, timeSec, Math.round(M * 1.6), { x0: x0, y0: y0, x1: x0 + rw, y1: y0 + rh });
+      center = true;
+    }
+    return { repeats: blocks / S.NB, center: center };
+  }
+
+  function maxRepeats(w, h) { return (Math.floor(w / 8) * Math.floor(h / 8)) / S.NB; }
+
+  function decodeAcc(acc, cnt, L) {
+    var NB = L.NB, TW = L.TW, TH = L.TH, FR = L.FRAME, CN = L.CRCN, bytes = new Uint8Array(FR), best = null;
+    for (var o = 0; o < 64; o++) {
+      var ob = o * NB;
+      for (var dy = 0; dy < TH; dy++) for (var dx = 0; dx < TW; dx++) {
+        bytes.fill(0);
+        for (var cy = 0; cy < TH; cy++) {
+          var ty = (cy + dy) % TH;
+          for (var cx = 0; cx < TW; cx++) {
+            if (acc[ob + cy * TW + cx] > 0) { var pos = L.PERM[ty * TW + (cx + dx) % TW]; bytes[pos >> 3] |= 128 >> (pos & 7); }
+          }
+        }
+        var len = bytes[0] ^ L.KEY[0];
+        if (len > L.MAXTEXT) continue;
+        for (var q = 1; q < FR; q++) bytes[q] ^= L.KEY[q];
+        bytes[0] = len;
+        var crc = crc32(bytes, FR - CN) >>> (8 * (4 - CN)), want = 0;
+        for (var i = 0; i < CN; i++) want = want * 256 + bytes[FR - CN + i];
+        if (crc !== want) continue;
+        var time = ((bytes[1] << 24) | (bytes[2] << 16) | (bytes[3] << 8) | bytes[4]) >>> 0;
+        var text = new TextDecoder().decode(bytes.subarray(5, 5 + len));
+        var fr = encodeFrame(L, text, time).bytes, sum = 0, tot = 0;
+        for (var c2 = 0; c2 < TH; c2++) for (var c3 = 0; c3 < TW; c3++) {
+          var p3 = L.PERM[((c2 + dy) % TH) * TW + (c3 + dx) % TW], bit = (fr[p3 >> 3] >> (7 - (p3 & 7))) & 1, ci = ob + c2 * TW + c3;
+          sum += (bit ? 1 : -1) * acc[ci]; tot += cnt[ci];
+        }
+        var strength = tot ? Math.max(0, sum / tot) : 0;
+        if (!best || strength > best.strength) best = { text: text, time: time, strength: strength, offset: [o & 7, o >> 3], phase: [dx, dy] };
+      }
+    }
+    return best;
+  }
+
+  /** Vote over the pixel window [wx0,wx1) x [wy0,wy1) of a grayscale image and try to decode layer L. */
+  function scan(gray, w, L, wx0, wy0, wx1, wy1) {
+    var NB = L.NB, TW = L.TW, TH = L.TH, acc = new Float32Array(64 * NB), cnt = new Float32Array(64 * NB);
+    var Va = new Float32Array(w), Vb = new Float32Array(w);
+    var bua = B1[L.pa[0]], bva = B1[L.pa[1]], bub = B1[L.pb[0]], bvb = B1[L.pb[1]], x, k;
+    for (var y0 = wy0; y0 + 8 <= wy1; y0++) {
+      var oy = (y0 - wy0) & 7, cy = ((y0 - wy0) >> 3) % TH;
+      for (x = wx0; x < wx1; x++) { Va[x] = 0; Vb[x] = 0; }
+      for (var yy = 0; yy < 8; yy++) {
+        var base = (y0 + yy) * w, c1 = bva[yy], c2 = bvb[yy];
+        for (x = wx0; x < wx1; x++) { var g = gray[base + x]; Va[x] += c1 * g; Vb[x] += c2 * g; }
+      }
+      for (var ox = 0; ox < 8; ox++) {
+        var ab = (oy * 8 + ox) * NB;
+        for (var bx = 0, xs = wx0 + ox; xs + 8 <= wx1; bx++, xs += 8) {
+          var ca = 0, cb = 0;
+          for (k = 0; k < 8; k++) { ca += bua[k] * Va[xs + k]; cb += bub[k] * Vb[xs + k]; }
+          var sv = (ca - cb) / SOFT; if (sv > 1) sv = 1; else if (sv < -1) sv = -1;
+          var cell = ab + cy * TW + (bx % TW);
+          acc[cell] += sv; cnt[cell] += 1;
+        }
+      }
+    }
+    return decodeAcc(acc, cnt, L);
+  }
+
+  // Windows (fractions of the image) tried for the strong seal: centre first, then halves and quarters for off-centre crops.
+  var WINS = [[.25, .25, .75, .75], [.15, .15, .85, .85], [0, 0, 1, 1], [.35, .35, .65, .65],
+    [0, 0, .5, 1], [.5, 0, 1, 1], [0, 0, 1, .5], [0, .5, 1, 1], [0, 0, .5, .5], [.5, 0, 1, .5], [0, .5, .5, 1], [.5, .5, 1, 1]];
+
+  /** Returns {found,text,time,strength,full,...}. full=true means the strong centre seal (whole note) was read. */
+  function extract(rgba, w, h) {
+    var repeats = maxRepeats(w, h);
+    if (w < 16 || h < 16 || repeats < 1) return { found: false, repeats: repeats, tooSmall: true };
+    var gray = new Uint8Array(w * h), n = w * h, i;
+    for (i = 0; i < n; i++) gray[i] = (299 * rgba[i * 4] + 587 * rgba[i * 4 + 1] + 114 * rgba[i * 4 + 2] + 500) / 1000;
+    var s = scan(gray, w, S, 0, 0, w, h);
+    if (!s) return { found: false, repeats: repeats };
+    var res = { found: true, full: false, text: s.text, time: s.time, strength: s.strength, repeats: repeats, offset: s.offset, phase: s.phase };
+    var minW = F.TW * 8 + 8, minH = F.TH * 8 + 8;
+    for (i = 0; i < WINS.length; i++) {
+      var W = WINS[i], x0 = Math.round(W[0] * w), y0 = Math.round(W[1] * h), x1 = Math.round(W[2] * w), y1 = Math.round(W[3] * h);
+      if (x1 - x0 < minW || y1 - y0 < minH) continue;
+      var f = scan(gray, w, F, x0, y0, x1, y1);
+      if (f) { res.full = true; res.text = f.text; res.time = f.time; break; }
+    }
+    return res;
+  }
+
+  var api = { embed: embed, extract: extract, maxRepeats: maxRepeats, byteLength: byteLength, MAXTEXT: F.MAXTEXT, TAGMAX: S.MAXTEXT, NB: S.NB };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.WM = api;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var MAX_EMBED_PX = 16e6, MAX_SCAN_PX = 24e6;
+  var MAXB = WM.MAXTEXT;
+  var $ = function (id) { return document.getElementById(id); };
+  var frame = function () { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); }); };
+  var capDownloads = (window.claude && window.claude.use) ? window.claude.use('downloads').catch(function () { return null; }) : Promise.resolve(null);
+
+  var state = { tab: 'seal', src: null, origUrl: null, sealCanvas: null, sealBlob: null, sealUrl: null, sealText: '', view: 'sealed', busy: false };
+  var scanToken = 0, thumbUrl = null;
+
+  /* ---------- helpers ---------- */
+  function fmtLocal(ts) {
+    try {
+      return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }).format(new Date(ts * 1000));
+    } catch (e) { return new Date(ts * 1000).toString(); }
+  }
+  function fmtUTC(ts) { return new Date(ts * 1000).toISOString().replace('T', ' ').replace('.000Z', ' UTC'); }
+  function fmtAgo(ts) {
+    var s = Math.round(Date.now() / 1000 - ts);
+    if (s < -90) return 'later than this device’s clock';
+    var a = Math.abs(s), u, n;
+    if (a < 60) return 'just now';
+    if (a < 3600) { n = Math.round(a / 60); u = 'minute'; }
+    else if (a < 86400) { n = Math.round(a / 3600); u = 'hour'; }
+    else if (a < 86400 * 60) { n = Math.round(a / 86400); u = 'day'; }
+    else if (a < 86400 * 730) { n = Math.round(a / (86400 * 30.4)); u = 'month'; }
+    else { n = Math.round(a / (86400 * 365.25)); u = 'year'; }
+    return n + ' ' + u + (n === 1 ? '' : 's') + ' ago';
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function toBlob(canvas, type, q) { return new Promise(function (res) { canvas.toBlob(res, type, q); }); }
+
+  async function loadCanvas(blob, maxPx) {
+    var url = URL.createObjectURL(blob);
+    try {
+      var img = new Image(); img.src = url; await img.decode();
+      var nw = img.naturalWidth, nh = img.naturalHeight, w = nw, h = nh, scaled = false;
+      if (w * h > maxPx) { var k = Math.sqrt(maxPx / (w * h)); w = Math.floor(w * k); h = Math.floor(h * k); scaled = true; }
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d', { willReadFrequently: true });
+      x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, w, h);
+      return { canvas: c, w: w, h: h, scaled: scaled, nw: nw, nh: nh };
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  function makeSample() {
+    var w = 1200, h = 800, c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d', { willReadFrequently: true });
+    var g = x.createLinearGradient(0, 0, 0, h * 0.66);
+    g.addColorStop(0, '#1d2b64'); g.addColorStop(0.5, '#c9506f'); g.addColorStop(1, '#f7b868');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    var sun = x.createRadialGradient(840, 430, 10, 840, 430, 150);
+    sun.addColorStop(0, 'rgba(255,244,214,1)'); sun.addColorStop(0.35, 'rgba(255,214,150,.9)'); sun.addColorStop(1, 'rgba(255,190,120,0)');
+    x.fillStyle = sun; x.fillRect(600, 200, 480, 480);
+    var layers = [['#6b3b63', 470, 38, 0.006, 1.1], ['#4a2a55', 540, 46, 0.008, 2.3], ['#2b1d45', 620, 52, 0.011, 4.1], ['#150f2b', 710, 40, 0.014, 5.7]];
+    layers.forEach(function (L) {
+      x.beginPath(); x.moveTo(0, h);
+      for (var i = 0; i <= w; i += 8) x.lineTo(i, L[1] + Math.sin(i * L[3] + L[4]) * L[2] + Math.sin(i * L[3] * 2.7 + L[4] * 2) * L[2] * 0.35);
+      x.lineTo(w, h); x.closePath(); x.fillStyle = L[0]; x.fill();
+    });
+    var id = x.getImageData(0, 0, w, h), d = id.data, s = 12345;
+    for (var i = 0; i < d.length; i += 4) {
+      s = (Math.imul(s, 1664525) + 1013904223) | 0;
+      var n = ((s >>> 24) - 128) / 128 * 6;
+      d[i] += n; d[i + 1] += n; d[i + 2] += n;
+    }
+    x.putImageData(id, 0, 0);
+    return c;
+  }
+
+  /* ---------- tabs ---------- */
+  function setTab(t) {
+    state.tab = t;
+    var seal = t === 'seal';
+    $('tabSeal').setAttribute('aria-selected', seal); $('tabSeal').tabIndex = seal ? 0 : -1;
+    $('tabRead').setAttribute('aria-selected', !seal); $('tabRead').tabIndex = seal ? -1 : 0;
+    $('panelSeal').hidden = !seal; $('panelRead').hidden = seal;
+    try { history.replaceState(null, '', seal ? '#seal' : '#read'); } catch (e) { /* ignored */ }
+  }
+  $('tabSeal').addEventListener('click', function () { setTab('seal'); });
+  $('tabRead').addEventListener('click', function () { setTab('read'); });
+  document.querySelector('.tabs').addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var t = state.tab === 'seal' ? 'read' : 'seal'; setTab(t); $(t === 'seal' ? 'tabSeal' : 'tabRead').focus(); }
+  });
+
+  /* ---------- SEAL tab ---------- */
+  function clampNote() {
+    var inp = $('note'), v = inp.value;
+    while (WM.byteLength(v) > MAXB) v = v.slice(0, -1);
+    if (v !== inp.value) inp.value = v;
+    var n = WM.byteLength(v);
+    $('count').textContent = n + ' / ' + MAXB + ' bytes';
+    $('count').classList.toggle('over', n >= MAXB);
+    return v;
+  }
+  function clampTag() {
+    var i = $('tag'), v = i.value;
+    while (WM.byteLength(v) > WM.TAGMAX) v = v.slice(0, -1);
+    if (v !== i.value) i.value = v;
+    $('tagCount').textContent = WM.byteLength(v) + ' / ' + WM.TAGMAX + ' bytes';
+    return v;
+  }
+  function tickClock() { $('clock').textContent = fmtLocal(Date.now() / 1000); }
+
+  function showSealMsg(t) { var m = $('sealMsg'); m.textContent = t || ''; m.hidden = !t; }
+
+  function revokeSeal() {
+    if (state.sealUrl) URL.revokeObjectURL(state.sealUrl);
+    state.sealUrl = null; state.sealBlob = null; state.sealCanvas = null;
+  }
+  function invalidateSeal() {
+    revokeSeal();
+    $('receipt').hidden = true; $('viewSeg').hidden = true; $('patNote').hidden = true; $('dropHint').hidden = false;
+    state.view = 'orig'; renderView();
+  }
+
+  function renderView() {
+    var s = state.src, img = $('viewImg'), pat = $('viewPat'), tag = $('viewTag');
+    if (!s) return;
+    var hasSeal = !!state.sealCanvas;
+    if (!hasSeal) state.view = 'orig';
+    $('viewSeg').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === state.view); });
+    $('patNote').hidden = state.view !== 'pattern';
+    $('dropHint').hidden = hasSeal;
+    if (state.view === 'pattern') {
+      drawPattern(); img.hidden = true; pat.hidden = false; tag.textContent = 'Pattern ×8';
+    } else {
+      pat.hidden = true; img.hidden = false;
+      var url = state.view === 'sealed' ? state.sealUrl : state.origUrl;
+      if (img.getAttribute('src') !== url) img.src = url;
+      tag.textContent = state.view === 'sealed' ? 'Watermarked' : (s.sample ? 'Sample image' : 'Original');
+      img.alt = state.view === 'sealed' ? 'Watermarked image' : 'Source image';
+    }
+  }
+
+  function drawPattern() {
+    var s = state.src, cw = Math.min(280, s.w), ch = Math.min(210, s.h);
+    var x0 = Math.floor((s.w - cw) / 2), y0 = Math.floor((s.h - ch) / 2);
+    var a = s.canvas.getContext('2d').getImageData(x0, y0, cw, ch).data;
+    var b = state.sealCanvas.getContext('2d').getImageData(x0, y0, cw, ch).data;
+    var out = new ImageData(cw, ch), o = out.data;
+    for (var i = 0; i < o.length; i += 4) {
+      var dlt = ((b[i] - a[i]) + (b[i + 1] - a[i + 1]) + (b[i + 2] - a[i + 2])) / 3;
+      var v = 128 + dlt * 8; v = v < 0 ? 0 : v > 255 ? 255 : v;
+      o[i] = o[i + 1] = o[i + 2] = v; o[i + 3] = 255;
+    }
+    var pc = $('viewPat'); pc.width = cw; pc.height = ch; pc.getContext('2d').putImageData(out, 0, 0);
+  }
+
+  async function setSource(blob, name, isSample) {
+    showSealMsg('');
+    try {
+      var r = await loadCanvas(blob, MAX_EMBED_PX);
+      if (state.origUrl) URL.revokeObjectURL(state.origUrl);
+      revokeSeal();
+      state.src = { canvas: r.canvas, w: r.w, h: r.h, name: name, sample: !!isSample, scaled: r.scaled, nw: r.nw, nh: r.nh };
+      state.origUrl = URL.createObjectURL(blob);
+      $('receipt').hidden = true; $('viewSeg').hidden = true;
+      state.view = 'orig'; renderView();
+      var rep = WM.maxRepeats(r.w, r.h);
+      var meta = r.w + ' × ' + r.h + ' px · room for ' + (rep < 10 ? rep.toFixed(1) : Math.floor(rep)) + '× repeats' + (isSample ? ' · sample' : '');
+      $('stageMeta').textContent = meta;
+      if (r.scaled) showSealMsg('This image was reduced from ' + r.nw + ' × ' + r.nh + ' to ' + r.w + ' × ' + r.h + ' px to fit browser limits.');
+      else if (rep < 2) showSealMsg('This image is too small to hold a watermark. Use one at least about 160 × 160 px.');
+      else if (rep < 6) showSealMsg('This is a small image, so the watermark has few repeats and may not survive heavy editing.');
+      $('sealBtn').disabled = rep < 2;
+    } catch (e) {
+      showSealMsg('That file could not be opened as an image.');
+    }
+  }
+
+  async function doSeal() {
+    if (state.busy || !state.src) return;
+    var text = clampNote();
+    if (!text.trim()) { showSealMsg('Write a note to hide first.'); $('note').focus(); return; }
+    showSealMsg(''); state.busy = true;
+    var btn = $('sealBtn'), M = +document.querySelector('input[name="str"]:checked').value;
+    btn.disabled = true; btn.textContent = 'Embedding…';
+    await frame();
+    try {
+      var s = state.src, ctx = s.canvas.getContext('2d');
+      var id = ctx.getImageData(0, 0, s.w, s.h);
+      var t = Math.floor(Date.now() / 1000);
+      var stats = WM.embed(id.data, s.w, s.h, text, ($('tag').value.trim() || text), t, M); state.center = stats.center;
+      var out = document.createElement('canvas'); out.width = s.w; out.height = s.h;
+      out.getContext('2d', { willReadFrequently: true }).putImageData(id, 0, 0);
+      var blob = await toBlob(out, 'image/png');
+      if (!blob) throw new Error('png');
+      revokeSeal();
+      state.sealCanvas = out; state.sealBlob = blob; state.sealUrl = URL.createObjectURL(blob); state.sealText = text;
+      state.view = 'sealed'; renderView();
+      $('viewSeg').hidden = false;
+      $('rNote').textContent = text;
+      var tm = el('span', null, fmtLocal(t)); var sub = el('span', 'sub', fmtUTC(t)); $('rTime').replaceChildren(tm, sub);
+      $('rRep').textContent = (stats.repeats < 10 ? stats.repeats.toFixed(1) : Math.floor(stats.repeats)) + ' micro-marks across the image' + (stats.center ? ', plus a high-amplitude full-payload block in the centre' : ' (image too small for the centre block)');
+      setCheck('chk1', 'run'); setCheck('chk2', 'run');
+      $('receipt').hidden = false;
+      $('receipt').scrollIntoView({ block: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      selfTest(id.data, s.w, s.h, out, text, M);
+    } catch (e) {
+      showSealMsg('Embedding failed. Try a smaller image.');
+    } finally {
+      state.busy = false; btn.disabled = false; btn.textContent = 'Embed watermark';
+    }
+  }
+
+  function setCheck(id, st, why) {
+    var li = $(id); li.dataset.s = st;
+    var ico = li.querySelector('.ico');
+    var old = li.querySelector('.why'); if (old) old.remove();
+    ico.innerHTML = st === 'ok' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>'
+      : st === 'bad' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' : '';
+    if (why) { var w = el('span', 'why', why); li.lastElementChild.appendChild(w); }
+  }
+
+  async function selfTest(data, w, h, canvas, text, M) {
+    var mine = state.sealBlob;
+    await frame();
+    var r1 = WM.extract(data, w, h);
+    if (mine !== state.sealBlob) return;
+    var ok1 = r1.found && (!state.center || (r1.full && r1.text === text));
+    setCheck('chk1', ok1 ? 'ok' : 'bad', ok1 ? '' : 'The watermark could not be read back. Try Strong, or a larger image.');
+    try {
+      var jb = await toBlob(canvas, 'image/jpeg', 0.7);
+      var bmp = await createImageBitmap(jb);
+      var c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+      var x2 = c2.getContext('2d', { willReadFrequently: true }); x2.drawImage(bmp, 0, 0);
+      if (bmp.close) bmp.close();
+      await frame();
+      var r2 = WM.extract(x2.getImageData(0, 0, w, h).data, w, h);
+      if (mine !== state.sealBlob) return;
+      var ok = r2.found;
+      setCheck('chk2', ok ? 'ok' : 'bad', ok ? ((state.center && !r2.full) ? 'Micro-marks survive; the centre block did not.' : '') : (M < 44 ? 'Not at this strength. Choose a stronger setting and embed again.' : 'Not at this strength. A larger image holds more repeats.'));
+    } catch (e) {
+      if (mine === state.sealBlob) setCheck('chk2', 'bad', 'The browser could not run this test.');
+    }
+  }
+
+  async function saveSealed() {
+    if (!state.sealBlob) return;
+    var base = state.src.sample ? 'tracemark-sample' : (state.src.name || 'image').replace(/\.[^.]+$/, '').slice(0, 80) + '-watermarked';
+    var dl = await capDownloads;
+    if (!dl) {
+      var a = document.createElement('a');
+      a.href = state.sealUrl; a.download = base + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      showSealMsg('');
+      return;
+    }
+    try { await dl.save({ filename: base + '.png', data: state.sealBlob }); showSealMsg(''); }
+    catch (e) {
+      if (e && e.code === 'declined') return;
+      showSealMsg('The file could not be saved from this page. Press and hold (or right-click) the Watermarked preview and choose Save image.');
+    }
+  }
+
+  $('note').addEventListener('input', function () { clampNote(); if (state.sealCanvas) invalidateSeal(); });
+  document.querySelectorAll('input[name="str"]').forEach(function (r) { r.addEventListener('change', function () { if (state.sealCanvas) invalidateSeal(); }); });
+  $('tag').addEventListener('input', function () { clampTag(); if (state.sealCanvas) invalidateSeal(); });
+  $('sealBtn').addEventListener('click', doSeal);
+  $('saveBtn').addEventListener('click', saveSealed);
+  $('pickSeal').addEventListener('click', function () { $('fileSeal').click(); });
+  $('fileSeal').addEventListener('change', function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) setSource(f, f.name, false); });
+  $('viewSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; state.view = b.dataset.view; renderView(); });
+  $('readThis').addEventListener('click', function () { if (state.sealBlob) { setTab('read'); readBlob(state.sealBlob, 'sealed image'); } });
+
+  /* ---------- drag and drop, paste ---------- */
+  function wireDrop(node, handler) {
+    ['dragenter', 'dragover'].forEach(function (ev) { node.addEventListener(ev, function (e) { e.preventDefault(); node.classList.add('drag'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { node.addEventListener(ev, function (e) { e.preventDefault(); node.classList.remove('drag'); }); });
+    node.addEventListener('drop', function (e) {
+      var f = Array.prototype.find.call(e.dataTransfer.files || [], function (f) { return /^image\//.test(f.type); });
+      if (f) handler(f, f.name);
+    });
+  }
+  wireDrop($('stage'), function (f, n) { setSource(f, n, false); });
+  wireDrop($('drop'), function (f, n) { readBlob(f, n); });
+  document.addEventListener('paste', function (e) {
+    var f = Array.prototype.find.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); });
+    if (!f) return;
+    e.preventDefault();
+    if (state.tab === 'seal') setSource(f, 'pasted-image', false); else readBlob(f, 'pasted image');
+  });
+
+  /* ---------- READ tab ---------- */
+  var COMMON = [2, 0.5, 4 / 3, 0.75, 1.5, 2 / 3, 3, 1 / 3, 1.25, 0.8, 1.2, 0.6, 2.5, 0.4, 4, 0.25];
+
+  function show(card) {
+    ['scanCard', 'foundCard', 'missCard'].forEach(function (id) { $(id).hidden = id !== card; });
+    $('readIdle').hidden = !!card;
+  }
+
+  async function readBlob(blob, name) {
+    var token = ++scanToken;
+    try {
+      var r = await loadCanvas(blob, MAX_SCAN_PX);
+      if (token !== scanToken) return;
+      if (thumbUrl) URL.revokeObjectURL(thumbUrl);
+      thumbUrl = URL.createObjectURL(blob);
+      $('thumbImg').src = thumbUrl; $('thumb').hidden = false;
+      $('thumbMeta').hidden = false; $('thumbMeta').textContent = (name || 'image') + ' · ' + r.nw + ' × ' + r.nh + ' px';
+      $('drop').style.minHeight = '0';
+      runScan(r.canvas, token, false);
+    } catch (e) {
+      show('missCard'); $('missText').textContent = 'That file could not be opened as an image.'; $('deepRow').hidden = true;
+    }
+  }
+
+  async function extractAt(canvas, s) {
+    var w = Math.round(canvas.width * s), h = Math.round(canvas.height * s);
+    if (w < 48 || h < 48 || w * h > MAX_SCAN_PX) return null;
+    var id;
+    if (s === 1) id = canvas.getContext('2d').getImageData(0, 0, w, h);
+    else {
+      var t = document.createElement('canvas'); t.width = w; t.height = h;
+      var x = t.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high'; x.drawImage(canvas, 0, 0, w, h);
+      id = x.getImageData(0, 0, w, h);
+    }
+    return WM.extract(id.data, w, h);
+  }
+
+  function fmtScale(s) { return s >= 1 ? '×' + (Math.round(s * 100) / 100) : '÷' + (Math.round(100 / s) / 100); }
+
+  async function runScan(canvas, token, deep) {
+    show('scanCard');
+    var bar = $('scanBar'), txt = $('scanText');
+    var list = deep ? [] : [1].concat(COMMON), i;
+    if (deep) {
+      var seen = [1].concat(COMMON), step = 1.007, cand = [];
+      for (i = 1; Math.pow(step, i) <= 4.0; i++) cand.push(Math.pow(step, i));
+      for (i = 1; Math.pow(step, -i) >= 0.25; i++) cand.push(Math.pow(step, -i));
+      cand.sort(function (a, b) { return Math.abs(Math.log(a)) - Math.abs(Math.log(b)); });
+      list = cand.filter(function (s) { return !seen.some(function (c) { return Math.abs(Math.log(s / c)) < 0.003; }); });
+    }
+    var tooSmall = false;
+    for (i = 0; i < list.length; i++) {
+      if (token !== scanToken) return;
+      var s = list[i];
+      txt.textContent = deep ? ('Trying sizes: ' + (i + 1) + ' of ' + list.length + ' (' + fmtScale(s) + ')')
+        : (i === 0 ? 'Checking the image as it is…' : 'Trying a resized copy ' + i + ' of ' + (list.length - 1) + ' (' + fmtScale(s) + ')…');
+      bar.style.width = Math.round((i / list.length) * 100) + '%';
+      await frame();
+      if (token !== scanToken) return;
+      var r = await extractAt(canvas, s);
+      if (r && r.tooSmall && s === 1) tooSmall = true;
+      if (r && r.found) { showFound(r, s, canvas); return; }
+      if (tooSmall) break;
+    }
+    if (token !== scanToken) return;
+    showMiss(tooSmall, deep, canvas);
+  }
+
+  function showFound(r, s, canvas) {
+    show('foundCard');
+    $('fNote').textContent = r.text || '(empty note)'; $('fLabel').textContent = r.full ? 'Payload' : 'Short tag';
+    var main = el('span', null, fmtLocal(r.time)), u = el('span', 'sub', fmtUTC(r.time) + ' · ' + fmtAgo(r.time));
+    $('fTime').replaceChildren(main, u);
+    var n = Math.max(1, Math.round(r.strength * 10)), m = $('fMeter'); m.replaceChildren();
+    for (var i = 0; i < 10; i++) m.appendChild(el('i', i < n ? 'on' : ''));
+    $('fSignal').textContent = Math.round(r.strength * 100) + '% · ' + (r.strength > 0.8 ? 'strong, pixels barely changed' : r.strength > 0.45 ? 'fair, the image was altered' : 'weak, but the checksum still matches');
+    var chips = $('fChips'); chips.replaceChildren();
+    var altered = false;
+    if (Math.abs(s - 1) > 1e-6) { chips.appendChild(el('span', 'chip', 'Resized to about ' + Math.round(100 / s) + '% of the original size')); altered = true; }
+    if (r.offset[0] || r.offset[1] || r.phase[0] || r.phase[1]) { chips.appendChild(el('span', 'chip', 'Cropped or shifted')); altered = true; }
+    if (r.strength <= 0.8) { chips.appendChild(el('span', 'chip', 'Compressed or edited')); altered = true; }
+    chips.appendChild(el('span', 'chip', r.full ? 'Centre payload block read' : 'Micro-mark only, full payload not found'));
+    if (!altered) chips.appendChild(el('span', 'chip', 'Pixels unchanged'));
+    chips.appendChild(el('span', 'chip', canvas.width + ' × ' + canvas.height + ' px'));
+  }
+
+  function showMiss(tooSmall, deepDone, canvas) {
+    show('missCard');
+    var t = $('missText');
+    if (tooSmall) { t.textContent = 'This image is too small to hold a full watermark. It needs to be at least about 150 × 100 px.'; $('deepRow').hidden = true; return; }
+    t.textContent = deepDone
+      ? 'Nothing matched at any size tried. The image was probably never watermarked with this page, or it was changed too much: rotated, photographed from a screen, or compressed very hard.'
+      : 'Nothing matched at the original size or the common screenshot sizes. The image may not be watermarked, or it was resized by an unusual amount.';
+    $('deepRow').hidden = !!deepDone;
+    $('deepBtn').onclick = function () { var tk = ++scanToken; runScan(canvas, tk, true); };
+  }
+
+  $('scanCancel').addEventListener('click', function () {
+    scanToken++;
+    show('missCard'); $('missText').textContent = 'Scan stopped.'; $('deepRow').hidden = true;
+  });
+  $('pickRead').addEventListener('click', function () { $('fileRead').click(); });
+  $('fileRead').addEventListener('change', function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) readBlob(f, f.name); });
+
+  /* ---------- start ---------- */
+  clampNote(); clampTag(); tickClock(); setInterval(tickClock, 1000);
+  if (location.hash === '#read') setTab('read');
+  var sample = makeSample();
+  toBlob(sample, 'image/png').then(function (b) { return setSource(b, 'sample', true); });
+})();
+</script>
+</body>
+</html>

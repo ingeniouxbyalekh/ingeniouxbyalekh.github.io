@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NextPrint</title>
+<meta name="description" content="Fast, Convenient & High-Quality Printing">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- simple mobile-first home screen, scoped to this page ---- */
+  body.home-simple {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .home-wrap {
+    width: 100%;
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 28px 20px 40px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .home-brand {
+    text-align: center;
+    margin-bottom: 22px;
+  }
+  .home-brand .logo {
+    font-size: 1.5rem;
+  }
+  .home-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .tile {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 14px;
+    text-align: center;
+  }
+  .tile-full {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    gap: 12px;
+  }
+  .tile-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .tile-full .tile-icon {
+    margin-bottom: 0;
+  }
+  .tile-label {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .tile-value {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink);
+  }
+  .tile-price .tile-value {
+    font-size: 1.4rem;
+  }
+  .tile-price .tile-value span {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    font-family: "IBM Plex Sans", sans-serif;
+  }
+  .tile-dnd {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+    grid-column: 1 / -1;
+  }
+  .tile-dnd .tile-label { color: #cfcfcf; }
+  .tile-dnd .tile-value { color: #fff; }
+
+  .home-cta {
+    margin-top: 14px;
+  }
+  .home-cta .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 16px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+  }
+  .home-fine {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body class="home-simple" data-page="index">
+
+<div class="home-wrap">
+
+  <div class="home-brand">
+    <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+  </div>
+
+  <div class="home-tiles">
+    <div class="tile tile-price">
+      <span class="tile-icon">⚫</span>
+      <div class="tile-label">Black &amp; White</div>
+      <div class="tile-value">₹4 <span>/ page</span></div>
+    </div>
+    <div class="tile tile-price">
+      <span class="tile-icon">🎨</span>
+      <div class="tile-label">Colour</div>
+      <div class="tile-value">₹7 <span>/ page</span></div>
+    </div>
+
+    <div class="tile tile-full">
+      <span class="tile-icon">📍</span>
+      <div>
+        <div class="tile-label">Print available at</div>
+        <div class="tile-value">Room No. 136</div>
+      </div>
+    </div>
+
+    <div class="tile tile-full">
+      <span class="tile-icon">🕘</span>
+      <div>
+        <div class="tile-label">Print time</div>
+        <div class="tile-value">9 PM – 11 PM</div>
+      </div>
+    </div>
+
+    <div class="tile tile-dnd">
+      <span class="tile-icon">🔕</span>
+      <div>
+        <div class="tile-label">Outside this time</div>
+        <div class="tile-value">Do not disturb</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="home-cta">
+    <a href="upload.html" class="btn btn-primary">Upload Files</a>
+  </div>
+
+  <p class="home-fine">© <span id="year"></span> NextPrint</p>
+</div>
+
+<script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script src="analytics.js"></script>
+</body>
+</html>
