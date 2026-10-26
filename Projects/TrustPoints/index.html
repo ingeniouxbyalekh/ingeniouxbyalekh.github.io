@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in to TrustPoints</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  :root {
+    --ink: #120f36;
+    --violet: #2b1a5f;
+    --paper: #f6f4ff;
+    --text: #ece9ff;
+    --muted: #a9a3d6;
+    --green: #4ade80;
+    --red: #f87171;
+    --edge: rgba(255, 255, 255, 0.14);
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  [hidden] { display: none !important; }
+
+  /* Rings: the page's one decoration. Trust spreading outward from the code. */
+  .rings {
+    position: fixed;
+    right: -22vmin;
+    top: 50%;
+    width: 120vmin;
+    height: 120vmin;
+    transform: translateY(-50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .rings circle { fill: none; stroke: rgba(255, 255, 255, 0.06); stroke-width: 1; }
+  .rings circle:nth-child(1) { stroke: rgba(74, 222, 128, 0.18); }
+
+  main {
+    position: relative;
+    z-index: 1;
+    min-height: 100dvh;
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: clamp(32px, 6vw, 96px);
+    align-items: center;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: clamp(24px, 5vw, 64px);
+  }
+
+  /* ---------- left: words ---------- */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: 0.01em;
+    margin-bottom: clamp(28px, 6vh, 64px);
+  }
+  .brand-mark {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--green);
+    display: grid; place-items: center;
+  }
+  .brand-mark svg { width: 20px; height: 20px; }
+
+  h1 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(38px, 5.6vw, 66px);
+    line-height: 1.02;
+    letter-spacing: -0.02em;
+    margin: 0 0 20px;
+    max-width: 11ch;
+  }
+  .lead { color: var(--muted); max-width: 40ch; margin: 0 0 32px; }
+
+  ol.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; display: grid; gap: 14px; max-width: 44ch; }
+  ol.steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 1px solid var(--edge);
+    display: grid; place-items: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--green);
+  }
+  ol.steps strong { font-weight: 600; color: #fff; }
+
+  .note { margin-top: 36px; color: var(--muted); font-size: 14px; max-width: 46ch; }
+
+  /* ---------- right: the code ---------- */
+  .stage { display: grid; justify-items: center; gap: 22px; }
+
+  .tile {
+    position: relative;
+    width: min(100%, 380px);
+    aspect-ratio: 1;
+    background: var(--paper);
+    border-radius: 34px;
+    padding: 34px;
+    color: var(--ink);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  }
+  .tile svg.qr { width: 100%; height: 100%; display: block; }
+  .tile.dim svg.qr { opacity: 0.12; transition: opacity .3s; }
+
+  /* countdown: the border drains over the life of the code */
+  .tile .ring { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+  .ring rect { fill: none; stroke-width: 5; stroke-linecap: round; }
+  .ring .track { stroke: rgba(18, 15, 54, 0.08); }
+  .ring .drain { stroke: var(--green); stroke-dasharray: 1; stroke-dashoffset: 0; }
+  .ring .drain.run { animation: drain var(--life, 120s) linear forwards; }
+  @keyframes drain { to { stroke-dashoffset: 1; } }
+
+  .tile-cover {
+    position: absolute; inset: 0;
+    display: grid; place-content: center; justify-items: center; gap: 14px;
+    text-align: center;
+    padding: 24px;
+  }
+  .spinner {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 3px solid rgba(18, 15, 54, 0.12);
+    border-top-color: var(--ink);
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status {
+    display: flex; align-items: center; gap: 10px;
+    color: var(--muted);
+    font-size: 15px;
+    min-height: 26px;
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+  .dot.pulse { animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.8); } }
+  .status.warn .dot { background: var(--red); }
+
+  button {
+    font: inherit;
+    font-weight: 600;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 22px;
+    cursor: pointer;
+    background: var(--green);
+    color: #06210f;
+  }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--edge); }
+  button:hover { filter: brightness(1.06); }
+  :focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+  .tile button { background: var(--ink); color: #fff; }
+
+  /* ---------- signed in ---------- */
+  .signed { display: grid; gap: 22px; justify-items: start; }
+  .avatar {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: var(--green);
+    color: #06210f;
+    display: grid; place-items: center;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 40px;
+    box-shadow: 0 0 0 8px rgba(74, 222, 128, 0.18), 0 0 0 20px rgba(74, 222, 128, 0.07);
+    margin: 8px 20px 8px 8px;
+  }
+  .signed h2 {
+    font-family: var(--display);
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .signed .mail { color: var(--muted); margin: -8px 0 0; overflow-wrap: anywhere; }
+  .facts { display: grid; gap: 6px; font-size: 15px; color: var(--muted); }
+  .facts b { color: var(--text); font-weight: 600; }
+
+  .error {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 20px;
+    padding: 20px 22px;
+    max-width: 46ch;
+  }
+  .error h3 { margin: 0 0 6px; font-family: var(--display); font-size: 22px; }
+  .error p { margin: 0 0 14px; color: #ffd6d6; }
+
+  .banner {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.35);
+    border-radius: 14px;
+    padding: 10px 16px;
+    font-size: 15px;
+    margin-bottom: 22px;
+    max-width: 44ch;
+  }
+
+  @media (max-width: 860px) {
+    main { grid-template-columns: 1fr; align-content: start; gap: 40px; }
+    h1 { max-width: none; }
+    .rings { right: -45vmin; opacity: .7; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dot.pulse, .spinner { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<svg class="rings" viewBox="0 0 100 100" aria-hidden="true">
+  <circle cx="50" cy="50" r="14"/><circle cx="50" cy="50" r="24"/><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="44"/>
+</svg>
+
+<main>
+  <section>
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#06210f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </span>
+      TrustPoints
+    </div>
+
+    <div id="notice" class="banner" hidden role="status"></div>
+
+    <div id="intro">
+      <h1>Scan with your phone to log in.</h1>
+      <p class="lead">Your password never leaves your phone. The TrustPoints app approves this browser for you.</p>
+      <ol class="steps">
+        <li><span>Open <strong>TrustPoints</strong> on your phone.</span></li>
+        <li><span>Go to <strong>Settings</strong> and tap <strong>Link a device</strong>.</span></li>
+        <li><span>Point the camera at the code on this page, then tap <strong>Log in</strong>.</span></li>
+      </ol>
+      <p class="note">This is a test page. Logging in shows that the link between your phone and this browser works. No contacts or points are loaded here yet.</p>
+    </div>
+
+    <div id="signed" class="signed" hidden>
+      <div class="avatar" id="avatar" aria-hidden="true"></div>
+      <h2 id="who"></h2>
+      <p class="mail" id="mail"></p>
+      <div class="facts">
+        <span>Browser: <b id="browser"></b></span>
+        <span>Linked at <b id="linkedAt"></b></span>
+        <span>Session <b id="sidShort"></b></span>
+      </div>
+      <button type="button" class="ghost" id="logout">Log out</button>
+    </div>
+  </section>
+
+  <section class="stage" aria-live="polite">
+    <div id="qrBox" class="stage" style="width:100%">
+      <div class="tile" id="tile">
+        <svg class="ring" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <rect class="track" x="2.5" y="2.5" width="95" height="95" rx="9" pathLength="1"/>
+          <rect class="drain" id="drain" x="2.5" y="2.5" width="95" height="95" rx="9" pathLength="1"/>
+        </svg>
+        <div id="qr" style="width:100%;height:100%"></div>
+        <div class="tile-cover" id="cover">
+          <div class="spinner" aria-hidden="true"></div>
+          <span>Getting your code</span>
+        </div>
+      </div>
+      <div class="status" id="status"><span class="dot pulse"></span><span id="statusText">Connecting</span></div>
+    </div>
+
+    <div id="errorBox" class="error" hidden role="alert">
+      <h3 id="errTitle"></h3>
+      <p id="errText"></p>
+      <button type="button" id="retry">Try again</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp }
+    from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBgKBYEq4MBlx54ot9l5-T3wLf4KfD1394",
+    authDomain: "trustpoints-a79af.firebaseapp.com",
+    projectId: "trustpoints-a79af",
+    storageBucket: "trustpoints-a79af.firebasestorage.app",
+    messagingSenderId: "66808199035",
+    appId: "1:66808199035:web:9aa0a13fb4f750be2a6fde"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const SESSION_KEY = "tp_web_sid";
+  const CODE_LIFE_MS = 120000;           // a code is valid for 2 minutes, then a new one appears
+
+  const $ = (id) => document.getElementById(id);
+  const el = {
+    notice: $("notice"), intro: $("intro"), signed: $("signed"), qrBox: $("qrBox"), errorBox: $("errorBox"),
+    tile: $("tile"), qr: $("qr"), cover: $("cover"), drain: $("drain"), status: $("status"), statusText: $("statusText"),
+    errTitle: $("errTitle"), errText: $("errText"),
+  };
+
+  let uid = null;
+  let currentSid = null;
+  let unsubscribe = null;
+  let expiryTimer = null;
+  let staleWhileHidden = false;
+
+  // ---------- small helpers ----------
+  function randomHex(bytes) {
+    const a = new Uint8Array(bytes);
+    crypto.getRandomValues(a);
+    return Array.from(a, (b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function describeBrowser() {
+    const ua = navigator.userAgent;
+    const browser = /Edg\//.test(ua) ? "Edge" : /OPR\//.test(ua) ? "Opera" : /Firefox\//.test(ua) ? "Firefox"
+      : /Chrome\//.test(ua) ? "Chrome" : /Safari\//.test(ua) ? "Safari" : "Browser";
+    const os = /Windows/.test(ua) ? "Windows" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS"
+      : /Mac OS X/.test(ua) ? "macOS" : /Linux/.test(ua) ? "Linux" : "a computer";
+    return `${browser} on ${os}`;
+  }
+
+  function showNotice(text) {
+    el.notice.textContent = text || "";
+    el.notice.hidden = !text;
+  }
+
+  function setStatus(text, warn = false, pulse = true) {
+    el.statusText.textContent = text;
+    el.status.classList.toggle("warn", warn);
+    el.status.querySelector(".dot").classList.toggle("pulse", pulse);
+  }
+
+  function showView(name) {                                  // "login" | "signed" | "error"
+    el.intro.hidden = name !== "login" && name !== "error";
+    el.signed.hidden = name !== "signed";
+    el.qrBox.hidden = name !== "login";
+    el.errorBox.hidden = name !== "error";
+  }
+
+  function showError(title, text) {
+    clearTimeout(expiryTimer);
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    el.errTitle.textContent = title;
+    el.errText.textContent = text;
+    showView("error");
+  }
+
+  function explain(e) {
+    const code = (e && e.code) || "";
+    if (code === "auth/operation-not-allowed" || code === "auth/admin-restricted-operation") {
+      return ["Anonymous sign-in is off", "In the Firebase console open Authentication, then Sign-in method, and turn on Anonymous. Then try again."];
+    }
+    if (code === "auth/unauthorized-domain") {
+      return ["This address is not allowed", `Add ${location.hostname || "this address"} under Authentication, Settings, Authorized domains in the Firebase console.`];
+    }
+    if (code === "permission-denied" || code === "firestore/permission-denied") {
+      return ["The login rules are not published", "Publish the Firestore rules that include the webLogin section, then try again."];
+    }
+    if (code === "unavailable" || code === "auth/network-request-failed") {
+      return ["No connection", "Check your internet connection and try again."];
+    }
+    return ["Something went wrong", (e && e.message) || "Unknown error."];
+  }
+
+  // ---------- the QR code ----------
+  function renderQr(text) {
+    const qr = qrcode(0, "M");
+    qr.addData(text);
+    qr.make();
+    const n = qr.getModuleCount();
+    const q = 1;                                              // the tile's own padding is the quiet zone
+    const inFinder = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+    let shapes = "";
+    for (let r = 0; r < n; r++) {
+      for (let c = 0; c < n; c++) {
+        if (qr.isDark(r, c) && !inFinder(r, c)) shapes += `<circle cx="${c + q + 0.5}" cy="${r + q + 0.5}" r="0.47"/>`;
+      }
+    }
+    const finder = (x, y) =>
+      `<rect x="${x + q + 0.5}" y="${y + q + 0.5}" width="6" height="6" rx="1.7" fill="none" stroke="currentColor" stroke-width="1"/>` +
+      `<rect x="${x + q + 2}" y="${y + q + 2}" width="3" height="3" rx="0.9"/>`;
+    shapes += finder(0, 0) + finder(n - 7, 0) + finder(0, n - 7);
+    const size = n + q * 2;
+    el.qr.innerHTML =
+      `<svg class="qr" viewBox="0 0 ${size} ${size}" fill="currentColor" role="img" aria-label="Login code for the TrustPoints app">${shapes}</svg>`;
+  }
+
+  function restartCountdown() {
+    el.drain.style.setProperty("--life", `${CODE_LIFE_MS / 1000}s`);
+    el.drain.classList.remove("run");
+    void el.drain.getBoundingClientRect();                    // restart the animation
+    el.drain.classList.add("run");
+  }
+
+  // ---------- sessions ----------
+  async function dropSession(sid) {
+    if (!sid) return;
+    try { await deleteDoc(doc(db, "webLogin", sid)); } catch (_) { /* already gone, or not ours */ }
+  }
+
+  async function newSession() {
+    clearTimeout(expiryTimer);
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    const old = localStorage.getItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
+    dropSession(old);
+
+    showView("login");
+    el.tile.classList.add("dim");
+    el.cover.hidden = false;
+    setStatus("Getting your code", false, true);
+
+    const sid = randomHex(16);                                // 32 hex characters: cannot be guessed
+    try {
+      await setDoc(doc(db, "webLogin", sid), {
+        status: "pending",
+        webUid: uid,
+        browser: describeBrowser(),
+        createdAt: serverTimestamp(),
+      });
+    } catch (e) {
+      const [t, m] = explain(e);
+      return showError(t, m);
+    }
+    currentSid = sid;
+    localStorage.setItem(SESSION_KEY, sid);
+
+    renderQr(`trustpoints://link?v=1&s=${sid}`);
+    el.tile.classList.remove("dim");
+    el.cover.hidden = true;
+    setStatus("Waiting for your phone");
+    restartCountdown();
+
+    expiryTimer = setTimeout(() => {
+      if (document.hidden) { staleWhileHidden = true; return; }
+      newSession();
+    }, CODE_LIFE_MS);
+
+    unsubscribe = onSnapshot(doc(db, "webLogin", sid), (snap) => {
+      if (!snap.exists()) return;
+      const d = snap.data();
+      if (d.status === "approved") {
+        clearTimeout(expiryTimer);
+        showSignedIn(sid, d);
+      } else if (d.status === "revoked" || d.status === "loggedout") {
+        loggedOutFromElsewhere();
+      }
+    }, (e) => { const [t, m] = explain(e); showError(t, m); });
+  }
+
+  function showSignedIn(sid, d) {
+    const name = d.name || d.email || "Signed in";
+    $("avatar").textContent = (name.trim()[0] || "?").toUpperCase();
+    $("who").textContent = name;
+    $("mail").textContent = d.email || "";
+    $("browser").textContent = d.browser || describeBrowser();
+    const at = d.approvedAt && d.approvedAt.toDate ? d.approvedAt.toDate() : new Date();
+    $("linkedAt").textContent = at.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    $("sidShort").textContent = sid.slice(0, 8);
+    showNotice("");
+    showView("signed");
+    setTimeout(() => location.replace("dashboard/index.html"), 1400);   // verified: open the dashboard
+  }
+
+  function loggedOutFromElsewhere() {
+    localStorage.removeItem(SESSION_KEY);
+    showNotice("You were logged out from your phone.");
+    newSession();
+  }
+
+  async function logout() {
+    const sid = currentSid;
+    $("logout").disabled = true;
+    try { await updateDoc(doc(db, "webLogin", sid), { status: "loggedout" }); } catch (_) { /* the phone may have unlinked already */ }
+    $("logout").disabled = false;
+    localStorage.removeItem(SESSION_KEY);
+    showNotice("You are logged out.");
+    newSession();
+  }
+
+  // ---------- start ----------
+  function waitForUser() {
+    return new Promise((resolve, reject) => {
+      const stop = onAuthStateChanged(auth, async (user) => {
+        stop();
+        if (user) return resolve(user);
+        try { resolve((await signInAnonymously(auth)).user); } catch (e) { reject(e); }
+      });
+    });
+  }
+
+  async function start() {
+    showView("login");
+    el.cover.hidden = false;
+    try {
+      uid = (await waitForUser()).uid;
+    } catch (e) {
+      const [t, m] = explain(e);
+      return showError(t, m);
+    }
+
+    // Reloading the page keeps you logged in, as long as the phone has not unlinked it.
+    const saved = localStorage.getItem(SESSION_KEY);
+    if (saved) {
+      try {
+        const snap = await getDoc(doc(db, "webLogin", saved));
+        const d = snap.exists() ? snap.data() : null;
+        if (d && d.webUid === uid && d.status === "approved") {
+          currentSid = saved;
+          showSignedIn(saved, d);
+          unsubscribe = onSnapshot(doc(db, "webLogin", saved), (s) => {
+            const x = s.exists() ? s.data() : null;
+            if (!x || x.status === "revoked" || x.status === "loggedout") loggedOutFromElsewhere();
+          });
+          return;
+        }
+      } catch (_) { /* not readable any more: start fresh */ }
+    }
+    newSession();
+  }
+
+  $("logout").addEventListener("click", logout);
+  $("retry").addEventListener("click", () => start());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden && staleWhileHidden) { staleWhileHidden = false; newSession(); }
+  });
+
+  start();
+</script>
+</body>
+</html>
