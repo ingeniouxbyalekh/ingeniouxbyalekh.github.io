@@ -8,7 +8,8 @@
 <h1 id="title">Admin</h1><p id="lead">Checking setup</p>
 <div id="note" class="info-box" hidden role="status" style="width:100%"></div>
 <div class="field" id="setup" hidden><label for="em">Default admin email</label><input id="em" type="email" placeholder="you@gmail.com" autocomplete="email"></div>
-<button id="go" class="gbtn" type="button" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span id="gtxt">Continue with Google</span></button>
+<button id="save" class="gbtn" type="button" hidden style="background:linear-gradient(180deg,#7bf5b0,var(--green));color:#05301a">Save admin email</button>
+<button id="go" class="gbtn" type="button" hidden><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continue with Google</button>
 <p class="fine">One admin device at a time. Logging in elsewhere signs this one out.</p>
 </div></main>
 <script type="module">
@@ -17,32 +18,39 @@ const { doc, getDoc, setDoc, serverTimestamp } = fs, $ = (i) => document.getElem
 let adminEmail = null;
 const note = (t, bad) => { $("note").textContent = t; $("note").hidden = !t; $("note").className = bad ? "warn-box" : "info-box"; };
 const ensureAnon = async () => { if (auth.currentUser?.isAnonymous) return; if (auth.currentUser) await signOut(auth); await signInAnonymously(auth); };
+async function fetchEmail() { await ensureAnon(); const s = await getDoc(cfg); return s.exists() ? s.data().email : null; }
 async function load() {
-  $("go").disabled = true;
+  $("go").hidden = $("save").hidden = $("setup").hidden = true;
   try {
-    await ensureAnon(); const s = await getDoc(cfg); adminEmail = s.exists() ? s.data().email : null;
-    $("setup").hidden = !!adminEmail; $("title").textContent = adminEmail ? "Admin login" : "Set up admin";
-    $("lead").textContent = adminEmail ? "Only the admin Google account can continue." : "Enter the email of the Google account that will be the admin. Do this once, now.";
-    $("go").disabled = false;
+    adminEmail = await fetchEmail();
+    $("setup").hidden = $("save").hidden = !!adminEmail; $("go").hidden = !adminEmail;
+    $("title").textContent = adminEmail ? "Admin login" : "Set up admin";
+    $("lead").textContent = adminEmail ? "Continue with the admin Google account. Any other account is refused." : "Enter the default admin email and save it. This is done once.";
+    $("go").disabled = $("save").disabled = false;
   } catch (e) { note(/permission/i.test(e.message) ? "Publish the updated Firestore rules first." : e.message, true); }
 }
 const saved = sessionStorage.getItem("tp_admin_msg"); if (saved) { sessionStorage.removeItem("tp_admin_msg"); note(saved); }
+$("save").addEventListener("click", async () => {
+  note(""); const email = $("em").value.trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return note("Enter a valid email.", true);
+  if (!confirm(`Save ${email} as the admin email?\n\nIt can only be changed later in the Firebase console.`)) return;
+  $("save").disabled = true;
+  try { await setDoc(cfg, { email, at: serverTimestamp() }); note("Admin email saved."); }
+  catch (e) { note(/permission/i.test(e.message) ? "An admin email is already saved. Continue with Google." : e.message, true); }
+  load();
+});
 $("go").addEventListener("click", async () => {
-  note(""); const typed = $("em").value.trim().toLowerCase();
-  if (!adminEmail && !/^\S+@\S+\.\S+$/.test(typed)) return note("Enter a valid email first.", true);
-  $("go").disabled = true;
+  note(""); $("go").disabled = true;
   try {
+    adminEmail = await fetchEmail();
+    if (!adminEmail) return load();
     const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
-    const user = (await signInWithPopup(auth, p)).user, mail = (user.email || "").toLowerCase();
-    if (!adminEmail) {
-      if (mail !== typed || !user.emailVerified) { await signOut(auth); note(`You chose ${mail}, but entered ${typed}. Use the same Google account.`, true); return load(); }
-      try { await setDoc(cfg, { email: mail, at: serverTimestamp() }); }
-      catch (e) { await signOut(auth); note("Admin is already set up. Reload and continue with Google.", true); return load(); }
-    } else if (mail !== adminEmail) { await signOut(auth); note("That Google account is not the admin.", true); return load(); }
+    const user = (await signInWithPopup(auth, p)).user;
+    if (!user.emailVerified || (user.email || "").toLowerCase() !== adminEmail) { await signOut(auth); note("That Google account is not the admin.", true); return load(); }
     const authTime = Number((await user.getIdTokenResult(true)).claims.auth_time);
     await setDoc(doc(db, "adminSession", "current"), { authTime, deviceId: "web", deviceName: navigator.userAgent.slice(0, 80), at: serverTimestamp() });
     location.replace("users.html");
-  } catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") note(e.code === "auth/popup-blocked" ? "Allow pop-ups for this site, then try again." : e.message, true); await load(); }
+  } catch (e) { if (!/popup-closed|cancelled-popup/.test(e.code || "")) note(e.code === "auth/popup-blocked" ? "Allow pop-ups for this site, then try again." : e.message, true); load(); }
 });
 load();
 </script></body></html>
