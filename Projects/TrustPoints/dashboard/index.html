@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TrustPoints Dashboard</title>
+<title>TrustPoints</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head><body>
-<header>
+<aside>
   <div class="brand"><span class="mark"></span>TrustPoints</div>
   <nav id="tabs">
     <button data-v="contacts" class="on">Contacts</button><button data-v="stats">Statistics</button>
     <button data-v="emotions">Emotions</button><button data-v="settings">Settings</button>
   </nav>
-  <button id="logout" class="ghost">Log out</button>
-</header>
+  <div class="me"><div class="av" id="meav"></div><div class="grow"><b id="mename"></b><div class="muted" id="memail"></div></div></div>
+</aside>
 <main>
   <p id="msg" hidden></p>
   <section id="contacts" class="view">
-    <div class="bar"><input id="q" placeholder="Search contacts" type="search"><button id="addc">+ Add contact</button></div>
+    <h2>Contacts</h2>
+    <div class="bar"><input id="q" placeholder="Search name or number" type="search"></div>
     <div id="list" class="grid"></div>
   </section>
   <section id="stats" class="view" hidden></section>

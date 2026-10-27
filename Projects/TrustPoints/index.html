@@ -262,7 +262,7 @@
         <li><span>Go to <strong>Settings</strong> and tap <strong>Link a device</strong>.</span></li>
         <li><span>Point the camera at the code on this page, then tap <strong>Log in</strong>.</span></li>
       </ol>
-      <p class="note">This is a test page. Logging in shows that the link between your phone and this browser works. No contacts or points are loaded here yet.</p>
+      <p class="note">After you approve, this browser shows your contacts, trust scores and emotions from your cloud backup. It only reads; nothing you do here changes your phone.</p>
     </div>
 
     <div id="signed" class="signed" hidden>
@@ -458,6 +458,9 @@
     }
     currentSid = sid;
     localStorage.setItem(SESSION_KEY, sid);
+    // Pointer that lets the Firestore rules find this browser's login once the phone approves it.
+    try { await setDoc(doc(db, "webSessions", uid), { sid, at: serverTimestamp() }); }
+    catch (e) { const [t, m] = explain(e); return showError(t, m); }
 
     renderQr(`trustpoints://link?v=1&s=${sid}`);
     el.tile.classList.remove("dim");
@@ -506,6 +509,7 @@
     const sid = currentSid;
     $("logout").disabled = true;
     try { await updateDoc(doc(db, "webLogin", sid), { status: "loggedout" }); } catch (_) { /* the phone may have unlinked already */ }
+    try { await deleteDoc(doc(db, "webSessions", uid)); } catch (_) {}
     $("logout").disabled = false;
     localStorage.removeItem(SESSION_KEY);
     showNotice("You are logged out.");
