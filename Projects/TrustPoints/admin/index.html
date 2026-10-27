@@ -3,43 +3,46 @@
 <title>TrustPoints admin</title><meta name="robots" content="noindex">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
-<body><main class="center"><form class="card" id="f" autocomplete="off">
-<div class="brand"><span class="mark"></span>TrustPoints admin</div><h1>Admin login</h1>
-<div id="note" class="info-box" hidden role="status"></div>
-<input id="pw" type="password" placeholder="Admin password" autocomplete="current-password" required aria-label="Admin password">
-<button id="go" type="submit">Log in</button>
-<p class="muted">Only one device can be logged in at a time. Three wrong passwords block this device for 24 hours.</p>
-</form></main>
+<body><main class="center"><div class="gate">
+<div class="shield" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5af09a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+<h1 id="title">Admin</h1><p id="lead">Checking setup</p>
+<div id="note" class="info-box" hidden role="status" style="width:100%"></div>
+<div class="field" id="setup" hidden><label for="em">Default admin email</label><input id="em" type="email" placeholder="you@gmail.com" autocomplete="email"></div>
+<button id="go" class="gbtn" type="button" disabled><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg><span id="gtxt">Continue with Google</span></button>
+<p class="fine">One admin device at a time. Logging in elsewhere signs this one out.</p>
+</div></main>
 <script type="module">
-import { auth, db, fs, signInAnonymously, signInWithEmailAndPassword, signOut, ADMIN_EMAIL } from "./fb.js";
-const { doc, getDoc, setDoc, serverTimestamp } = fs, $ = (i) => document.getElementById(i);
-const dev = localStorage.tp_admin_dev || (localStorage.tp_admin_dev = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""));
-const ref = doc(db, "adminBlocks", dev);
+import { auth, db, fs, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut } from "./fb.js";
+const { doc, getDoc, setDoc, serverTimestamp } = fs, $ = (i) => document.getElementById(i), cfg = doc(db, "adminConfig", "main");
+let adminEmail = null;
 const note = (t, bad) => { $("note").textContent = t; $("note").hidden = !t; $("note").className = bad ? "warn-box" : "info-box"; };
-const lock = (until) => { $("go").disabled = $("pw").disabled = true; note(`This device is blocked until ${new Date(until).toLocaleString()}.`, true); };
-const ensureAnon = async () => { if (!auth.currentUser || auth.currentUser.email) { if (auth.currentUser) await signOut(auth); await signInAnonymously(auth); } };
-const saved = sessionStorage.getItem("tp_admin_msg"); if (saved) { sessionStorage.removeItem("tp_admin_msg"); note(saved); }
-async function blockInfo() { await ensureAnon(); const s = await getDoc(ref).catch(() => null); return s?.exists() ? s.data() : null; }
-blockInfo().then((b) => { if (b && b.blockedUntil > Date.now()) lock(b.blockedUntil); }).catch((e) => note("Could not start: " + e.message, true));
-$("f").addEventListener("submit", async (ev) => {
-  ev.preventDefault(); $("go").disabled = true;
+const ensureAnon = async () => { if (auth.currentUser?.isAnonymous) return; if (auth.currentUser) await signOut(auth); await signInAnonymously(auth); };
+async function load() {
+  $("go").disabled = true;
   try {
-    const b = await blockInfo(); if (b && b.blockedUntil > Date.now()) return lock(b.blockedUntil);
-    let cred;
-    try { cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, $("pw").value); }
-    catch (e) {
-      if (!/invalid-credential|wrong-password|invalid-login/.test(e.code)) { note(e.code === "auth/too-many-requests" ? "Too many tries. Wait a few minutes." : e.code === "auth/operation-not-allowed" ? "Turn on Email/Password under Authentication, Sign-in method." : e.code === "auth/user-not-found" ? "Create the admin user in Firebase Authentication first." : e.message, true); return; }
-      await ensureAnon();
-      const fresh = !b || (b.blockedUntil > 0 && b.blockedUntil <= Date.now()), n = (fresh ? 0 : b.attempts) + 1;
-      await setDoc(ref, { attempts: n, blockedUntil: n >= 3 ? Date.now() + 864e5 : 0 }).catch(() => {});
-      if (n >= 3) return lock(Date.now() + 864e5);
-      note(`Wrong password. ${3 - n} ${3 - n === 1 ? "try" : "tries"} left.`, true); $("pw").value = ""; return;
-    }
-    await setDoc(ref, { attempts: 0, blockedUntil: 0 }).catch(() => {});
-    const authTime = Number((await cred.user.getIdTokenResult(true)).claims.auth_time);
-    await setDoc(doc(db, "adminSession", "current"), { authTime, deviceId: dev, deviceName: navigator.userAgent.slice(0, 80), at: serverTimestamp() });
+    await ensureAnon(); const s = await getDoc(cfg); adminEmail = s.exists() ? s.data().email : null;
+    $("setup").hidden = !!adminEmail; $("title").textContent = adminEmail ? "Admin login" : "Set up admin";
+    $("lead").textContent = adminEmail ? "Only the admin Google account can continue." : "Enter the email of the Google account that will be the admin. Do this once, now.";
+    $("go").disabled = false;
+  } catch (e) { note(/permission/i.test(e.message) ? "Publish the updated Firestore rules first." : e.message, true); }
+}
+const saved = sessionStorage.getItem("tp_admin_msg"); if (saved) { sessionStorage.removeItem("tp_admin_msg"); note(saved); }
+$("go").addEventListener("click", async () => {
+  note(""); const typed = $("em").value.trim().toLowerCase();
+  if (!adminEmail && !/^\S+@\S+\.\S+$/.test(typed)) return note("Enter a valid email first.", true);
+  $("go").disabled = true;
+  try {
+    const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: "select_account" });
+    const user = (await signInWithPopup(auth, p)).user, mail = (user.email || "").toLowerCase();
+    if (!adminEmail) {
+      if (mail !== typed || !user.emailVerified) { await signOut(auth); note(`You chose ${mail}, but entered ${typed}. Use the same Google account.`, true); return load(); }
+      try { await setDoc(cfg, { email: mail, at: serverTimestamp() }); }
+      catch (e) { await signOut(auth); note("Admin is already set up. Reload and continue with Google.", true); return load(); }
+    } else if (mail !== adminEmail) { await signOut(auth); note("That Google account is not the admin.", true); return load(); }
+    const authTime = Number((await user.getIdTokenResult(true)).claims.auth_time);
+    await setDoc(doc(db, "adminSession", "current"), { authTime, deviceId: "web", deviceName: navigator.userAgent.slice(0, 80), at: serverTimestamp() });
     location.replace("users.html");
-  } catch (e) { note(/permission/i.test(e.message) ? "Rules not published yet, or the admin e-mail in the rules does not match config.js." : e.message, true); }
-  finally { if (!$("pw").disabled) $("go").disabled = false; }
+  } catch (e) { if (e.code !== "auth/popup-closed-by-user" && e.code !== "auth/cancelled-popup-request") note(e.code === "auth/popup-blocked" ? "Allow pop-ups for this site, then try again." : e.message, true); await load(); }
 });
+load();
 </script></body></html>
