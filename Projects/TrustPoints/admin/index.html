@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrustPoints admin</title><meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
+<body><main class="center"><form class="card" id="f" autocomplete="off">
+<div class="brand"><span class="mark"></span>TrustPoints admin</div><h1>Admin login</h1>
+<div id="note" class="info-box" hidden role="status"></div>
+<input id="pw" type="password" placeholder="Admin password" autocomplete="current-password" required aria-label="Admin password">
+<button id="go" type="submit">Log in</button>
+<p class="muted">Only one device can be logged in at a time. Three wrong passwords block this device for 24 hours.</p>
+</form></main>
+<script type="module">
+import { auth, db, fs, signInAnonymously, signInWithEmailAndPassword, signOut, ADMIN_EMAIL } from "./fb.js";
+const { doc, getDoc, setDoc, serverTimestamp } = fs, $ = (i) => document.getElementById(i);
+const dev = localStorage.tp_admin_dev || (localStorage.tp_admin_dev = [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, "0")).join(""));
+const ref = doc(db, "adminBlocks", dev);
+const note = (t, bad) => { $("note").textContent = t; $("note").hidden = !t; $("note").className = bad ? "warn-box" : "info-box"; };
+const lock = (until) => { $("go").disabled = $("pw").disabled = true; note(`This device is blocked until ${new Date(until).toLocaleString()}.`, true); };
+const ensureAnon = async () => { if (!auth.currentUser || auth.currentUser.email) { if (auth.currentUser) await signOut(auth); await signInAnonymously(auth); } };
+const saved = sessionStorage.getItem("tp_admin_msg"); if (saved) { sessionStorage.removeItem("tp_admin_msg"); note(saved); }
+async function blockInfo() { await ensureAnon(); const s = await getDoc(ref).catch(() => null); return s?.exists() ? s.data() : null; }
+blockInfo().then((b) => { if (b && b.blockedUntil > Date.now()) lock(b.blockedUntil); }).catch((e) => note("Could not start: " + e.message, true));
+$("f").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); $("go").disabled = true;
+  try {
+    const b = await blockInfo(); if (b && b.blockedUntil > Date.now()) return lock(b.blockedUntil);
+    let cred;
+    try { cred = await signInWithEmailAndPassword(auth, ADMIN_EMAIL, $("pw").value); }
+    catch (e) {
+      if (!/invalid-credential|wrong-password|invalid-login/.test(e.code)) { note(e.code === "auth/too-many-requests" ? "Too many tries. Wait a few minutes." : e.code === "auth/operation-not-allowed" ? "Turn on Email/Password under Authentication, Sign-in method." : e.code === "auth/user-not-found" ? "Create the admin user in Firebase Authentication first." : e.message, true); return; }
+      await ensureAnon();
+      const fresh = !b || (b.blockedUntil > 0 && b.blockedUntil <= Date.now()), n = (fresh ? 0 : b.attempts) + 1;
+      await setDoc(ref, { attempts: n, blockedUntil: n >= 3 ? Date.now() + 864e5 : 0 }).catch(() => {});
+      if (n >= 3) return lock(Date.now() + 864e5);
+      note(`Wrong password. ${3 - n} ${3 - n === 1 ? "try" : "tries"} left.`, true); $("pw").value = ""; return;
+    }
+    await setDoc(ref, { attempts: 0, blockedUntil: 0 }).catch(() => {});
+    const authTime = Number((await cred.user.getIdTokenResult(true)).claims.auth_time);
+    await setDoc(doc(db, "adminSession", "current"), { authTime, deviceId: dev, deviceName: navigator.userAgent.slice(0, 80), at: serverTimestamp() });
+    location.replace("users.html");
+  } catch (e) { note(/permission/i.test(e.message) ? "Rules not published yet, or the admin e-mail in the rules does not match config.js." : e.message, true); }
+  finally { if (!$("pw").disabled) $("go").disabled = false; }
+});
+</script></body></html>

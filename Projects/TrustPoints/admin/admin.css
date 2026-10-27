@@ -1,0 +1,6 @@
+.center{min-height:100vh;display:grid;place-items:center;padding:20px}
+.card{width:min(420px,100%);border-radius:28px;padding:32px;background:var(--glass);border:1px solid var(--edge);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);box-shadow:0 8px 32px rgba(5,2,30,.28),inset 0 1px 0 rgba(255,255,255,.28);display:grid;gap:14px}
+.card h1{font:700 28px var(--d);margin:0}.warn-box{border:1px solid var(--red);background:rgba(255,138,138,.14);border-radius:14px;padding:10px 14px}
+.info-box{border:1px solid var(--edge);background:var(--glass2);border-radius:14px;padding:10px 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}.chip2{border:1px solid var(--edge);background:var(--glass);border-radius:99px;padding:3px 12px;font-size:14px}
+a.ghost{text-decoration:none;display:inline-block;border-radius:14px;padding:9px 16px;font-weight:600;color:var(--text);background:var(--glass);border:1px solid var(--edge)}
