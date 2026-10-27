@@ -5,25 +5,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head><body>
-<aside>
+<header>
   <div class="brand"><span class="mark"></span>TrustPoints</div>
-  <nav id="tabs">
-    <button data-v="contacts" class="on">Contacts</button><button data-v="stats">Statistics</button>
-    <button data-v="emotions">Emotions</button><button data-v="settings">Settings</button>
-  </nav>
-  <div class="me"><div class="av" id="meav"></div><div class="grow"><b id="mename"></b><div class="muted" id="memail"></div></div></div>
-</aside>
-<main>
-  <p id="msg" hidden></p>
-  <section id="contacts" class="view">
-    <h2>Contacts</h2>
-    <div class="bar"><input id="q" placeholder="Search name or number" type="search"></div>
-    <div id="list" class="grid"></div>
+  <div class="user"><div class="av" id="meav"></div><div class="who"><b id="mename"></b><span id="memail"></span></div></div>
+  <button id="logout" class="ghost">Log out</button>
+</header>
+<p id="msg" hidden></p>
+<div class="split">
+  <section class="side">
+    <input id="q" placeholder="Search name or number" type="search" aria-label="Search contacts">
+    <div id="count" class="muted"></div>
+    <div id="list"></div>
   </section>
-  <section id="stats" class="view" hidden></section>
-  <section id="emotions" class="view" hidden></section>
-  <section id="settings" class="view" hidden></section>
-</main>
-<div id="sheet" hidden><div class="panel"><button id="close" class="ghost x">Close</button><div id="detail"></div></div></div>
+  <section class="pane" id="pane"><button id="back" class="ghost">Back to contacts</button><div id="detail"></div></section>
+</div>
+<div id="toast" hidden></div>
 <script type="module" src="js/app.js"></script>
 </body></html>
