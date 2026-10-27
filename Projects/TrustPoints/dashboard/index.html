@@ -11,14 +11,13 @@
   <button id="logout" class="ghost">Log out</button>
 </header>
 <p id="msg" hidden></p>
-<div class="split">
-  <section class="side">
-    <input id="q" placeholder="Search name or number" type="search" aria-label="Search contacts">
-    <div id="count" class="muted"></div>
-    <div id="list"></div>
-  </section>
-  <section class="pane" id="pane"><button id="back" class="ghost">Back to contacts</button><div id="detail"></div></section>
-</div>
+<main>
+  <div class="head"><h2>Contacts</h2><span id="count" class="muted"></span></div>
+  <input id="q" placeholder="Search name or number" type="search" aria-label="Search contacts">
+  <div id="list"></div>
+</main>
+<div id="scrim" hidden></div>
+<aside class="pane" id="pane" hidden><button id="back" class="ghost">Close</button><div id="detail"></div></aside>
 <div id="toast" hidden></div>
 <script type="module" src="js/app.js"></script>
 </body></html>

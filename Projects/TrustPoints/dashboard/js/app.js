@@ -30,6 +30,7 @@ async function start() {
 const histOf = (k) => acts.filter((a) => a.phoneKey === k).sort((a, b) => b.timestamp - a.timestamp);
 const stat = (c) => { const h = histOf(c.key), b = +c.basePoints || 0; return { h, b, total: b + h.reduce((s, x) => s + x.points, 0), t: compute(h, b) }; };
 const allEmotions = () => [...BUILT_IN, ...emos.map((e) => ({ ...e, category: CAT_OWN }))];
+const shut = () => { open = cat = null; $("pane").hidden = $("scrim").hidden = true; render(); };
 function render() { if (!email) return; renderList(); if (open) renderDetail(); }
 
 function renderList() {
@@ -41,7 +42,6 @@ function renderList() {
     <div class="g"><div class="n">${esc(c.name)}</div><div class="muted">${esc(c.phone)} · ${fmt(total)} pts</div></div>
     ${t ? `<span class="pill ${t.band[2]}">${Math.round(t.percent)}%</span>` : '<span class="muted">No data</span>'}</button>`).join("")
     || (contacts.length ? '<p class="muted">No contact matches.</p>' : loaded >= 3 ? '<div class="empty"><b>Nothing backed up yet.</b><br>In the app open Settings, Cloud backup, then tap Backup or turn on Automatic backup.</div>' : '<p class="muted">Loading</p>');
-  if (!open && matchMedia("(min-width:801px)").matches) $("detail").innerHTML = loaded >= 3 && contacts.length ? '<div class="empty"><b>Pick a contact</b><br>You will see their trust, points and history here, and can add an emotion.</div>' : "";
 }
 function spark(h, b) {
   if (!h.length) return "";
@@ -51,7 +51,7 @@ function spark(h, b) {
 }
 function renderDetail() {
   const c = contacts.find((x) => x.key === open);
-  if (!c) { open = null; document.body.classList.remove("open"); return render(); }
+  if (!c) return shut();
   const { h, b, total, t } = stat(c), pos = h.filter((x) => x.points > 0).length, neg = h.filter((x) => x.points < 0).length;
   const cnt = {}; h.forEach((x) => (cnt[x.emotionName] = (cnt[x.emotionName] || 0) + 1));
   const top = Object.entries(cnt).sort((a, b) => b[1] - a[1]).slice(0, 4), tm = Math.max(1, ...top.map((x) => x[1]));
@@ -73,8 +73,8 @@ document.addEventListener("click", guard(async (ev) => {
   const t = ev.target.closest("button"); if (!t) return;
   const c = contacts.find((x) => x.key === open);
   if (t.id === "logout") { await updateDoc(doc(db, "webLogin", sid), { status: "loggedout" }).catch(() => {}); await deleteDoc(doc(db, "webSessions", (await waitForUser()).uid)).catch(() => {}); return bounce(); }
-  if (t.id === "back") { open = cat = null; document.body.classList.remove("open"); return render(); }
-  if (t.dataset.k) { open = t.dataset.k; cat = null; document.body.classList.add("open"); return render(); }
+  if (t.id === "back") return shut();
+  if (t.dataset.k) { open = t.dataset.k; cat = null; $("pane").hidden = $("scrim").hidden = false; $("pane").scrollTop = 0; return render(); }
   if (t.dataset.cat) { cat = cat === t.dataset.cat ? null : t.dataset.cat; return renderDetail(); }
   if (t.dataset.e && c) {
     const e = allEmotions().find((x) => x.name === t.dataset.e), ts = Date.now();
@@ -84,4 +84,6 @@ document.addEventListener("click", guard(async (ev) => {
   if (t.dataset.del && confirm("Delete this entry?")) return deleteDoc(doc(db, base() + "/activity/list", t.dataset.del));
 }));
 $("q").addEventListener("input", renderList);
+$("scrim").addEventListener("click", shut);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && open) shut(); });
 start().catch((e) => say(e.message));
