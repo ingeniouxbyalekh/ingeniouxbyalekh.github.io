@@ -1,6 +1,6 @@
 import { db, fs, waitForUser } from "./firebase.js";
 import { BUILT_IN, CATS, CAT_OWN, compute } from "./engine.js";
-const { doc, getDoc, updateDoc, deleteDoc, collection, onSnapshot } = fs;
+const { doc, getDoc, setDoc, serverTimestamp, updateDoc, deleteDoc, collection, onSnapshot } = fs;
 const $ = (id) => document.getElementById(id), SID = "tp_web_sid";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (n) => (n > 0 ? "+" : "") + (Math.round(n * 100) / 100);
@@ -16,6 +16,7 @@ async function start() {
   if (!sid) return bounce();
   const d = (await getDoc(doc(db, "webLogin", sid)).catch(() => null))?.data();
   if (!d || d.webUid !== user.uid || d.status !== "approved") return bounce();
+  await setDoc(doc(db, "webSessions", user.uid), { sid, at: serverTimestamp() }).catch(() => {});
   email = d.email.toLowerCase(); name = d.name || email;
   $("meav").textContent = name[0].toUpperCase(); $("mename").textContent = name; $("memail").textContent = email;
   onSnapshot(doc(db, "webLogin", sid), (s) => { if (!s.exists() || ["revoked", "loggedout"].includes(s.data().status)) bounce(); });
