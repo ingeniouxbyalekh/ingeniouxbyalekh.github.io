@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TrustPoints admin: users</title><meta name="robots" content="noindex">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
+<body><header><div class="brand"><span class="mark"></span>TrustPoints admin</div><button id="logout" class="ghost">Log out</button></header>
+<p id="msg" hidden></p>
+<main><details class="act" id="act"><summary>Admin activity</summary><div id="actbody" class="muted">Loading</div></details>
+<div class="head"><h2>Users</h2><span id="count" class="muted"></span></div>
+<input id="q" placeholder="Search name, email or number" type="search" aria-label="Search users"><div id="list"></div></main>
+<script type="module">
+import { db, rtdb, fs, rt, requireAdmin, logout } from "./fb.js";
+const $ = (i) => document.getElementById(i), esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const when = (t) => (t ? new Date(t).toLocaleString() : "–"); let users = [], A = {};
+function render() {
+  const q = $("q").value.trim().toLowerCase(), rows = users.filter((u) => !q || `${u.name} ${u.email} ${u.phone}`.toLowerCase().includes(q));
+  $("count").textContent = `${rows.length} of ${users.length}`;
+  $("list").innerHTML = rows.map((u) => `<a class="row" href="view.html?u=${encodeURIComponent(u.email)}" style="text-decoration:none;color:inherit"><div class="av">${esc((u.name || u.email)[0].toUpperCase())}</div><div class="g"><div class="n">${esc(u.name || "(no name)")}</div><div class="muted" style="overflow:hidden;text-overflow:ellipsis">${esc(u.email)}${u.phone ? " · " + esc(u.phone) : ""}</div></div><span class="muted">${u.n} ${u.n === 1 ? "sync" : "syncs"}</span></a>`).join("") || '<div class="empty">No users found in permanentData.</div>';
+}
+const line = (x) => `<div class="hist"><span>${esc(x.deviceName)} <span class="muted">${esc(x.email || "")}</span></span><span class="muted">${when(x.at)}${x.endedAt ? " → " + when(x.endedAt) + " (" + esc(x.endedReason || "") + ")" : ""}</span></div>`;
+function renderAct() {
+  const past = Object.values(A.past || {}).reverse(), fail = Object.values(A.fail || {}).reverse();
+  $("actbody").innerHTML = `<h4>Admin email</h4><div class="hist"><b>${esc(A.email || "")}</b><span class="muted">saved ${when(A.setup?.at)} on ${esc(A.setup?.deviceName || "")}</span></div>
+    <h4>Current login</h4>${A.cur ? line(A.cur) : '<p class="muted">None.</p>'}<h4>Past logins</h4>${past.map(line).join("") || '<p class="muted">None yet.</p>'}
+    <h4>Refused sign-ins</h4>${fail.map(line).join("") || '<p class="muted">None.</p>'}`;
+}
+requireAdmin().then((user) => {
+  if (!user) return;
+  fs.onSnapshot(fs.collection(db, "permanentData"), (s) => {
+    const m = new Map();
+    s.docs.forEach((d) => { const x = d.data(), det = x.details || {}, e = String(x.baseEmail || det.email || d.id.replace(/-\d+$/, "")).toLowerCase(), u = m.get(e) || { email: e, n: 0 }; u.n++; u.name = det.name || u.name; u.phone = det.phone || u.phone; m.set(e, u); });
+    users = [...m.values()].sort((a, b) => (a.name || a.email).localeCompare(b.name || b.email)); render();
+  }, (e) => { $("msg").textContent = "Could not read permanentData: " + e.message; $("msg").hidden = false; });
+  const on = (path, k, last) => rt.onValue(last ? rt.query(rt.ref(rtdb, path), rt.limitToLast(last)) : rt.ref(rtdb, path), (s) => { A[k] = s.val(); renderAct(); });
+  on("Admin/defaultEmail", "email"); on("Admin/setup", "setup"); on("Admin/currentLogin", "cur"); on("Admin/pastLogins", "past", 20); on("Admin/failedLogins", "fail", 20);
+});
+$("q").addEventListener("input", render); $("logout").addEventListener("click", () => logout());
+</script></body></html>
