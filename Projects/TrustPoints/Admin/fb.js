@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebas
 import { getAuth, onAuthStateChanged, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-auth.js";
 import * as fs from "https://www.gstatic.com/firebasejs/13.1.0/firebase-firestore.js";
 import * as rt from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
-import { firebaseConfig } from "./config.js";
+import { firebaseConfig } from "./config.js?v=20261028";
 // A separate named app keeps the admin sign-in apart from the website's QR login in the same browser.
 const app = initializeApp(firebaseConfig, "admin");
 export const auth = getAuth(app), db = fs.getFirestore(app), rtdb = rt.getDatabase(app);
