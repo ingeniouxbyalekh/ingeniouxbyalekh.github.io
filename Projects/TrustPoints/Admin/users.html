@@ -1,28 +1,39 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrustPoints admin: users</title><meta name="robots" content="noindex">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
-<body><header><div class="brand"><span class="mark"></span>TrustPoints admin</div><button id="logout" class="ghost">Log out</button></header>
-<p id="msg" hidden></p>
-<main><details class="act" id="act"><summary>Admin activity</summary><div id="actbody" class="muted">Loading</div></details>
-<div class="head"><h2>Users</h2><span id="count" class="muted"></span></div>
-<input id="q" placeholder="Search name, email or number" type="search" aria-label="Search users"><div id="list"></div></main>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="admin.css"></head>
+<body>
+<header class="appbar"><a class="brand" href="users.html"><span class="mark" aria-hidden="true"></span>TrustPoints</a><span class="tag">Admin</span><span class="spacer"></span><button id="logout" class="btn" type="button">Log out</button></header>
+<main class="wrap">
+<p id="msg" class="warn-box" hidden role="alert"></p>
+<div class="title"><h1>Users</h1><span id="count" class="muted"></span></div>
+<div class="cols">
+<section>
+<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search name, email or number" aria-label="Search users"></label>
+<div id="list" class="list"><div class="empty">Loading…</div></div>
+</section>
+<details class="panel" id="act" open><summary>Admin activity</summary><div id="actbody" class="body"><p class="sub">Loading…</p></div></details>
+</div>
+</main>
 <script type="module">
 import { db, rtdb, fs, rt, requireAdmin, logout } from "./fb.js";
 const $ = (i) => document.getElementById(i), esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-const when = (t) => (t ? new Date(t).toLocaleString() : "–"); let users = [], A = {};
+const when = (t) => (t ? new Date(t).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "–"); let users = [], A = {};
+if (matchMedia("(max-width: 900px)").matches) $("act").open = false;
 function render() {
   const q = $("q").value.trim().toLowerCase(), rows = users.filter((u) => !q || `${u.name} ${u.email} ${u.phone}`.toLowerCase().includes(q));
-  $("count").textContent = `${rows.length} of ${users.length}`;
-  $("list").innerHTML = rows.map((u) => `<a class="row" href="view.html?u=${encodeURIComponent(u.email)}" style="text-decoration:none;color:inherit"><div class="av">${esc((u.name || u.email)[0].toUpperCase())}</div><div class="g"><div class="n">${esc(u.name || "(no name)")}</div><div class="muted" style="overflow:hidden;text-overflow:ellipsis">${esc(u.email)}${u.phone ? " · " + esc(u.phone) : ""}</div></div><span class="muted">${u.n} ${u.n === 1 ? "sync" : "syncs"}</span></a>`).join("") || '<div class="empty">No users found.</div>';
+  $("count").textContent = q ? `${rows.length} of ${users.length}` : `${users.length} ${users.length === 1 ? "user" : "users"}`;
+  $("list").innerHTML = rows.map((u) => `<a class="row" href="view.html?u=${encodeURIComponent(u.email)}"><div class="av">${esc((u.name || u.email)[0].toUpperCase())}</div><div class="g"><div class="name">${esc(u.name || "No name")}</div><div class="sub meta"><span>${esc(u.email)}</span>${u.phone ? `<span>${esc(u.phone)}</span>` : ""}</div></div><span class="sub">${u.n} ${u.n === 1 ? "sync" : "syncs"}</span><i class="chev" aria-hidden="true"></i></a>`).join("") || `<div class="empty">${users.length ? "No users match." : "No users found."}</div>`;
 }
-const line = (x) => `<div class="hist"><span>${esc(x.deviceName)} <span class="muted">${esc(x.email || "")}</span></span><span class="muted">${when(x.at)}${x.endedAt ? " → " + when(x.endedAt) + " (" + esc(x.endedReason || "") + ")" : ""}</span></div>`;
+const entry = (x, kind) => `<div class="log"><b${kind === "live" ? ' class="live"' : ""}>${esc(x.deviceName)}</b>${x.email ? `<span class="sub">${esc(x.email)}</span>` : ""}<span class="sub">${{ live: "Since", past: "Signed in", fail: "Tried" }[kind]} ${when(x.at)}</span>${x.endedAt ? `<span class="sub">Ended ${when(x.endedAt)}${x.endedReason ? ", " + esc(x.endedReason) : ""}</span>` : ""}</div>`;
 function renderAct() {
   const past = Object.values(A.past || {}).reverse(), fail = Object.values(A.fail || {}).reverse();
-  $("actbody").innerHTML = `<h4>Admin email</h4><div class="hist"><b>${esc(A.email || "")}</b><span class="muted">saved ${when(A.setup?.at)} on ${esc(A.setup?.deviceName || "")}</span></div>
-    <h4>Current login</h4>${A.cur ? line(A.cur) : '<p class="muted">None.</p>'}<h4>Past logins</h4>${past.map(line).join("") || '<p class="muted">None yet.</p>'}
-    <h4>Refused sign-ins</h4>${fail.map(line).join("") || '<p class="muted">None.</p>'}`;
+  $("actbody").innerHTML = `<div class="grp"><h4>Admin email</h4><div class="log"><b>${esc(A.email || "–")}</b>${A.setup ? `<span class="sub">Saved ${when(A.setup.at)} on ${esc(A.setup.deviceName || "")}</span>` : ""}</div></div>
+    <div class="grp"><h4>Current login</h4>${A.cur ? entry(A.cur, "live") : '<p class="sub">None</p>'}</div>
+    <div class="grp"><h4>Past logins</h4><div class="scroll">${past.map((x) => entry(x, "past")).join("") || '<p class="sub">None yet</p>'}</div></div>
+    <div class="grp"><h4>Refused sign-ins</h4><div class="scroll">${fail.map((x) => entry(x, "fail")).join("") || '<p class="sub">None</p>'}</div></div>`;
 }
 requireAdmin().then((user) => {
   if (!user) return;
