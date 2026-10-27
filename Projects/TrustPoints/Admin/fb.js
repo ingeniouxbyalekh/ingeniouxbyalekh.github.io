@@ -32,6 +32,6 @@ export async function requireAdmin() {
   const user = await new Promise((r) => { const s = onAuthStateChanged(auth, (u) => { s(); r(u); }); });
   if (!user || user.isAnonymous) return kick();
   const mine = Number((await user.getIdTokenResult()).claims.auth_time);
-  onSnapshot(doc(db, "adminSession", "current"), (s) => { if (!s.exists() || s.data().authTime !== mine) kick("This admin login was replaced by another device."); }, () => kick("Session ended. Log in again."));
+  onSnapshot(doc(db, "adminSession", "current"), (s) => { if (!s.exists() || s.data().authTime !== mine) kick("Signed out: admin logged in on another device."); }, () => kick("Session ended."));
   return user;
 }
