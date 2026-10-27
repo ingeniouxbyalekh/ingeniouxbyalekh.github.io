@@ -1,21 +1,14 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TrustPoints admin: user</title><meta name="robots" content="noindex">
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="admin.css"></head>
-<body>
-<header class="appbar"><a class="brand" href="users.html"><span class="mark" aria-hidden="true"></span>TrustPoints</a><span class="spacer"></span><a class="btn" href="users.html">All users</a><button id="logout" class="btn" type="button">Log out</button></header>
-<main class="wrap">
-<p id="msg" class="warn-box" hidden role="alert"></p>
-<div class="who"><div class="av lg" id="meav"></div><div class="g"><h1 id="mename"></h1><p id="memail" class="muted"></p></div><span id="count" class="muted"></span></div>
-<div class="split" id="split">
-<section>
-<div id="emos"></div>
-<label class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search name or number" aria-label="Search contacts"></label>
-<div id="list" class="list"><div class="empty">Loading…</div></div>
-</section>
-<aside class="pane" id="pane"><div class="pane-top"><button id="back" class="btn" type="button">Back to contacts</button></div><div id="detail"></div></aside>
-</div>
-</main>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
+<body><header><div class="brand"><span class="mark"></span>TrustPoints admin</div>
+<div class="user"><div class="av" id="meav"></div><div class="who"><b id="mename"></b><span id="memail"></span></div></div>
+<a class="ghost" href="users.html">All users</a><button id="logout" class="ghost">Log out</button></header>
+<p id="msg" hidden></p>
+<main><div class="head"><h2>Contacts</h2><span id="count" class="muted"></span></div>
+<div id="emos" class="chips"></div>
+<input id="q" placeholder="Search name or number" type="search" aria-label="Search contacts"><div id="list"></div></main>
+<div id="scrim" hidden></div><aside class="pane" id="pane" hidden><button id="back" class="ghost">Close</button><div id="detail"></div></aside>
 <script type="module" src="view.js"></script></body></html>
