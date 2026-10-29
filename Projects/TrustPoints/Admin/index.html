@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0724">
 <title>TrustPoints admin</title><meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../dashboard/style.css"><link rel="stylesheet" href="admin.css"></head>
 <body><main class="center"><div class="gate">
-<div class="shield" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#5af09a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+<div class="shield" id="shield" aria-hidden="true"></div>
 <h1 id="title">Admin</h1><p id="lead">Loading…</p>
-<div id="note" class="info-box" hidden role="status" style="width:100%"></div>
+<div id="note" class="info-box" hidden role="status"></div>
 <div class="field" id="setup" hidden><label for="em">Admin email</label><input id="em" type="email" placeholder="you@gmail.com" autocomplete="email"></div>
-<button id="save" class="gbtn" type="button" hidden style="background:linear-gradient(180deg,#7bf5b0,var(--green));color:#05301a">Save</button>
+<button id="save" class="pbtn" type="button" hidden>Save admin email</button>
 <button id="go" class="gbtn" type="button" hidden><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.2 5.5-4.7 7.2l7.6 5.9c4.4-4.1 6.9-10.1 6.9-17.6z"/><path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 010-9.4l-7.9-6.1a24 24 0 000 21.6z"/><path fill="#34A853" d="M24 48c6.5 0 12-2.1 16-5.8l-7.6-5.9c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>Continue with Google</button>
 </div></main>
+<script type="module">import { icon } from "../dashboard/js/ui.js"; document.getElementById("shield").innerHTML = icon("shield");</script>
 <script type="module">
 import { auth, db, rtdb, fs, rt, signInAnonymously, GoogleAuthProvider, signInWithPopup, signOut, describeDevice, deviceId } from "./fb.js";
 const { doc, getDoc, setDoc, serverTimestamp } = fs, $ = (i) => document.getElementById(i), cfg = doc(db, "adminConfig", "main");
