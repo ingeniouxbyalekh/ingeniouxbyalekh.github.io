@@ -71,7 +71,7 @@ function updateTimeline(){
   mFill.style.height = progressPx + 'px';
 
   mItems.forEach(item=>{
-    const dotOffset = item.offsetTop + 4; // matches ::before top offset
+    const dotOffset = item.offsetTop + 26; // matches ::before top offset
     item.classList.toggle('lit', progressPx >= dotOffset);
   });
 }
@@ -79,26 +79,13 @@ window.addEventListener('scroll', updateTimeline, {passive:true});
 window.addEventListener('resize', updateTimeline);
 updateTimeline();
 
-// ---------- work card cursor glow + 3D magnetic tilt ----------
+// ---------- work card cursor glow ----------
 const isFinePointerGlobal = window.matchMedia('(pointer: fine)').matches;
 document.querySelectorAll('.work-card').forEach(card=>{
   card.addEventListener('mousemove', e=>{
     const r = card.getBoundingClientRect();
-    const x = e.clientX - r.left;
-    const y = e.clientY - r.top;
-    card.style.setProperty('--x', x+'px');
-    card.style.setProperty('--y', y+'px');
-
-    if(!isFinePointerGlobal || prefersReducedMotionGlobal) return;
-    const px = (x / r.width) - 0.5;   // -0.5 .. 0.5
-    const py = (y / r.height) - 0.5;
-    const maxTilt = 7; // degrees
-    const rotY = px * maxTilt * 2;
-    const rotX = -py * maxTilt * 2;
-    card.style.transform = `perspective(1200px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateY(-4px) scale(1.015)`;
-  });
-  card.addEventListener('mouseleave', ()=>{
-    card.style.transform = '';
+    card.style.setProperty('--x', (e.clientX - r.left)+'px');
+    card.style.setProperty('--y', (e.clientY - r.top)+'px');
   });
 });
 
