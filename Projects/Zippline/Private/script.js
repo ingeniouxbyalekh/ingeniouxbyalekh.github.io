@@ -1,719 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
-<title>ZippLine</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #e9eef2;
-    --panel: #ffffff;
-    --ink: #16202e;
-    --muted: #6b7788;
-    --line: #d8e0e8;
-    --accent: #2743e0;
-    --accent-ink: #ffffff;
-    --theirs: #ffffff;
-    --ok: #1e9e6a;
-    --danger: #c8382e;
-    --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --font-head: "Bricolage Grotesque", "Instrument Sans", system-ui, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #0f1520;
-      --panel: #171f2d;
-      --ink: #e8edf5;
-      --muted: #8d99ab;
-      --line: #263042;
-      --accent: #5a74ff;
-      --theirs: #1f293a;
-    }
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    font-family: var(--font-body);
-    background: var(--bg);
-    color: var(--ink);
-    font-size: 15px;
-    line-height: 1.45;
-  }
-  button, input { font: inherit; color: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .hidden { display: none !important; }
-
-  /* ---------- Login ---------- */
-  #login-view {
-    min-height: 100%;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-  }
-  .login-card {
-    width: 100%;
-    max-width: 380px;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 32px 28px;
-  }
-  .login-card h1 {
-    font-family: var(--font-head);
-    font-size: 34px;
-    letter-spacing: -0.02em;
-    margin: 0 0 4px;
-  }
-  .login-card p.sub { margin: 0 0 24px; color: var(--muted); }
-  label { display: block; font-weight: 500; font-size: 13px; margin: 14px 0 6px; }
-  input[type=text], input[type=password] {
-    width: 100%;
-    padding: 11px 12px;
-    background: var(--bg);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-  }
-  input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
-  .btn {
-    cursor: pointer;
-    border: 0;
-    border-radius: 8px;
-    padding: 11px 16px;
-    font-weight: 600;
-    background: var(--accent);
-    color: var(--accent-ink);
-  }
-  .btn:disabled { opacity: .6; cursor: default; }
-  .btn.full { width: 100%; margin-top: 22px; }
-  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 7px 12px; font-weight: 500; }
-  .btn.ghost:hover { color: var(--ink); }
-  .error { color: var(--danger); font-size: 13px; min-height: 18px; margin-top: 12px; }
-
-  /* ---------- Chat layout ---------- */
-  #app {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    height: 100dvh;              /* JS below overrides this while the keyboard is open */
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    background: var(--panel);
-    border-left: 1px solid var(--line);
-    border-right: 1px solid var(--line);
-    overflow: hidden;
-  }
-  aside {
-    border-right: 1px solid var(--line);
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-  .me-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 16px;
-    border-bottom: 1px solid var(--line);
-  }
-  .me-bar .who { flex: 1; min-width: 0; }
-  .me-bar .who strong { display: block; font-family: var(--font-head); font-size: 18px; }
-  .me-bar .who span { color: var(--muted); font-size: 13px; }
-  .contacts { overflow-y: auto; flex: 1; }
-  .contact {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    padding: 12px 16px;
-    background: none;
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    text-align: left;
-    cursor: pointer;
-  }
-  .contact:hover { background: var(--bg); }
-  .contact.active { background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
-  .avatar {
-    position: relative;
-    width: 40px; height: 40px;
-    border-radius: 50%;
-    display: grid; place-items: center;
-    font-family: var(--font-head);
-    font-weight: 700;
-    color: #fff;
-    flex: none;
-  }
-  .avatar .dot {
-    position: absolute; right: -1px; bottom: -1px;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: var(--muted);
-    border: 2px solid var(--panel);
-  }
-  .avatar .dot.on { background: var(--ok); }
-  .contact .name { font-weight: 600; }
-  .contact > div:last-child { flex: 1; min-width: 0; }
-  .contact .name, .contact .status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .contact .status { color: var(--muted); font-size: 13px; }
-  .contact .status.received { font-weight: 700; color: var(--ink); }
-  .empty { padding: 24px 16px; color: var(--muted); }
-
-  main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-  .chat-head {
-    flex: none;
-    display: flex; align-items: center; gap: 12px;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--line);
-  }
-  .chat-head .back { display: none; padding: 7px; }
-  .chat-head .back svg { display: block; }
-  .chat-head .name { font-family: var(--font-head); font-size: 18px; font-weight: 600; }
-  .chat-head .status { color: var(--muted); font-size: 13px; }
-  #messages {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 20px 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    background: var(--bg);
-  }
-  .day {
-    align-self: center;
-    font-size: 12px;
-    color: var(--muted);
-    margin: 12px 0 6px;
-  }
-  .msg {
-    position: relative;
-    max-width: min(75%, 520px);
-    padding: 9px 13px;
-    border-radius: 16px;
-    background: var(--theirs);
-    border: 1px solid var(--line);
-    align-self: flex-start;
-    border-bottom-left-radius: 4px;
-    overflow-wrap: anywhere;
-    white-space: pre-wrap;
-    touch-action: pan-y;
-    transition: transform .15s ease;
-  }
-  .msg.swiping { transition: none; }
-  .msg.mine {
-    align-self: flex-end;
-    background: var(--accent);
-    color: var(--accent-ink);
-    border-color: var(--accent);
-    border-radius: 16px;
-    border-bottom-right-radius: 4px;
-  }
-  .msg .txt { display: block; }
-  .meta { display: flex; justify-content: flex-end; gap: 8px; font-size: 11px; opacity: .7; margin-top: 2px; }
-  .msg.mine .tick.seen { opacity: 1; font-weight: 600; color: #b8ffd9; }
-  .status.typing { color: var(--accent); font-weight: 500; }
-  .msg.typing { display: inline-flex; gap: 4px; padding: 13px 14px; width: fit-content; }
-  .msg.typing span {
-    width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
-    animation: blink 1.2s infinite ease-in-out;
-  }
-  .msg.typing span:nth-child(2) { animation-delay: .15s; }
-  .msg.typing span:nth-child(3) { animation-delay: .3s; }
-  @keyframes blink {
-    0%, 60%, 100% { opacity: .3; transform: translateY(0); }
-    30% { opacity: 1; transform: translateY(-3px); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .msg.typing span { animation: none; opacity: .6; }
-  }
-  .placeholder {
-    flex: 1; display: grid; place-items: center;
-    color: var(--muted); background: var(--bg); text-align: center; padding: 24px;
-  }
-  form.composer {
-    display: flex; gap: 10px;
-    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
-    border-top: 1px solid var(--line);
-    background: var(--panel);
-  }
-  form.composer input { flex: 1; border-radius: 22px; padding: 11px 16px; }
-  form.composer .btn { border-radius: 22px; padding: 11px 22px; }
-
-  /* ---------- Video call ---------- */
-  .call-actions { margin-left: auto; display: flex; gap: 8px; }
-  .call-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; }
-  .icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px; }
-  /* ---------- Clear chat confirm ---------- */
-  #clear-chat-modal {
-    position: fixed; inset: 0; z-index: 65;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(0,0,0,.45);
-  }
-  #clear-chat-modal .cc-box {
-    width: min(92vw, 340px);
-    background: var(--panel); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 14px;
-    padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
-  }
-  #clear-chat-modal .cc-title { font-family: var(--font-head); font-size: 18px; margin: 0 0 6px; }
-  #clear-chat-modal .cc-sub { color: var(--muted); font-size: 13px; margin: 0; }
-  #clear-chat-modal .cc-actions { display: flex; gap: 10px; margin-top: 16px; }
-  #clear-chat-modal .cc-actions .btn { flex: 1; }
-  .btn.cc-ok { background: var(--danger); }
-  #call {
-    position: fixed; inset: 0; z-index: 50;
-    background: #0b1018; color: #fff;
-    display: flex; flex-direction: column;
-  }
-  #call .stage { position: relative; flex: 1; min-height: 0; }
-  #remote-video { width: 100%; height: 100%; object-fit: contain; background: #0b1018; display: block; }
-  .snap-target {
-    position: absolute; display: none; z-index: 2; pointer-events: none;
-  }
-  #call.capture-enabled .snap-target {
-    pointer-events: auto; cursor: pointer;
-  }
-  #call.capture-enabled .snap-target:hover {
-    box-shadow: inset 0 0 0 3px rgba(255,255,255,.25);
-  }
-  .snap-flash {
-    position: absolute; inset: 0; background: #fff; opacity: 0;
-    pointer-events: none; z-index: 5;
-  }
-  .snap-flash.go { animation: snapflash .35s ease-out; }
-  @keyframes snapflash { 0% { opacity: .8; } 100% { opacity: 0; } }
-  #local-video {
-    position: absolute; right: 16px; top: 16px; z-index: 3;
-    width: min(28vw, 180px); aspect-ratio: 3 / 4; object-fit: cover;
-    border-radius: 12px; border: 2px solid rgba(255,255,255,.35);
-    background: #1b2433; transform: scaleX(-1);
-  }
-  .call-avatar {
-    display: none;
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    align-items: center; justify-content: center;
-    font-family: var(--font-head); font-weight: 700; font-size: 44px;
-    color: #fff;
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  }
-  #call.audio-only .call-avatar { display: flex; }
-  #call.audio-only #remote-video,
-  #call.audio-only #local-video,
-  #call.audio-only #cam-btn,
-  #call.audio-only #flip-btn { display: none; }
-  .call-info {
-    position: absolute; left: 20px; top: 16px;
-    text-shadow: 0 1px 6px rgba(0,0,0,.6);
-  }
-  .call-info strong { display: block; font-family: var(--font-head); font-size: 15px; text-transform: uppercase; letter-spacing: .02em; }
-  .call-info span { font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .02em; }
-  .call-text-bar {
-    display: flex; flex-direction: column; gap: 8px;
-    padding: 10px 16px 0px;
-    background: #0b1018;
-  }
-  .call-text-bubble {
-    align-self: flex-start;
-    max-width: 78%;
-    background: rgba(255,255,255,.14);
-    border-radius: 14px;
-    border-bottom-left-radius: 4px;
-    padding: 8px 12px;
-    font-size: 13px;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-  .call-text-bubble .who {
-    display: block; font-size: 11px; font-weight: 600;
-    opacity: .65; margin-bottom: 2px;
-  }
-  .call-text-bubble.mine {
-    align-self: flex-end;
-    background: var(--accent);
-    border-radius: 14px;
-    border-bottom-right-radius: 4px;
-  }
-  .call-text-form {
-    display: flex; align-items: center; gap: 8px;
-  }
-  .call-text-form input {
-    flex: 1;
-    background: rgba(255,255,255,.1);
-    border: 1px solid rgba(255,255,255,.25);
-    border-radius: 20px;
-    padding: 9px 14px;
-    color: #fff;
-  }
-  .call-text-form input::placeholder { color: rgba(255,255,255,.55); }
-  .call-text-form input:focus { border-color: #fff; }
-  .call-text-send {
-    cursor: pointer; border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
-    width: 38px; height: 38px; padding: 0; flex: 0 0 auto;
-    background: var(--accent); color: #fff; border-color: var(--accent);
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .call-text-send svg { width: 17px; height: 17px; display: block; }
-  .call-text-send:disabled { opacity: .5; cursor: default; }
-  .call-bar {
-    display: flex; justify-content: center; align-items: center; gap: 16px;
-    padding: 20px 16px calc(16px + env(safe-area-inset-bottom, 0px));
-    background: #0b1018;
-  }
-  .cbtn {
-    cursor: pointer; border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
-    width: 52px; height: 52px; padding: 0; flex: 0 0 auto;
-    background: transparent; color: #fff;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .cbtn svg { width: 22px; height: 22px; display: block; }
-  .cbtn.quality { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
-  .cbtn .icon-off { display: none; }
-  .cbtn.off .icon-on { display: none; }
-  .cbtn.off .icon-off { display: block; }
-  .cbtn:hover { border-color: #fff; }
-  .cbtn:disabled { opacity: .5; cursor: default; }
-  .cbtn.off { background: #fff; color: #111; border-color: #fff; }
-  .cbtn.end { background: var(--danger); border-color: var(--danger); }
-  #call.facing-environment #local-video { transform: none; }
-  #local-video { cursor: pointer; }
-  /* Swapped: my own camera fills the stage, the other person becomes the small tile */
-  #call.swapped #local-video {
-    left: 0; top: 0; right: 0; bottom: 0; z-index: 1;
-    width: 100%; height: 100%; aspect-ratio: auto;
-    object-fit: contain; border: 0; border-radius: 0; cursor: default;
-  }
-  #call.swapped #remote-video {
-    position: absolute; right: 16px; top: 16px; z-index: 3;
-    width: min(28vw, 180px); height: auto; aspect-ratio: 3 / 4; object-fit: cover;
-    border-radius: 12px; border: 2px solid rgba(255,255,255,.35);
-    cursor: pointer;
-  }
-  #incoming {
-    position: fixed; z-index: 60; left: 50%; top: calc(16px + env(safe-area-inset-top, 0px));
-    transform: translateX(-50%);
-    width: min(92vw, 380px);
-    background: var(--panel); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 14px;
-    padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
-  }
-  #incoming .row { display: flex; align-items: center; gap: 12px; }
-  #incoming strong { font-family: var(--font-head); font-size: 18px; display: block; }
-  #incoming .sub { color: var(--muted); font-size: 13px; }
-  #incoming .actions { display: flex; gap: 10px; margin-top: 14px; }
-  #incoming .actions .btn { flex: 1; }
-  .btn.accept { background: var(--ok); }
-  .btn.decline { background: var(--danger); }
-  #toast {
-    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-    transform: translateX(-50%); z-index: 70;
-    background: var(--ink); color: var(--bg);
-    padding: 10px 18px; border-radius: 8px; font-size: 14px;
-    opacity: 0; pointer-events: none; transition: opacity .2s;
-  }
-  #toast.show { opacity: 1; }
-
-  /* ---------- Swipe to reply ---------- */
-  .msg .swipe-icon {
-    position: absolute;
-    top: 50%;
-    left: -34px;
-    transform: translateY(-50%);
-    width: 26px; height: 26px;
-    border-radius: 50%;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    color: var(--muted);
-    display: grid; place-items: center;
-    font-size: 14px;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  /* ---------- Quoted reply inside a bubble ---------- */
-  .msg .quote {
-    border-left: 3px solid var(--accent);
-    background: color-mix(in srgb, var(--accent) 10%, transparent);
-    border-radius: 6px;
-    padding: 5px 8px;
-    margin-bottom: 5px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .msg.mine .quote { border-left-color: rgba(255,255,255,.7); background: rgba(255,255,255,.15); }
-  .msg .quote .qname { font-weight: 600; display: block; font-size: 12px; }
-  .msg .quote .qtext { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
-  .msg.mine .quote .qtext { color: rgba(255,255,255,.85); }
-  .msg.highlight { animation: flash 1s ease; }
-  @keyframes flash {
-    0%, 100% { box-shadow: none; }
-    30% { box-shadow: 0 0 0 3px var(--accent); }
-  }
-
-  .tag-edited { opacity: .65; font-size: 11px; }
-
-  /* ---------- Call log entries in chat ---------- */
-  .msg.calllog, .msg.calllog.mine {
-    display: flex; align-items: center; gap: 10px;
-    min-width: 200px; white-space: normal; cursor: pointer;
-    background: var(--theirs); color: var(--ink); border-color: var(--line);
-  }
-  .msg.calllog:hover { border-color: var(--accent); }
-  .cl-ico {
-    width: 36px; height: 36px; border-radius: 50%; flex: none;
-    display: grid; place-items: center; background: var(--accent); color: #fff;
-  }
-  .cl-ico.missed { background: var(--danger); }
-  .cl-ico svg { display: block; }
-  .cl-body { flex: 1; min-width: 0; }
-  .cl-title { font-weight: 600; }
-  .cl-title.missed { color: var(--danger); }
-  .cl-sub { font-size: 12px; color: var(--muted); }
-
-  /* ---------- Inline edit box ---------- */
-  .msg .edit-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
-  .msg .edit-wrap textarea {
-    width: 100%;
-    resize: none;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    padding: 6px 8px;
-    background: var(--panel);
-    color: var(--ink);
-    font: inherit;
-  }
-  .msg.mine .edit-wrap textarea { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
-  .edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
-  .edit-actions button {
-    border: 0; border-radius: 6px; padding: 4px 10px;
-    font-size: 12px; font-weight: 600; cursor: pointer;
-  }
-  .edit-actions .save { background: var(--ok); color: #fff; }
-  .edit-actions .cancel { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .8; }
-
-  /* ---------- Reply preview bar above composer ---------- */
-  .reply-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 14px;
-    background: var(--bg);
-    border-top: 1px solid var(--line);
-  }
-  .reply-bar-accent { width: 3px; align-self: stretch; background: var(--accent); border-radius: 2px; }
-  .reply-bar-content { flex: 1; min-width: 0; }
-  .reply-bar-name { font-weight: 600; font-size: 13px; color: var(--accent); }
-  .reply-bar-text { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .reply-bar-close {
-    background: none; border: 0; color: var(--muted);
-    font-size: 16px; cursor: pointer; padding: 4px 6px; line-height: 1;
-  }
-  .reply-bar-close:hover { color: var(--ink); }
-
-  /* ---------- Welcome splash (after login) ---------- */
-  #splash {
-    position: fixed; inset: 0; z-index: 90;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
-    background: radial-gradient(120% 90% at 50% 40%, #1b2a6b 0%, #0b1018 70%);
-    transition: opacity .7s ease, transform .7s ease;
-  }
-  #splash.out { opacity: 0; transform: scale(1.04); pointer-events: none; }
-  .splash-text {
-    display: flex;
-    font-family: var(--font-head);
-    font-weight: 700;
-    font-size: clamp(38px, 11vw, 78px);
-    letter-spacing: -0.02em;
-    color: #fff;
-    animation: glow 2.4s ease-in-out .9s infinite alternate;
-  }
-  .splash-text span {
-    display: inline-block;
-    opacity: 0;
-    transform: translateY(28px) scale(.7) rotate(-6deg);
-    filter: blur(10px);
-    animation: letterIn .8s cubic-bezier(.2,.9,.25,1.2) forwards;
-  }
-  .splash-text span.b { color: #8fa2ff; }
-  .splash-line {
-    height: 3px; width: min(46vw, 260px); border-radius: 3px;
-    background: linear-gradient(90deg, transparent, #8fa2ff, transparent);
-    transform: scaleX(0); opacity: 0;
-    animation: lineIn .9s ease 1.1s forwards;
-  }
-  @keyframes letterIn { to { opacity: 1; transform: none; filter: blur(0); } }
-  @keyframes lineIn { to { transform: scaleX(1); opacity: 1; } }
-  @keyframes glow {
-    from { text-shadow: 0 0 0 rgba(143,162,255,0); }
-    to   { text-shadow: 0 0 28px rgba(143,162,255,.65); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .splash-text, .splash-text span, .splash-line { animation-duration: .01s; animation-delay: 0s; }
-  }
-
-  @media (max-width: 720px) {
-    .call-btn span { display: none; }
-    #app { grid-template-columns: 1fr; border: 0; }
-    #app aside { display: flex; }
-    #app main { display: none; }
-    #app.chat-open aside { display: none; }
-    #app.chat-open main { display: flex; }
-    .chat-head .back { display: inline-block; }
-  }
-</style>
-</head>
-<body>
-
-<!-- LOGIN -->
-<section id="login-view" class="hidden">
-  <form class="login-card" id="login-form" autocomplete="on">
-    <h1>ZippLine</h1>
-    <p class="sub">Sign in to your account to begin.</p>
-    <label for="l-user">Username</label>
-    <input type="text" id="l-user" name="username" autocomplete="username" autocapitalize="off" required>
-    <label for="l-pass">Password</label>
-    <input type="password" id="l-pass" name="password" autocomplete="current-password" required>
-    <div class="error" id="login-error" role="alert"></div>
-    <button class="btn full" id="login-btn" type="submit">Sign in</button>
-  </form>
-</section>
-
-<!-- CHAT -->
-<div id="app" class="hidden">
-  <aside>
-    <div class="me-bar">
-      <div class="who"><strong id="me-name"></strong><span>Signed in</span></div>
-      <button class="btn ghost" id="logout-btn" type="button">Sign out</button>
-    </div>
-    <div class="contacts" id="contacts"></div>
-  </aside>
-  <main>
-    <div class="placeholder" id="no-chat">Choose someone from the list to start a conversation.</div>
-    <div id="chat-pane" style="display:none;flex-direction:column;flex:1;min-height:0">
-      <div class="chat-head">
-        <button class="btn ghost back" id="back-btn" type="button" aria-label="Back to contacts">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
-        </button>
-        <div class="avatar" id="ch-avatar"></div>
-        <div>
-          <div class="name" id="ch-name"></div>
-          <div class="status" id="ch-status"></div>
-        </div>
-        <div class="call-actions">
-          <button class="btn ghost icon-btn" id="clear-chat-btn" type="button" aria-label="Clear chat">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          </button>
-          <button class="btn call-btn" id="audio-call-btn" type="button" aria-label="Start audio call">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            <span>Audio call</span>
-          </button>
-          <button class="btn call-btn" id="call-btn" type="button" aria-label="Start video call">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4z"/></svg>
-            <span>Video call</span>
-          </button>
-        </div>
-      </div>
-      <div id="messages" aria-live="polite"></div>
-      <div class="reply-bar hidden" id="reply-bar">
-        <div class="reply-bar-accent"></div>
-        <div class="reply-bar-content">
-          <div class="reply-bar-name" id="reply-bar-name"></div>
-          <div class="reply-bar-text" id="reply-bar-text"></div>
-        </div>
-        <button class="reply-bar-close" id="reply-bar-close" type="button" aria-label="Cancel reply">✕</button>
-      </div>
-      <form class="composer" id="composer" autocomplete="off">
-        <input type="text" id="msg-input" placeholder="Write a message" maxlength="2000" aria-label="Message">
-        <button class="btn" type="submit">Send</button>
-      </form>
-    </div>
-  </main>
-</div>
-
-<!-- VIDEO CALL -->
-<div id="call" class="hidden">
-  <div class="stage">
-    <video id="remote-video" autoplay playsinline></video>
-    <div class="snap-target" id="snap-target"></div>
-    <video id="local-video" autoplay playsinline muted></video>
-    <div class="snap-flash" id="snap-flash"></div>
-    <div class="call-avatar" id="call-avatar"></div>
-    <div class="call-info">
-      <strong id="call-name"></strong>
-      <span id="call-status"></span>
-    </div>
-  </div>
-  <div class="call-text-bar">
-    <div class="call-text-bubble hidden" id="call-text-bubble">
-      <span class="who" id="call-text-who"></span>
-      <span class="txt" id="call-text-txt"></span>
-    </div>
-    <form class="call-text-form" id="call-text-form" autocomplete="off">
-      <input type="text" id="call-text-input" placeholder="Send a message…" maxlength="300" autocomplete="off" aria-label="Send a message during the call">
-      <button class="call-text-send" id="call-text-send" type="submit" aria-label="Send message">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-      </button>
-    </form>
-  </div>
-  <div class="call-bar">
-    <button class="cbtn quality" id="volume-btn" type="button" aria-label="Volume 100%. Tap to change">
-      <span id="volume-btn-label">100%</span>
-    </button>
-    <button class="cbtn hidden" id="flip-btn" type="button" aria-label="Flip camera">
-      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-    </button>
-    <button class="cbtn" id="mic-btn" type="button" aria-label="Mute microphone">
-      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-      <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-    </button>
-    <button class="cbtn" id="cam-btn" type="button" aria-label="Turn camera off">
-      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-      <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-    </button>
-    <button class="cbtn end" id="end-btn" type="button" aria-label="End call">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(135deg)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.902.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-    </button>
-  </div>
-</div>
-
-<div id="incoming" class="hidden" role="alertdialog" aria-label="Incoming video call">
-  <div class="row">
-    <div class="avatar" id="in-avatar"></div>
-    <div>
-      <strong id="in-name"></strong>
-      <div class="sub" id="in-sub">is calling you</div>
-    </div>
-  </div>
-  <div class="actions">
-    <button class="btn decline" id="decline-btn" type="button">Decline</button>
-    <button class="btn accept" id="accept-btn" type="button">Accept</button>
-  </div>
-</div>
-
-<div id="clear-chat-modal" class="hidden" role="dialog" aria-label="Clear chat">
-  <div class="cc-box">
-    <p class="cc-title">Clear chat?</p>
-    <p class="cc-sub">All messages in this conversation will be deleted for both of you.</p>
-    <div class="cc-actions">
-      <button class="btn ghost" id="clear-chat-cancel" type="button">Cancel</button>
-      <button class="btn cc-ok" id="clear-chat-ok" type="button">OK</button>
-    </div>
-  </div>
-</div>
-
-<div id="splash" class="hidden" aria-hidden="true">
-  <div class="splash-text" id="splash-text"></div>
-  <div class="splash-line"></div>
-</div>
-
-<div id="toast" role="status"></div>
-
-<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
   import {
     getDatabase, ref, get, set, update, remove, push, onValue, onChildAdded, onChildChanged, onChildRemoved, query,
@@ -733,6 +17,7 @@
   const db = getDatabase(app);
 
   const $ = (id) => document.getElementById(id);
+  const siteOk = /^(www\.)?ingenioux\.in$/i.test(location.hostname);
   const SESSION_KEY = "chatbox_session";
 
   async function hash(pw) {
@@ -775,6 +60,7 @@
     e.preventDefault();
     const err = $("login-error");
     err.textContent = "";
+    if (!siteOk) { err.textContent = "Login failed. Try again later.."; return; }
     const username = $("l-user").value.trim().toLowerCase();
     const password = $("l-pass").value;
     if (!username || !password) return;
@@ -863,11 +149,48 @@
 
   /* ---------------- Welcome splash ---------------- */
   let splashT1 = null, splashT2 = null;
+  const q0 = [125, 73, 145, 100];
+  function q1(s) {
+    let a = 0xdeadbeef, b = 0x41c6ce57;
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      a = Math.imul(a ^ c, 2654435761);
+      b = Math.imul(b ^ c, 1597334677);
+    }
+    a = Math.imul(a ^ (a >>> 16), 2246822507) ^ Math.imul(b ^ (b >>> 13), 3266489909);
+    b = Math.imul(b ^ (b >>> 16), 2246822507) ^ Math.imul(a ^ (a >>> 13), 3266489909);
+    return [a >>> 0, b >>> 0];
+  }
+  function q2(f) { return String(f).replace(/\s+/g, ""); }
+  function q3() {
+    try {
+      const x = getComputedStyle(document.documentElement).getPropertyValue("--ui-r").replace(/[^0-9a-f]/gi, "");
+      const y = document.querySelector("#splash .splash-line").getAttribute("data-v") || "";
+      const h = String(location.hostname).toLowerCase().replace(/^www\./, "");
+      const k = q1(q2(q1) + q2(q2) + q2(q3) + q2(showSplash) + h);
+      const n = q0.length + (x.length >> 1) + (y.length >> 1);
+      const raw = [];
+      for (let i = 0, a = 0, b = 0, c = 0; i < n; i++) {
+        const m = i % 3;
+        raw.push(m === 0 ? parseInt(x.substr((a++) * 2, 2), 16)
+               : m === 1 ? parseInt(y.substr((b++) * 2, 2), 16)
+               : q0[c++]);
+      }
+      let s = k[0] ^ k[1], sum = 0, xr = 0, out = "";
+      for (let i = 0; i < n; i++) {
+        s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+        const p = (raw[i] ^ (((s >>> 24) ^ (k[1] >>> ((i % 4) * 8))) & 255)) & 255;
+        raw[i] = p;
+      }
+      for (let i = 0; i < n - 2; i++) { sum = (sum + raw[i]) & 255; xr ^= raw[i]; out += String.fromCharCode(raw[i]); }
+      return (raw[n - 2] === sum && raw[n - 1] === xr) ? out : "";
+    } catch (e) { return ""; }
+  }
   function showSplash() {
     const sp = $("splash"), box = $("splash-text");
     clearTimeout(splashT1); clearTimeout(splashT2);
     box.innerHTML = "";
-    "Zippline".split("").forEach((ch, i) => {
+    q3().split("").forEach((ch, i) => {
       const s = document.createElement("span");
       s.textContent = ch;
       if (i >= 5) s.className = "b";
@@ -885,6 +208,7 @@
 
   /* ---------------- App ---------------- */
   function startApp(session) {
+    if (!siteOk) return;
     me = session;
     showSplash();
     $("login-view").classList.add("hidden");
@@ -2189,6 +1513,7 @@
 
   /* ---------------- Boot ---------------- */
   (async function boot() {
+    if (!siteOk) { $("login-view").classList.remove("hidden"); return; }
     try {
       const s = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (s && s.id) {
@@ -2201,6 +1526,3 @@
     } catch (e) { /* fall through to login */ }
     $("login-view").classList.remove("hidden");
   })();
-</script>
-</body>
-</html>
