@@ -287,9 +287,9 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
         <fieldset>
           <legend class="steplab"><span class="step-n">3</span>Strength</legend>
           <div class="opts">
-            <label class="opt"><input type="radio" name="str" value="18"><span class="dot"></span><b>Light</b><span class="d">Invisible. Survives screenshots and ordinary JPEG.</span></label>
-            <label class="opt"><input type="radio" name="str" value="28" checked><span class="dot"></span><b>Standard</b><span class="d">Survives heavy JPEG, crops and resizing.</span><span class="rec">Recommended</span></label>
-            <label class="opt"><input type="radio" name="str" value="44"><span class="dot"></span><b>Strong</b><span class="d">Survives the most. Faint texture can show in smooth areas.</span></label>
+            <label class="opt"><input type="radio" name="str" value="10"><span class="dot"></span><b>Light</b><span class="d">Closest to your original. Survives screenshots and mild JPEG on photos.</span></label>
+            <label class="opt"><input type="radio" name="str" value="16" checked><span class="dot"></span><b>Standard</b><span class="d">Balanced. Survives JPEG, crops and resizing, with no visible noise.</span><span class="rec">Recommended</span></label>
+            <label class="opt"><input type="radio" name="str" value="26"><span class="dot"></span><b>Strong</b><span class="d">Survives the most, even on flat or white images. Faint texture can show.</span></label>
           </div>
         </fieldset>
 
@@ -406,6 +406,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
    * S = small seals: tiny 16x8-block tile (128x64 px) holding time + short tag, repeated over the WHOLE image.
    * F = strong seal: full note + time, higher strength, in the centre region (central 60% x 60%). */
   var SOFT = 20;
+  var CFG = { amin: 0.6, sig: 12, c4: 0.7, c2: 0.7, tpl: 1 / 60, head: 0, soft: 20, qd: 2, qds: [4, 3, 2, 1.5], skip: 1.2, emb: 0 };   // gentle by default: weaker in smooth areas, lighter sync and QOM
 
   function mulberry32(a) {
     return function () {
@@ -472,7 +473,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
     for (i = 0; i < L.NB; i++) { var pos = L.PERM[i]; tb[i] = (fr[pos >> 3] >> (7 - (pos & 7))) & 1; }
     var nbx = Math.floor(w / BS), nby = Math.floor(h / BS);
     var bx0 = reg ? reg.x0 : 0, by0 = reg ? reg.y0 : 0, bx1 = reg ? reg.x1 : nbx, by1 = reg ? reg.y1 : nby;
-    var DMAX = 4 * M, embedded = 0;
+    var embedded = 0;
     for (var by = by0; by < by1; by++) {
       for (var bx = bx0; bx < bx1; bx++) {
         var ca = 0, cb = 0, k = 0;
@@ -486,10 +487,13 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
         }
         ca /= m * m; cb /= m * m;
         var s = tb[(by % L.TH) * L.TW + (bx % L.TW)] ? 1 : -1;
+        var act = Math.sqrt(ca * ca + cb * cb), fa = CFG.amin + (1 - CFG.amin) * act / CFG.sig; if (fa > 1) fa = 1;
+        if (act < CFG.skip) continue;   // truly flat block (white page, solid fill): leave it untouched
+        var Mb = M * fa, DM = 4 * Mb;
         var d = ca - cb, need = s * d;
-        if (need >= M) { embedded++; continue; }
-        if (need < -DMAX) continue;
-        var half = (s * M - d) / 2;
+        if (need >= Mb) { embedded++; continue; }
+        if (need < -DM) continue;
+        var half = (s * Mb - d) / 2;
         for (var y2 = 0; y2 < BS; y2++) {
           var q = ((by * BS + y2) * w + bx * BS) * 4, ky2 = ((y2 / m) | 0) * 8;
           for (var x2 = 0; x2 < BS; x2++, q += 4) {
@@ -500,6 +504,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
         embedded++;
       }
     }
+    CFG.emb = embedded;
     return (bx1 - bx0) * (by1 - by0);
   }
 
@@ -508,7 +513,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
    * 64 moments (n<=15, m>0, n-m even); each |Q_nm| carries one bit by quantisation index modulation, step QD.
    * Frame: [len][6 text bytes][crc8] = 64 bits. Magnitudes are rotation invariant and the image is always
    * resampled to 128x128 before reading, so this layer survives resizing and rotation. */
-  var QN = 128, QD = 4, K3 = 1 / Math.sqrt(3), QL = null;
+  var QN = 128, K3 = 1 / Math.sqrt(3), QL = null;
   function qSetup() {
     if (QL) return QL;
     var mom = [], n, m, i, j, k, p, fa = [1], idx = [], rr = [], th = [];
@@ -575,7 +580,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
     return b;
   }
   function qEmbedImg(rgba, w, h, text) {
-    var L = qSetup(), bits = qFrame(text), rgb = qDown(rgba, w, h), K = L.K, Q = qMom(rgb, L), tgt = new Float64Array(K), k, c, i, dsum = 0;
+    var QD = CFG.qd, L = qSetup(), bits = qFrame(text), rgb = qDown(rgba, w, h), K = L.K, Q = qMom(rgb, L), tgt = new Float64Array(K), k, c, i, dsum = 0;
     for (k = 0; k < K; k++) {
       var mag = Math.hypot(Q[4 * k], Q[4 * k + 1], Q[4 * k + 2], Q[4 * k + 3]), off = bits[k] ? 0.75 : 0.25, j = Math.max(0, Math.round(mag / QD - off));
       tgt[k] = (j + off) * QD; dsum += Math.abs(tgt[k] - mag);
@@ -598,8 +603,8 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
     }
     return { bits: bits, dmean: dsum / K, moments: K };
   }
-  function qRead(rgba, w, h) {
-    var L = qSetup(), Q = qMom(qDown(rgba, w, h), L), f = new Uint8Array(8), bits = [];
+  function qRead(rgba, w, h, QD) {
+    QD = QD || CFG.qd; var L = qSetup(), Q = qMom(qDown(rgba, w, h), L), f = new Uint8Array(8), bits = [];
     for (var k = 0; k < 64; k++) {
       var mg = Math.hypot(Q[4 * k], Q[4 * k + 1], Q[4 * k + 2], Q[4 * k + 3]) / QD, b = (mg - Math.floor(mg)) >= 0.5 ? 1 : 0;
       bits.push(b); if (b) f[k >> 3] |= 128 >> (k & 7);
@@ -690,15 +695,21 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
 
   /** One short text goes into BOTH layers: QOM moments (global) first, then DCT micro-marks on every 8x8 block. */
   function embed(rgba, w, h, tag, timeSec, M) {
-    for (var ci = 0; ci < rgba.length; ci++) if ((ci & 3) !== 3) rgba[ci] = rgba[ci] < 6 ? 6 : rgba[ci] > 249 ? 249 : rgba[ci];   // headroom so white or black areas can carry the mark
-    addTemplate(rgba, w, h, M / 60);
+    var HD = CFG.head; for (var ci = 0; ci < rgba.length; ci++) if ((ci & 3) !== 3) rgba[ci] = rgba[ci] < HD ? HD : rgba[ci] > 255 - HD ? 255 - HD : rgba[ci];   // headroom so white or black areas can carry the mark
+    addTemplate(rgba, w, h, M * CFG.tpl);
     var tpl = new Uint8ClampedArray(rgba);
     var q = qEmbedImg(rgba, w, h, tag), mid = new Uint8ClampedArray(rgba);
-    embedLayer(rgba, w, h, S, tag, timeSec, M * 0.8, null, 4);   // coarse layers first: they survive zoomed-out screenshots
-    embedLayer(rgba, w, h, S, tag, timeSec, M * 0.8, null, 2);
-    var mid2 = new Uint8ClampedArray(rgba);
-    var blocks = embedLayer(rgba, w, h, S, tag, timeSec, M, null);
-    return { repeats: blocks / S.NB, blocks: blocks, qom: q, mid: mid, mid2: mid2, tpl: tpl, tplN: TPL.length, tplA: M / 60 };
+    var base = new Uint8ClampedArray(rgba), sk = CFG.skip, mid2, blocks;
+    for (var pass = 0; pass < 2; pass++) {
+      embedLayer(rgba, w, h, S, tag, timeSec, M * CFG.c4, null, 4);   // coarse layers first: they survive zoomed-out screenshots
+      embedLayer(rgba, w, h, S, tag, timeSec, M * CFG.c2, null, 2);
+      mid2 = new Uint8ClampedArray(rgba);
+      blocks = embedLayer(rgba, w, h, S, tag, timeSec, M, null);
+      if (!sk || CFG.emb >= 0.08 * blocks) break;   // too few textured blocks (clean gradient): redo, marking every block
+      rgba.set(base); CFG.skip = 0;
+    }
+    CFG.skip = sk;
+    return { repeats: blocks / S.NB, blocks: blocks, qom: q, mid: mid, mid2: mid2, tpl: tpl, tplN: TPL.length, tplA: M * CFG.tpl, qd: CFG.qd };
   }
 
   function maxRepeats(w, h) { return (Math.floor(w / 8) * Math.floor(h / 8)) / S.NB; }
@@ -753,7 +764,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
         for (var bx = 0, xs = wx0 + ox; xs + 8 <= wx1; bx++, xs += 8) {
           var ca = 0, cb = 0;
           for (k = 0; k < 8; k++) { ca += bua[k] * Va[xs + k]; cb += bub[k] * Vb[xs + k]; }
-          var sv = (ca - cb) / SOFT; if (sv > 1) sv = 1; else if (sv < -1) sv = -1;
+          var sv = (ca - cb) / CFG.soft; if (sv > 1) sv = 1; else if (sv < -1) sv = -1;
           var cell = ab + cy * TW + (bx % TW);
           acc[cell] += sv; cnt[cell] += 1;
         }
@@ -776,13 +787,13 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
       for (var yy = 0; yy < hm; yy++) for (var xx = 0; xx < wm; xx++) { var sm = 0; for (var dy = 0; dy < m2; dy++) for (var dx = 0; dx < m2; dx++) sm += gray[(yy * m2 + dy) * w + xx * m2 + dx]; gm[yy * wm + xx] = sm / (m2 * m2); }
       s = scan(gm, wm, S, 0, 0, wm, hm); mm = m2;
     }
-    var q = (s || tryQ) ? qRead(rgba, w, h) : null;
+    var q = null; if (s || tryQ) { for (var qi = 0; qi < CFG.qds.length && !(q && q.found); qi++) q = qRead(rgba, w, h, CFG.qds[qi]); }
     if (s) return { found: true, dct: true, m: mm, qom: !!(q && q.found), text: s.text, time: s.time, strength: s.strength, repeats: repeats, offset: s.offset, phase: s.phase };
     if (q && q.found) return { found: true, dct: false, qom: true, text: q.text, time: null, strength: 0.6, repeats: repeats, offset: [0, 0], phase: [0, 0] };
     return { found: false, repeats: repeats };
   }
 
-  var api = { embed: embed, extract: extract, maxRepeats: maxRepeats, byteLength: byteLength, MAXTEXT: 6, TAGMAX: 6, NB: S.NB, basis: { A: S.A, B: S.B }, qRead: qRead, syncScale: syncScale };
+  var api = { cfg: CFG, embed: embed, extract: extract, maxRepeats: maxRepeats, byteLength: byteLength, MAXTEXT: 6, TAGMAX: 6, NB: S.NB, basis: { A: S.A, B: S.B }, qRead: qRead, syncScale: syncScale };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.WM = api;
 })(typeof window !== 'undefined' ? window : this);
@@ -966,6 +977,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
       var s = state.src, ctx = s.canvas.getContext('2d');
       var id = ctx.getImageData(0, 0, s.w, s.h);
       var t = Math.floor(Date.now() / 1000); state.sealTime = t;
+      WM.cfg.qd = M >= 26 ? 3 : 2;
       var stats = WM.embed(id.data, s.w, s.h, text, t, M);
       var out = document.createElement('canvas'); out.width = s.w; out.height = s.h;
       out.getContext('2d', { willReadFrequently: true }).putImageData(id, 0, 0);
@@ -1016,7 +1028,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
       var r2 = WM.extract(x2.getImageData(0, 0, w, h).data, w, h, true);
       if (mine !== state.sealBlob) return;
       var ok = r2.found;
-      setCheck('chk2', ok ? 'ok' : 'bad', ok ? (r2.dct ? '' : 'DCT marks lost; the QOM moments still carried the text.') : (M < 44 ? 'Not at this strength. Choose a stronger setting and embed again.' : 'Not at this strength. A larger image holds more repeats.'));
+      setCheck('chk2', ok ? 'ok' : 'bad', ok ? (r2.dct ? '' : 'DCT marks lost; the QOM moments still carried the text.') : (M < 26 ? 'Not at this strength. Choose a stronger setting and embed again.' : 'Not at this strength. A larger image holds more repeats.'));
     } catch (e) {
       if (mine === state.sealBlob) setCheck('chk2', 'bad', 'The browser could not run this test.');
     }
@@ -1258,7 +1270,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
 
     var tt = state.sealTime || Math.floor(Date.now() / 1000), txt = state.sealText || '', nbytes = WM.byteLength(txt);
     var rp = st.repeats < 10 ? st.repeats.toFixed(1) : Math.floor(st.repeats);
-    var lvl = M <= 18 ? 'Light' : M <= 28 ? 'Standard' : 'Strong';
+    var lvl = M <= 10 ? 'Light' : M <= 16 ? 'Standard' : 'Strong';
     var vis = psnr >= 45 ? 'far below what the eye can notice' : psnr >= 38 ? 'practically invisible' : psnr >= 32 ? 'faint, may show in smooth areas' : 'visible in smooth areas';
     $('trLegend').textContent = 'Photos get shrunk, cropped, screenshotted and compressed, and no single trick survives all of that. So your text is written four different ways, and if one layer is damaged another can still be read. The small pictures show a ' + cw + ' × ' + ch + ' px piece from the middle of your photo. The changes are so faint that most pictures are brightened (boosted) so you can see them: grey means no change, lighter or darker grey means the pixels were changed there.';
 
@@ -1267,7 +1279,7 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
     tile('Image quality', psnr.toFixed(1) + ' dB', vis);
     tile('Repeats', rp + '×', 'full copies of the text across the image');
     tile('Colour check', good + ' / 64', good === 64 ? 'bits verified after embedding' : 'bits matched after embedding');
-    tile('Strength', lvl, 'bit margin ' + M);
+    tile('Strength', lvl, 'margin up to ' + M);
 
     var host = $('trStages'); host.replaceChildren();
     var stage = function (n, title, tag, sum, det, chipList, figs, wide) {
@@ -1288,15 +1300,15 @@ details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
       [panel('Ripples added (boosted ×16)', diffPanel(orig, st.tpl, 16))]);
     stage(3, 'Layer 2 · QOM colour fingerprint', 'survives resizing and rotation', 'A fingerprint of the whole picture’s colours carries 64 bits of your text.',
       'We treat red, green and blue together as one four-part number (a quaternion), place the picture on a 128 × 128 round disc, and measure ' + st.qom.moments + ' Zernike moments. These are 64 shape-and-colour numbers that describe the picture as a whole, not pixel by pixel. Each number carries one bit (0 or 1): we nudge its size to land on a tiny "even" or "odd" step, which is called quantisation index modulation. The 64 bits hold the length, up to 6 text bytes and a small check byte. Because it describes the whole image at a fixed 128 × 128 size, it survives resizing and even rotation, but not cropping.',
-      ['64 Zernike moments', 'orders up to 15', 'step size 4', '8 correction passes', 'average nudge ' + st.qom.dmean.toFixed(2)],
+      ['64 Zernike moments', 'orders up to 15', 'step size ' + st.qd, '8 correction passes', 'average nudge ' + st.qom.dmean.toFixed(2)],
       [panel('Fingerprint and big blocks (boosted ×16)', diffPanel(st.tpl, mid, 16)), bitsBox]);
     stage(4, 'Layer 3 · Latent diffusion', 'hides the mark in the frequency layer', 'Start from noise, clean it step by step, and your mark appears.',
       'Diffusion is the idea behind AI image generators: start from noise and clean it step by step. Here the "latent" is the pair of DCT frequency values (the same kind of numbers JPEG uses) in each 8 × 8 pixel block, for ' + st.blocks + ' blocks. We covered these values with random noise, then ran ' + T + ' small DDIM steps, each one cleaning the noise a bit more while steering the values toward the pattern that spells your text. The pictures on the right show this. There is no trained AI network here: the cleaning is done by a plain mathematical formula, so it is a diffusion-style process, not a neural model.',
       [st.blocks + ' blocks', 'noise level ' + (1 - ab(T)).toFixed(2) + ' of 1', T + ' DDIM steps', 'no trained network'],
       [panel('Covered in noise', zPanel(snaps[6])), panel('After 2 cleaning steps', zPanel(snaps[4])), panel('After 4 cleaning steps', zPanel(snaps[2])), panel('Cleaned: mark in place', zPanel(snaps[0]))]);
     stage(5, 'Layer 4 · DCT micro-marks', 'survives cropping and JPEG', 'Every 8 × 8 block of the photo stores one bit, and the pattern repeats.',
-      'A block says "1" when one frequency pattern is stronger than another by at least ' + M + ' (your ' + lvl + ' setting), and "0" when it is the other way round. A group of 16 × 8 blocks (a tile of 128 × 64 pixels holding 128 bits) contains the whole frame once, and the tile is repeated across the entire image about ' + rp + ' times, so cropping a piece still keeps a full copy. The same text is also written with bigger blocks (16 and 32 pixels) so a zoomed-out screenshot can still read it.',
-      ['8 × 8 pixel blocks', 'tile 128 × 64 px', '128 bits per tile', '~' + rp + ' repeats', 'scales 8, 16, 32 px', 'margin ' + M], null, true);
+      'A block says "1" when one frequency pattern is stronger than another by a margin of up to ' + M + ' (your ' + lvl + ' setting), and "0" when it is the other way round. The margin is scaled to the picture: it is smaller in smooth, flat areas where any change would show, and larger near edges and texture where it stays hidden. That is how the image keeps looking untouched. A group of 16 × 8 blocks (a tile of 128 × 64 pixels holding 128 bits) contains the whole frame once, and the tile is repeated across the entire image about ' + rp + ' times, so cropping a piece still keeps a full copy. The same text is also written with bigger blocks (16 and 32 pixels) so a zoomed-out screenshot can still read it.',
+      ['8 × 8 pixel blocks', 'tile 128 × 64 px', '128 bits per tile', '~' + rp + ' repeats', 'scales 8, 16, 32 px', 'margin up to ' + M, 'adaptive to the picture'], null, true);
     stage(6, 'Result', 'saved as lossless PNG', 'Quality score ' + psnr.toFixed(1) + ' dB: ' + vis + '.',
       'The quality score (PSNR) compares your original with the watermarked image. Higher is better, and above about 40 dB the change is hard to notice. The biggest change to any single pixel is ' + mx + ' out of 255. PNG saves every pixel exactly, so the watermark is kept perfectly. JPEG, or apps that shrink pictures, throw away fine detail and can weaken the mark, although screenshots of the PNG should still read. Use the Extract tab to read it back at any time.',
       ['PSNR ' + psnr.toFixed(1) + ' dB', 'largest change ' + mx + ' / 255'],
