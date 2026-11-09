@@ -580,6 +580,8 @@ const SURVEY_OPTIONS = {
   5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Fast upload', 'Great prices', 'Easy payment', 'Will use again'] },
 };
 
+const RATE_LABELS = { 1: 'Terrible', 2: 'Poor', 3: 'Okay', 4: 'Good', 5: 'Excellent' };
+
 function surveyDayKey(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
@@ -603,11 +605,13 @@ function initSurvey(token, requestKey) {
       s.classList.toggle('on', on);
       s.setAttribute('aria-checked', String(Number(s.dataset.n) === n));
     });
+    box.dataset.tone = n <= 2 ? 'low' : n === 3 ? 'mid' : 'high';
+    document.getElementById('rateLabel').textContent = RATE_LABELS[n];
     if (changed) {
       const cfg = SURVEY_OPTIONS[n];
       document.getElementById('surveyTitle').textContent = cfg.title;
       optsEl.innerHTML = cfg.opts.map(o =>
-        `<label class="survey-opt"><input type="checkbox" value="${o}"><span>${o}</span></label>`).join('');
+        `<label class="survey-opt"><input type="checkbox" value="${o}"><span class="tick">✓</span><span>${o}</span></label>`).join('');
     }
     more.classList.add('show');
   }));
@@ -637,7 +641,7 @@ function initSurvey(token, requestKey) {
         for (let i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === rating ? 1 : 0);
         return out;
       });
-      box.innerHTML = '<div class="survey-thanks">Thanks for your feedback! 🙏</div>';
+      box.innerHTML = '<div class="survey-thanks"><span>🙏</span>Thanks for your feedback!</div>';
     } catch (err) {
       btn.disabled = false;
       btn.textContent = 'Submit feedback';
@@ -656,14 +660,13 @@ function showTokenSuccess(token, requestKey, amount) {
       <div class="sub"> Collect your prints from room no. 136</div>
     </div>
     <div class="survey" id="survey">
-      <div class="survey-head">
-        <h4>How was your experience?</h4>
-        <button type="button" class="survey-skip" id="surveySkip">Skip</button>
-      </div>
-      <div class="survey-sub">Optional — takes 10 seconds.</div>
+      <button type="button" class="survey-skip" id="surveySkip">Skip</button>
+      <div class="survey-eyebrow">Quick feedback</div>
+      <h4>How was your experience?</h4>
       <div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">
         ${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" role="radio" aria-checked="false" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}
       </div>
+      <div class="rate-label" id="rateLabel">Tap a star (optional)</div>
       <div class="survey-more" id="surveyMore">
         <div class="survey-title" id="surveyTitle"></div>
         <div class="survey-opts" id="surveyOpts"></div>
