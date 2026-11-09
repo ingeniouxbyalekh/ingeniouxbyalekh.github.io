@@ -568,6 +568,84 @@ async function nextToken() {
   return String(result.snapshot.val());
 }
 
+// ---- optional post-token survey: 1-5 stars, quick-pick reasons that
+// change with the rating, and free-text feedback. Saved to
+// feedback/<id>, and also added to running totals in ratingStats/
+// (per-day buckets + all-time) so averages survive "Clear feedback". ----
+const SURVEY_OPTIONS = {
+  1: { title: 'Sorry about that. What went wrong?', opts: ['Terrible website', 'Prices are too high', 'WhatsApp is a better option', 'Upload kept failing or was too slow', 'Too confusing to use'] },
+  2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Upload was slow', 'Payment was confusing', 'WhatsApp seems easier'] },
+  3: { title: 'Okay is not great. What could improve?', opts: ['Could be faster', 'Some steps were confusing', 'Pricing is average', 'Needs more print options', 'It was fine overall'] },
+  4: { title: 'Glad it went well! What worked?', opts: ['Easy to use', 'Fast upload', 'Fair prices', 'Smooth payment', 'Just minor issues'] },
+  5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Fast upload', 'Great prices', 'Easy payment', 'Will use again'] },
+};
+
+function surveyDayKey(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function initSurvey(token, requestKey) {
+  const box = document.getElementById('survey');
+  if (!box) return;
+  const stars = [...document.querySelectorAll('#surveyStars button')];
+  const more = document.getElementById('surveyMore');
+  const optsEl = document.getElementById('surveyOpts');
+  let rating = 0;
+
+  document.getElementById('surveySkip').addEventListener('click', () => { box.remove(); });
+
+  stars.forEach(btn => btn.addEventListener('click', () => {
+    const n = Number(btn.dataset.n);
+    const changed = n !== rating;
+    rating = n;
+    stars.forEach(s => {
+      const on = Number(s.dataset.n) <= n;
+      s.classList.toggle('on', on);
+      s.setAttribute('aria-checked', String(Number(s.dataset.n) === n));
+    });
+    if (changed) {
+      const cfg = SURVEY_OPTIONS[n];
+      document.getElementById('surveyTitle').textContent = cfg.title;
+      optsEl.innerHTML = cfg.opts.map(o =>
+        `<label class="survey-opt"><input type="checkbox" value="${o}"><span>${o}</span></label>`).join('');
+    }
+    more.classList.add('show');
+  }));
+
+  document.getElementById('surveySubmit').addEventListener('click', async (e) => {
+    if (!rating) return;
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+    const reasons = [...optsEl.querySelectorAll('input:checked')].map(i => i.value);
+    const comment = document.getElementById('surveyComment').value.trim().slice(0, 500);
+    const dKey = surveyDayKey(new Date());
+    try {
+      await db.ref('feedback').push({
+        rating, reasons, comment, token, requestKey,
+        day: dKey,
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+      });
+      const bump = cur => {
+        cur = cur || { count: 0, sum: 0 };
+        return { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating };
+      };
+      await db.ref('ratingStats/days/' + dKey).transaction(bump);
+      await db.ref('ratingStats/total').transaction(cur => {
+        cur = cur || { count: 0, sum: 0 };
+        const out = { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating };
+        for (let i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === rating ? 1 : 0);
+        return out;
+      });
+      box.innerHTML = '<div class="survey-thanks">Thanks for your feedback! 🙏</div>';
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = 'Submit feedback';
+      alert('Could not send feedback right now. You can skip it, no problem.');
+    }
+  });
+}
+
 function showTokenSuccess(token, requestKey, amount) {
   const canPay = CONFIG.paymentsEnabled && window.Razorpay;
   msgArea.innerHTML = `
@@ -577,11 +655,30 @@ function showTokenSuccess(token, requestKey, amount) {
       <div class="code">${token}</div>
       <div class="sub"> Collect your prints from room no. 136</div>
     </div>
+    <div class="survey" id="survey">
+      <div class="survey-head">
+        <h4>How was your experience?</h4>
+        <button type="button" class="survey-skip" id="surveySkip">Skip</button>
+      </div>
+      <div class="survey-sub">Optional — takes 10 seconds.</div>
+      <div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">
+        ${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" role="radio" aria-checked="false" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}
+      </div>
+      <div class="survey-more" id="surveyMore">
+        <div class="survey-title" id="surveyTitle"></div>
+        <div class="survey-opts" id="surveyOpts"></div>
+        <textarea id="surveyComment" maxlength="500" placeholder="Anything else you'd like to tell us? (optional)"></textarea>
+        <div class="survey-actions">
+          <button type="button" class="btn btn-primary" id="surveySubmit" style="flex:1;justify-content:center;">Submit feedback</button>
+        </div>
+      </div>
+    </div>
     <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
       ${canPay ? `<button type="button" class="btn btn-primary" id="payNowBtn" style="width:100%;justify-content:center;">Pay now · ₹${amount}</button>` : ''}
       <div id="payMsg"></div>
       <button type="button" class="btn btn-outline" id="sendAnotherBtn" style="width:100%;justify-content:center;">Send another file</button>
     </div>`;
+  initSurvey(token, requestKey);
   const payBtn = document.getElementById('payNowBtn');
   if (payBtn) {
     payBtn.addEventListener('click', () => startPayment(requestKey, amount, payBtn, document.getElementById('payMsg')));

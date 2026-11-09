@@ -112,6 +112,28 @@
 
   .info-banner { background:#fff8e1; border:1px solid #ecd98b; border-radius:10px; padding:12px 14px; font-size:.84rem; margin-bottom:14px; display:none; }
 
+  /* ---------- ratings ---------- */
+  .star-row { color:#e0a210; letter-spacing:1px; white-space:nowrap; }
+  .star-row .off { color:#d6d2c4; }
+  .rt-toggle { display:inline-flex; gap:6px; }
+  .rt-toggle .chip-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .rt-row { display:grid; grid-template-columns:130px 1fr 110px; gap:10px; align-items:center; font-size:.84rem; margin-bottom:10px; }
+  .rt-row .track { height:8px; background:var(--paper-dim); border-radius:8px; overflow:hidden; }
+  .rt-row .fill { height:100%; background:#e0a210; border-radius:8px; transition:width .4s; }
+  .rt-row .num { text-align:right; color:var(--ink-soft); }
+  .rt-row .num b { color:var(--ink); }
+  .fb-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .fb-head h3 { margin:0; }
+  .btn-danger { font:inherit; font-size:.82rem; padding:8px 14px; border:1px solid var(--red); background:#fff; color:var(--red); border-radius:999px; cursor:pointer; transition:.15s; }
+  .btn-danger:hover { background:var(--red); color:#fff; }
+  .btn-danger:disabled { opacity:.5; cursor:default; }
+  .fb-note { font-size:.78rem; color:var(--ink-soft); margin:0 0 14px; }
+  .fb-item { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; background:#fff; }
+  .fb-top { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:.78rem; color:var(--ink-soft); margin-bottom:6px; }
+  .fb-tags { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  .fb-comment { font-size:.88rem; margin:6px 0 0; white-space:pre-wrap; word-break:break-word; }
+  @media (max-width:640px){ .rt-row { grid-template-columns:90px 1fr 84px; font-size:.78rem; } }
+
   /* ---------- mobile (desktop layout above is untouched) ---------- */
   html, body.admin { overflow-x: hidden; }
   @media (max-width: 640px) {
@@ -198,7 +220,7 @@
     <div class="topbar">
       <div>
         <h1>Admin</h1>
-        <p class="sub">Visitors &amp; shop availability</p>
+        <p class="sub">Visitors, availability &amp; ratings</p>
       </div>
       <div class="top-actions">
         <a class="chip-btn" href="print.html">Print desk</a>
@@ -210,6 +232,7 @@
     <div class="seg" role="tablist">
       <button type="button" class="active" data-panel="visitors">Visitors</button>
       <button type="button" data-panel="availability">Availability</button>
+      <button type="button" data-panel="ratings">Ratings</button>
     </div>
 
     <!-- ===== Visitors ===== -->
@@ -287,6 +310,38 @@
       </div>
     </section>
 
+  
+    <!-- ===== Ratings ===== -->
+    <section class="panel" id="panel-ratings">
+      <div class="info-banner" id="rtError"></div>
+      <div class="grid g-stats">
+        <div class="card stat accent"><div class="lbl">Today</div><div class="val" id="rToday">–</div><div class="note" id="rTodayN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="rWeek">–</div><div class="note" id="rWeekN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">This month</div><div class="val" id="rMonth">–</div><div class="note" id="rMonthN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">All time</div><div class="val" id="rAll">–</div><div class="note" id="rAllN">no ratings</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <h3>Average rating
+          <span class="rt-toggle" id="rtToggle">
+            <button type="button" class="chip-btn active" data-v="day">Day</button>
+            <button type="button" class="chip-btn" data-v="week">Week</button>
+            <button type="button" class="chip-btn" data-v="month">Month</button>
+          </span>
+        </h3>
+        <div id="rtList"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <div class="fb-head">
+          <h3>All feedback <small id="fbCount"></small></h3>
+          <button type="button" class="btn-danger" id="clearFb">Clear all feedback</button>
+        </div>
+        <p class="fb-note">Clearing removes the written feedback only. Averages and rating counts above are kept.</p>
+        <div id="fbList"><div class="empty">Loading…</div></div>
+      </div>
+    </section>
+
   </div>
 </div>
 
@@ -333,7 +388,7 @@ let started = false;
 function showApp() {
   $('gate').style.display = 'none';
   $('app').style.display = 'block';
-  if (!started) { started = true; startVisitors(); startAvailability(); }
+  if (!started) { started = true; startVisitors(); startAvailability(); startRatings(); }
 }
 if (sessionStorage.getItem('np_admin_page_ok') === '1') showApp(); else $('pw').focus();
 
@@ -532,6 +587,110 @@ function nextSlot(map) {
     }
   }
   return null;
+}
+
+/* ======================== RATINGS ======================== */
+let ratingStats = {};
+let ratingView = 'day';
+
+function mondayKey(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (x.getDay() + 6) % 7; // Monday = 0
+  x.setDate(x.getDate() - dow);
+  return dayKey(x);
+}
+const monthKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+const parseDay = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const fmtAvg = (sum, n) => n ? (sum / n).toFixed(2) : '–';
+const starRow = n => { const r = Math.round(n); return '<span class="star-row">' + '★'.repeat(r) + '<span class="off">' + '★'.repeat(5 - r) + '</span></span>'; };
+
+function sumRange(days, from, to) {
+  let c = 0, s = 0;
+  Object.keys(days).forEach(k => {
+    const d = parseDay(k);
+    if (d >= from && d <= to) { c += days[k].count || 0; s += days[k].sum || 0; }
+  });
+  return { c, s };
+}
+
+function renderRatings() {
+  const days = ratingStats.days || {};
+  const total = ratingStats.total || {};
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 6);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const far = new Date(9999, 0, 1);
+
+  const t = sumRange(days, today, today);
+  const w = sumRange(days, weekAgo, far);
+  const m = sumRange(days, monthStart, far);
+  const setStat = (id, o) => {
+    $(id).textContent = fmtAvg(o.s, o.c);
+    $(id + 'N').textContent = o.c ? (o.c + (o.c === 1 ? ' rating' : ' ratings')) : 'no ratings';
+  };
+  setStat('rToday', t); setStat('rWeek', w); setStat('rMonth', m);
+  setStat('rAll', { c: total.count || 0, s: total.sum || 0 });
+
+  // grouped averages
+  const groups = {};
+  Object.keys(days).forEach(k => {
+    const d = parseDay(k);
+    const key = ratingView === 'day' ? k : ratingView === 'week' ? mondayKey(d) : monthKey(d);
+    const g = groups[key] || (groups[key] = { c: 0, s: 0 });
+    g.c += days[k].count || 0; g.s += days[k].sum || 0;
+  });
+  const keys = Object.keys(groups).sort().reverse().slice(0, ratingView === 'day' ? 30 : ratingView === 'week' ? 12 : 12);
+  const label = key => {
+    if (ratingView === 'month') return parseDay(key + '-01').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    const d = parseDay(key);
+    const s = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return ratingView === 'week' ? 'Week of ' + s : s;
+  };
+  $('rtList').innerHTML = keys.length ? keys.map(k => {
+    const g = groups[k], avg = g.s / g.c;
+    return '<div class="rt-row"><span>' + esc(label(k)) + '</span><div class="track"><div class="fill" style="width:' + (avg / 5 * 100) + '%"></div></div><span class="num"><b>' + avg.toFixed(2) + '</b> · ' + g.c + '</span></div>';
+  }).join('') : '<div class="empty">No ratings yet.</div>';
+}
+
+function renderFeedback(list) {
+  $('fbCount').textContent = list.length ? list.length + ' shown' : '';
+  $('clearFb').disabled = !list.length;
+  $('fbList').innerHTML = list.length ? list.map(f => {
+    const when = f.createdAt ? new Date(f.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    const tags = (f.reasons || []).map(r => '<span class="pg">' + esc(r) + '</span>').join('');
+    return '<div class="fb-item"><div class="fb-top"><span>' + starRow(f.rating || 0) + ' &nbsp;' + (f.rating || 0) + '/5</span><span>' + esc(when) + (f.token ? ' · token ' + esc(f.token) : '') + '</span></div>' +
+      (tags ? '<div class="fb-tags">' + tags + '</div>' : '') +
+      (f.comment ? '<p class="fb-comment">' + esc(f.comment) + '</p>' : '') + '</div>';
+  }).join('') : '<div class="empty">No feedback yet.</div>';
+}
+
+function showRtError(err) {
+  const b = $('rtError');
+  b.style.display = 'block';
+  b.innerHTML = '<b>Database error.</b> ' + esc(err.message || err) + ' — make sure your Realtime Database rules allow read/write on the <code>feedback</code> and <code>ratingStats</code> paths.';
+}
+
+function startRatings() {
+  db.ref('ratingStats').on('value', snap => { ratingStats = snap.val() || {}; renderRatings(); }, showRtError);
+  db.ref('feedback').orderByChild('createdAt').limitToLast(300).on('value', snap => {
+    const list = [];
+    snap.forEach(c => { list.push(c.val()); });
+    renderFeedback(list.reverse());
+  }, showRtError);
+
+  $('rtToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    ratingView = b.dataset.v;
+    document.querySelectorAll('#rtToggle button').forEach(x => x.classList.toggle('active', x === b));
+    renderRatings();
+  });
+
+  $('clearFb').addEventListener('click', () => {
+    if (!confirm('Delete ALL written feedback? Average ratings will NOT be affected. This cannot be undone.')) return;
+    $('clearFb').disabled = true;
+    db.ref('feedback').remove().catch(err => { $('clearFb').disabled = false; showRtError(err); });
+  });
 }
 
 function startAvailability() {

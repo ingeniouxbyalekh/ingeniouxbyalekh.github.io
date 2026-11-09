@@ -708,3 +708,28 @@ a { color: var(--red); }
 }
 
 #print-frame { position: absolute; width: 0; height: 0; border: 0; visibility: hidden; }
+
+
+/* ---------- post-token survey (upload.html) ---------- */
+.survey { margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; padding: 16px; }
+.survey-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.survey-head h4 { font-family: "Fraunces", serif; font-size: 1.05rem; margin: 0; }
+.survey-skip { font: inherit; font-size: 0.82rem; background: none; border: none; color: var(--ink-soft); text-decoration: underline; cursor: pointer; padding: 4px; }
+.survey-skip:hover { color: var(--red); }
+.survey-sub { font-size: 0.82rem; color: var(--ink-soft); margin: 2px 0 10px; }
+.stars { display: flex; gap: 6px; }
+.stars button { font-size: 2rem; line-height: 1; background: none; border: none; cursor: pointer; color: #cfcbbd; padding: 2px; transition: transform .12s, color .12s; }
+.stars button.on { color: #e0a210; }
+.stars button:hover { transform: scale(1.12); }
+.stars button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; border-radius: 4px; }
+.survey-more { display: none; margin-top: 14px; }
+.survey-more.show { display: block; animation: surveyFade .25s ease; }
+@keyframes surveyFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.survey-title { font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; }
+.survey-opts { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+.survey-opt { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1.5px solid var(--line); border-radius: 8px; font-size: 0.88rem; cursor: pointer; background: #fff; transition: .15s; }
+.survey-opt input { width: 18px; height: 18px; accent-color: var(--red); flex: none; margin: 0; }
+.survey-opt:has(input:checked) { border-color: var(--red); background: #fbeceb; }
+.survey textarea { width: 100%; min-height: 68px; font: inherit; font-size: 0.9rem; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; resize: vertical; box-sizing: border-box; }
+.survey-actions { display: flex; gap: 10px; margin-top: 10px; }
+.survey-thanks { text-align: center; padding: 6px 0; font-size: 0.92rem; color: var(--ok); }
