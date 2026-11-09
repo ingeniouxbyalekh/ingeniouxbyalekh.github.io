@@ -200,10 +200,16 @@ function effectivePages(f) {
 // Total pages printed for one file = pages x copies (copies count towards the offer)
 function totalPages(f) { return effectivePages(f) * (f.copies || 1); }
 
-// Bulk offer: files with 10 or more pages get a lower B&W / colour rate.
+// Bulk offer: the pages of ALL files in one order (token) are added up
+// (pages x copies, photo paper excluded). Once the sum reaches minPages,
+// every B&W / colour file in the order gets the lower rate.
+function orderPages() {
+  return selectedFiles.reduce((sum, f) => sum + (f.printType === 'photo' ? 0 : totalPages(f)), 0);
+}
+
 function offerApplies(f) {
   const o = CONFIG.offer;
-  return !!o && f.printType !== 'photo' && totalPages(f) >= o.minPages;
+  return !!o && f.printType !== 'photo' && orderPages() >= o.minPages;
 }
 
 function ratePerPage(printType, offer) {
@@ -223,19 +229,14 @@ function filePrice(f) {
 function rateNoteState(f) {
   const o = CONFIG.offer;
   if (f.printType === 'photo' || !o) return { cls: 'rate-note', html: '' };
-  const pages = totalPages(f);
   const reg = ratePerPage(f.printType, false);
   const off = ratePerPage(f.printType, true);
   if (offerApplies(f)) {
-    const saved = pages * (reg - off);
+    const saved = totalPages(f) * (reg - off);
     return { cls: 'rate-note offer-on', html: `<span class="ofr-badge">Offer applied</span><span><strong>₹${off}</strong>/page <s>₹${reg}</s> · you save <strong>₹${saved}</strong></span>` };
   }
-  const known = f.kind !== 'doc' && f.pageCount;
-  if (known && pages < o.minPages) {
-    const need = o.minPages - pages;
-    return { cls: 'rate-note nudge', html: `<span class="ofr-badge">Bulk offer</span><span>Print <strong>${need} more page${need > 1 ? 's' : ''}</strong> (pages × copies) to get <strong>₹${off}</strong>/page (now ₹${reg})</span>` };
-  }
-  return { cls: 'rate-note nudge', html: `<span class="ofr-badge">Bulk offer</span><span>₹${reg}/page · <strong>₹${off}</strong>/page from ${o.minPages} pages</span>` };
+  const need = o.minPages - orderPages();
+  return { cls: 'rate-note nudge', html: `<span class="ofr-badge">Bulk offer</span><span>Add <strong>${need} more page${need > 1 ? 's' : ''}</strong> in this order to get <strong>₹${off}</strong>/page (now ₹${reg})</span>` };
 }
 
 function updateRateNote(f) {
@@ -249,6 +250,7 @@ function updateRateNote(f) {
 function recalcPrice() {
   const total = selectedFiles.reduce((sum, f) => sum + filePrice(f), 0);
   amountDisplay.textContent = '₹' + total;
+  selectedFiles.forEach(updateRateNote);
   return total;
 }
 
