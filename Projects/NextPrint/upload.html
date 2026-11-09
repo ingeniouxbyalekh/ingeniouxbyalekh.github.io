@@ -55,12 +55,9 @@
           </div>
         </div>
 
-        <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
-          <button type="button" class="btn btn-primary" id="payNowBtn" style="width:100%;justify-content:center;">
-            Pay now
-          </button>
-          <button type="button" class="btn btn-outline" id="payLaterBtn" style="width:100%;justify-content:center;">
-            Pay after delivery
+        <div style="margin-top:16px;">
+          <button type="button" class="btn btn-primary" id="uploadBtn" style="width:100%;justify-content:center;">
+            Upload Files
           </button>
         </div>
       </form>
@@ -98,8 +95,7 @@ const fileListEl = document.getElementById('fileList');
 const addMoreRow = document.getElementById('addMoreRow');
 const addMoreBtn = document.getElementById('addMoreBtn');
 const msgArea = document.getElementById('msg-area');
-const payNowBtn = document.getElementById('payNowBtn');
-const payLaterBtn = document.getElementById('payLaterBtn');
+const uploadBtn = document.getElementById('uploadBtn');
 const amountDisplay = document.getElementById('amountDisplay');
 
 // Each entry: { file, id, status, url, progress, kind, pageCount,
@@ -520,38 +516,42 @@ async function nextToken() {
   return String(result.snapshot.val());
 }
 
-function showTokenSuccess(token) {
+function showTokenSuccess(token, requestKey, amount) {
+  const canPay = CONFIG.paymentsEnabled && window.Razorpay;
   msgArea.innerHTML = `
-    <div class="msg success">Sent for printing.</div>
+    <div class="msg success">Files uploaded. Sent for printing.</div>
     <div class="otp-banner">
       <div style="font-size:0.85rem;color:var(--ink-soft);">Your token number</div>
       <div class="code">${token}</div>
       <div class="sub"> Collect your prints from room no. 136</div>
     </div>
-    <div style="margin-top:16px;text-align:center;">
-      <button type="button" class="btn btn-outline" id="sendAnotherBtn">Send another file</button>
+    <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px;">
+      ${canPay ? `<button type="button" class="btn btn-primary" id="payNowBtn" style="width:100%;justify-content:center;">Pay now · ₹${amount}</button>` : ''}
+      <div id="payMsg"></div>
+      <button type="button" class="btn btn-outline" id="sendAnotherBtn" style="width:100%;justify-content:center;">Send another file</button>
     </div>`;
+  const payBtn = document.getElementById('payNowBtn');
+  if (payBtn) {
+    payBtn.addEventListener('click', () => startPayment(requestKey, amount, payBtn, document.getElementById('payMsg')));
+  }
   document.getElementById('sendAnotherBtn').addEventListener('click', () => {
     msgArea.innerHTML = '';
     document.getElementById('request-form').style.display = '';
   });
 }
 
-// ---- disable/relabel both action buttons while a request is in flight,
-// and restore them afterwards ----
-function setBusy(activeBtn, text) {
-  payNowBtn.disabled = true;
-  payLaterBtn.disabled = true;
-  if (activeBtn && text) activeBtn.textContent = text;
+// ---- disable/relabel the upload button while a request is in flight,
+// and restore it afterwards ----
+function setBusy(text) {
+  uploadBtn.disabled = true;
+  if (text) uploadBtn.textContent = text;
 }
 function clearBusy() {
-  payNowBtn.disabled = false;
-  payLaterBtn.disabled = false;
-  payNowBtn.textContent = 'Pay now';
-  payLaterBtn.textContent = 'Pay after delivery';
+  uploadBtn.disabled = false;
+  uploadBtn.textContent = 'Upload Files';
 }
 
-// ---- shared validation for both buttons: checks files are attached
+// ---- validation before upload: checks files are attached
 // and any custom page ranges are valid, then returns the total amount
 // (or null, having already shown an error message) ----
 function validateAndGetAmount() {
@@ -583,9 +583,8 @@ function validateAndGetAmount() {
   return amount;
 }
 
-// ---- shared file prep + upload, used by both "Pay now" and "Pay
-// after delivery" ----
-async function processFiles(activeBtn) {
+// ---- file prep + upload ----
+async function processFiles() {
   for (const f of selectedFiles) {
     if (f.status === 'done') continue;
 
@@ -619,34 +618,41 @@ async function processFiles(activeBtn) {
       f._grayscaled = true;
     }
 
-    activeBtn.textContent = 'Uploading files…';
+    uploadBtn.textContent = 'Uploading files…';
     await uploadToCloudinary(f);
   }
 }
 
-// ---- "Pay now": prep & upload files, then open Razorpay checkout for
-// the estimated amount. The request is only saved once payment succeeds. ----
-payNowBtn.addEventListener('click', async () => {
+// ---- "Upload Files": prep & upload files, then save the request as
+// unpaid and hand out the token. "Pay now" is offered on the token screen. ----
+uploadBtn.addEventListener('click', async () => {
   const amount = validateAndGetAmount();
   if (amount === null) return;
 
-  setBusy(payNowBtn, 'Preparing files…');
+  setBusy('Preparing files…');
   try {
-    await processFiles(payNowBtn);
+    await processFiles();
   } catch (err) {
     showMsg(err.message || 'Something went wrong preparing your files.', 'error');
     clearBusy();
     return;
   }
 
+  uploadBtn.textContent = 'Sending request…';
+  const formValues = { notes: document.getElementById('notes').value.trim() };
+  saveRequest(formValues, amount, { paymentStatus: 'unpaid' });
+});
+
+// ---- "Pay now" (shown after the token is generated): opens Razorpay for
+// the request's amount and, on success, marks that saved request as paid ----
+function startPayment(requestKey, amount, payBtn, payMsg) {
   if (!CONFIG.paymentsEnabled || !window.Razorpay) {
-    showMsg('Online payment is unavailable right now. Please use "Pay after delivery", or reload the page.', 'error');
-    clearBusy();
+    payMsg.innerHTML = '<div class="msg error">Online payment is unavailable right now. You can pay at the counter.</div>';
     return;
   }
-
-  const formValues = { notes: document.getElementById('notes').value.trim() };
-  payNowBtn.textContent = 'Opening payment…';
+  payMsg.innerHTML = '';
+  payBtn.disabled = true;
+  payBtn.textContent = 'Opening payment…';
 
   const rzp = new Razorpay({
     key: CONFIG.razorpay.keyId,
@@ -655,47 +661,36 @@ payNowBtn.addEventListener('click', async () => {
     name: 'NextPrint',
     description: 'Print request',
     handler: function (response) {
-      saveRequest(formValues, amount, {
+      payBtn.textContent = 'Confirming payment…';
+      db.ref('printRequests/' + requestKey).update({
         paymentStatus: 'paid',
         paymentId: response.razorpay_payment_id,
+        paymentMethod: 'razorpay',
+      }).then(() => {
+        payBtn.style.display = 'none';
+        payMsg.innerHTML = '<div class="msg success">Payment received. Thank you!</div>';
+      }).catch(() => {
+        payBtn.style.display = 'none';
+        payMsg.innerHTML = '<div class="msg error">Payment went through (ID: ' + escapeHtml(response.razorpay_payment_id) + ') but we could not update your request. Please show this ID at the counter.</div>';
       });
     },
     modal: {
       ondismiss: function () {
-        clearBusy();
-        showMsg('Payment was not completed. You can try again, or choose "Pay after delivery".', 'error');
+        payBtn.disabled = false;
+        payBtn.textContent = 'Pay now · ₹' + amount;
       },
     },
   });
 
   rzp.on('payment.failed', function (response) {
-    clearBusy();
+    payBtn.disabled = false;
+    payBtn.textContent = 'Pay now · ₹' + amount;
     const desc = response && response.error && response.error.description;
-    showMsg('Payment failed' + (desc ? ': ' + desc : '.') + ' You can try again, or choose "Pay after delivery".', 'error');
+    payMsg.innerHTML = '<div class="msg error">Payment failed' + (desc ? ': ' + escapeHtml(desc) : '.') + ' You can try again or pay at the counter.</div>';
   });
 
   rzp.open();
-});
-
-// ---- "Pay after delivery": prep & upload files, then save the
-// request straight away with no payment step ----
-payLaterBtn.addEventListener('click', async () => {
-  const amount = validateAndGetAmount();
-  if (amount === null) return;
-
-  setBusy(payLaterBtn, 'Preparing files…');
-  try {
-    await processFiles(payLaterBtn);
-  } catch (err) {
-    showMsg(err.message || 'Something went wrong preparing your files.', 'error');
-    clearBusy();
-    return;
-  }
-
-  payLaterBtn.textContent = 'Sending request…';
-  const formValues = { notes: document.getElementById('notes').value.trim() };
-  saveRequest(formValues, amount, { paymentStatus: 'unpaid' });
-});
+}
 
 async function saveRequest(formValues, amount, paymentInfo) {
   let token;
@@ -732,9 +727,10 @@ async function saveRequest(formValues, amount, paymentInfo) {
     files: filesData,
   };
 
-  db.ref('printRequests').push(record)
+  const newRef = db.ref('printRequests').push();
+  newRef.set(record)
     .then(() => {
-      showTokenSuccess(token);
+      showTokenSuccess(token, newRef.key, amount);
       document.getElementById('request-form').reset();
       selectedFiles = [];
       renderFileList();

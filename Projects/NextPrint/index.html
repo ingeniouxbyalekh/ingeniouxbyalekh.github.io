@@ -84,13 +84,11 @@
     font-family: "IBM Plex Sans", sans-serif;
   }
   .tile-dnd {
-    background: var(--ink);
-    border-color: var(--ink);
-    color: #fff;
     grid-column: 1 / -1;
+    padding: 14px;
+    font-size: 0.9rem;
+    color: var(--ink);
   }
-  .tile-dnd .tile-label { color: #cfcfcf; }
-  .tile-dnd .tile-value { color: #fff; }
 
   .home-cta {
     margin-top: 14px;
@@ -108,6 +106,40 @@
     font-size: 0.78rem;
     color: var(--ink-soft);
   }
+
+  /* ---- shop status banner (driven by admin.html) ---- */
+  .shop-status {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    border-radius: 12px;
+    border: 1.5px solid var(--line);
+    background: #fff;
+    margin-bottom: 14px;
+    transition: background .3s, border-color .3s;
+  }
+  .shop-status .dot-live {
+    width: 14px; height: 14px; border-radius: 50%;
+    background: #b9b5a8; flex: none;
+  }
+  .shop-status .ss-title {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600; font-size: 1.25rem; line-height: 1.2;
+  }
+  .shop-status .ss-sub { font-size: 0.85rem; color: var(--ink-soft); margin-top: 2px; }
+  .shop-status.is-open { background: #eaf5ee; border-color: var(--ok); }
+  .shop-status.is-open .dot-live {
+    background: var(--ok);
+    box-shadow: 0 0 0 0 rgba(47,122,77,.5);
+    animation: livePulse 1.8s infinite;
+  }
+  .shop-status.is-closed { background: #fbeceb; border-color: var(--red); }
+  .shop-status.is-closed .dot-live { background: var(--red); }
+  @keyframes livePulse {
+    70% { box-shadow: 0 0 0 12px rgba(47,122,77,0); }
+    100% { box-shadow: 0 0 0 0 rgba(47,122,77,0); }
+  }
 </style>
 </head>
 <body class="home-simple" data-page="index">
@@ -116,6 +148,14 @@
 
   <div class="home-brand">
     <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+  </div>
+
+  <div class="shop-status" id="shopStatus" aria-live="polite">
+    <span class="dot-live"></span>
+    <div>
+      <div class="ss-title" id="ssTitle">Checking shop status…</div>
+      <div class="ss-sub" id="ssSub"></div>
+    </div>
   </div>
 
   <div class="home-tiles">
@@ -138,21 +178,7 @@
       </div>
     </div>
 
-    <div class="tile tile-full">
-      <span class="tile-icon">🕘</span>
-      <div>
-        <div class="tile-label">Print time</div>
-        <div class="tile-value">9 PM – 11 PM</div>
-      </div>
-    </div>
-
-    <div class="tile tile-dnd">
-      <span class="tile-icon">🔕</span>
-      <div>
-        <div class="tile-label">Outside this time</div>
-        <div class="tile-value">Do not disturb</div>
-      </div>
-    </div>
+    <div class="tile tile-dnd">🔕 Outside this time: Do not disturb</div>
   </div>
 
   <div class="home-cta">
@@ -168,5 +194,57 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="config.js"></script>
 <script src="analytics.js"></script>
+<script>
+/* ---- live shop status from Firebase (set in admin.html) ----
+   shop/open  -> true = open, false = closed
+   shop/slots -> { "10": true, ... } hours available while closed (IST)  */
+(function () {
+  if (typeof firebase === 'undefined' || typeof CONFIG === 'undefined') return;
+  if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
+  var db = firebase.database();
+
+  var box = document.getElementById('shopStatus');
+  var title = document.getElementById('ssTitle');
+  var sub = document.getElementById('ssSub');
+  var state = null;
+
+  function hourLabel(h) { return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); }
+  function slotLabel(h) { return hourLabel(h) + ' \u2013 ' + hourLabel((h + 1) % 24); }
+  function istHour() {
+    return parseInt(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }).format(new Date()), 10) % 24;
+  }
+
+  function render() {
+    if (!state) return;
+    box.classList.remove('is-open', 'is-closed');
+    if (state.open) {
+      box.classList.add('is-open');
+      title.textContent = 'Shop is open';
+      sub.textContent = 'You can upload your files now.';
+      return;
+    }
+    box.classList.add('is-closed');
+    title.textContent = 'Shop is closed';
+    var nowH = istHour(), found = null;
+    for (var i = 0; i < 24; i++) {
+      var h = (nowH + i) % 24;
+      if (state.slots[h] === true) { found = { h: h, i: i, later: h > nowH }; break; }
+    }
+    if (!found) { sub.textContent = 'No slot available right now.'; return; }
+    var when = found.i === 0 ? 'Now' : (found.later ? 'Today' : 'Tomorrow');
+    sub.textContent = 'Next available slot: ' + when + ', ' + slotLabel(found.h);
+  }
+
+  db.ref('shop').on('value', function (snap) {
+    var v = snap.val() || {};
+    state = { open: v.open === true, slots: v.slots || {} };
+    render();
+  }, function () {
+    title.textContent = 'Shop status unavailable';
+    sub.textContent = '';
+  });
+  setInterval(render, 60000);
+})();
+</script>
 </body>
 </html>

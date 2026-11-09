@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — NextPrint</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- admin.html — scoped styles (shared tokens come from style.css) ---- */
+  body.admin { background: var(--paper); min-height: 100vh; }
+  .admin-wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 70px; }
+
+  /* top bar */
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
+  .topbar h1 { font-size:1.7rem; margin:0; }
+  .topbar .sub { font-size:.82rem; color:var(--ink-soft); margin:2px 0 0; }
+  .top-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip-btn { font:inherit; font-size:.82rem; padding:8px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; cursor:pointer; text-decoration:none; transition:.15s; }
+  .chip-btn:hover { border-color:var(--red); color:var(--red); }
+
+  /* section tabs */
+  .seg { display:inline-flex; background:var(--paper-dim); border:1px solid var(--line); border-radius:999px; padding:4px; margin-bottom:22px; }
+  .seg button { font:inherit; font-size:.88rem; font-weight:500; border:none; background:none; padding:9px 20px; border-radius:999px; cursor:pointer; color:var(--ink-soft); transition:.15s; }
+  .seg button.active { background:var(--ink); color:#fff; }
+  .panel { display:none; }
+  .panel.active { display:block; animation:fade .25s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none} }
+
+  /* cards */
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .card h3 { font-size:1.05rem; margin:0 0 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .card h3 small { font-family:"IBM Plex Sans",sans-serif; font-weight:400; font-size:.75rem; color:var(--ink-soft); }
+  .grid { display:grid; gap:14px; }
+  .g-stats { grid-template-columns:repeat(4,1fr); margin-bottom:14px; }
+  .g-two { grid-template-columns:1.6fr 1fr; margin-bottom:14px; }
+  .g-two-even { grid-template-columns:1fr 1fr; margin-bottom:14px; }
+  @media (max-width:820px){ .g-stats{grid-template-columns:repeat(2,1fr)} .g-two,.g-two-even{grid-template-columns:1fr} }
+
+  .stat { position:relative; overflow:hidden; }
+  .stat .lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+  .stat .val { font-family:"Fraunces",serif; font-weight:600; font-size:2rem; line-height:1.15; margin-top:6px; }
+  .stat .note { font-size:.74rem; color:var(--ink-soft); margin-top:2px; }
+  .stat::after { content:""; position:absolute; right:-18px; top:-18px; width:64px; height:64px; border-radius:50%; background:var(--paper-dim); }
+  .stat.accent::after { background:#f6dcdb; }
+  .stat.accent .val { color:var(--red); }
+
+  /* bar chart */
+  .chart { display:flex; align-items:flex-end; gap:6px; height:170px; padding-top:10px; }
+  .chart .col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .chart .bar { width:100%; max-width:34px; background:var(--ink); border-radius:5px 5px 0 0; min-height:2px; position:relative; transition:height .4s; }
+  .chart .col.today .bar { background:var(--red); }
+  .chart .bar span { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:.68rem; color:var(--ink-soft); }
+  .chart .day { font-size:.64rem; color:var(--ink-soft); margin-top:6px; white-space:nowrap; }
+
+  /* ranked lists */
+  .rank { list-style:none; margin:0; padding:0; }
+  .rank li { margin-bottom:12px; }
+  .rank .row { display:flex; justify-content:space-between; font-size:.86rem; margin-bottom:4px; gap:8px; }
+  .rank .row span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank .track { height:6px; background:var(--paper-dim); border-radius:6px; overflow:hidden; }
+  .rank .fill { height:100%; background:var(--blue); border-radius:6px; transition:width .4s; }
+  .empty { color:var(--ink-soft); font-size:.86rem; padding:12px 0; }
+
+  /* table */
+  .tbl-wrap { overflow-x:auto; }
+  table.vt { width:100%; border-collapse:collapse; font-size:.82rem; }
+  table.vt th { text-align:left; font-weight:500; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.vt td { padding:10px; border-bottom:1px solid var(--paper-dim); white-space:nowrap; }
+  table.vt tr:last-child td { border-bottom:none; }
+  .pg { display:inline-block; background:var(--paper-dim); padding:2px 9px; border-radius:999px; font-size:.74rem; }
+  .mono { font-family:"IBM Plex Mono",monospace; font-size:.78rem; }
+
+  /* ---------- availability ---------- */
+  .shop-card { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:24px; margin-bottom:14px; border-width:2px; transition:.25s; }
+  .shop-card.open { border-color:var(--ok); background:linear-gradient(135deg,#fff,#eaf5ee); }
+  .shop-card.closed { border-color:var(--red); background:linear-gradient(135deg,#fff,#fbeceb); }
+  .shop-state { display:flex; align-items:center; gap:14px; }
+  .pulse { width:14px; height:14px; border-radius:50%; background:var(--ok); box-shadow:0 0 0 0 rgba(47,122,77,.5); animation:pulse 1.8s infinite; flex:none; }
+  .closed .pulse { background:var(--red); animation:none; }
+  @keyframes pulse { 70%{box-shadow:0 0 0 12px rgba(47,122,77,0)} 100%{box-shadow:0 0 0 0 rgba(47,122,77,0)} }
+  .shop-state h2 { font-size:1.5rem; margin:0; }
+  .shop-state p { margin:2px 0 0; font-size:.84rem; }
+
+  .switch { position:relative; width:76px; height:42px; flex:none; }
+  .switch input { opacity:0; width:0; height:0; position:absolute; }
+  .switch .sl { position:absolute; inset:0; background:#c9c5b8; border-radius:999px; cursor:pointer; transition:.25s; }
+  .switch .sl::before { content:""; position:absolute; width:34px; height:34px; left:4px; top:4px; background:#fff; border-radius:50%; transition:.25s; box-shadow:0 2px 5px rgba(0,0,0,.25); }
+  .switch input:checked + .sl { background:var(--ok); }
+  .switch input:checked + .sl::before { transform:translateX(34px); }
+  .switch input:focus-visible + .sl { outline:2px solid var(--blue); outline-offset:3px; }
+
+  .slots-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .slots-head h3 { margin:0; }
+  .slots-tools { display:flex; gap:8px; }
+  .slots-help { font-size:.84rem; margin-bottom:16px; }
+  .slots { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  @media (max-width:820px){ .slots{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:520px){ .slots{grid-template-columns:repeat(2,1fr)} }
+  .slot { position:relative; }
+  .slot input { position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer; margin:0; z-index:2; }
+  .slot .box { display:flex; align-items:center; gap:10px; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff; font-size:.84rem; transition:.15s; }
+  .slot .tick { width:20px; height:20px; border-radius:6px; border:1.5px solid #b9b5a8; display:grid; place-items:center; color:transparent; font-size:.8rem; flex:none; transition:.15s; }
+  .slot input:checked + .box { border-color:var(--ok); background:#eaf5ee; }
+  .slot input:checked + .box .tick { background:var(--ok); border-color:var(--ok); color:#fff; }
+  .slot input:focus-visible + .box { outline:2px solid var(--blue); outline-offset:2px; }
+  .slot.past .box { opacity:.55; }
+  .next-pill { display:inline-block; margin-top:14px; padding:8px 14px; border-radius:999px; background:var(--paper-dim); font-size:.84rem; }
+  .save-note { font-size:.78rem; color:var(--ok); height:1em; margin-top:10px; }
+
+  .info-banner { background:#fff8e1; border:1px solid #ecd98b; border-radius:10px; padding:12px 14px; font-size:.84rem; margin-bottom:14px; display:none; }
+
+  /* ---------- mobile (desktop layout above is untouched) ---------- */
+  html, body.admin { overflow-x: hidden; }
+  @media (max-width: 640px) {
+    :root { font-size: 16px; }
+    .admin-wrap { padding: 16px 12px 56px; }
+
+    .topbar { margin-bottom: 16px; align-items: flex-start; }
+    .topbar > div:first-child { width: 100%; }
+    .topbar h1 { font-size: 1.4rem; }
+    .top-actions { width: 100%; display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
+    .chip-btn { text-align: center; padding: 10px 8px; font-size: .8rem; white-space: nowrap; }
+
+    .seg { display: flex; width: 100%; margin-bottom: 16px; }
+    .seg button { flex: 1; padding: 10px 8px; font-size: .86rem; }
+
+    .card { padding: 14px; border-radius: 10px; }
+    .card h3 { font-size: 1rem; margin-bottom: 12px; flex-wrap: wrap; }
+    .grid { gap: 10px; }
+    .g-stats, .g-two, .g-two-even { margin-bottom: 10px; }
+
+    .g-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat .val { font-size: 1.55rem; }
+    .stat .lbl { font-size: .64rem; }
+    .stat .note { font-size: .68rem; }
+    .stat::after { width: 46px; height: 46px; right: -14px; top: -14px; }
+
+    /* 14 bars: tighter, and label every other day so they don't collide */
+    .chart { gap: 3px; height: 140px; }
+    .chart .bar { max-width: 22px; }
+    .chart .bar span { font-size: .58rem; top: -15px; }
+    .chart .day { font-size: .56rem; margin-top: 5px; }
+    .chart .col:nth-child(even) .day { visibility: hidden; }
+
+    .rank .row { font-size: .82rem; }
+
+    /* recent visitors: table becomes a stack of small cards */
+    .tbl-wrap { overflow-x: visible; }
+    table.vt, table.vt tbody, table.vt tr, table.vt td { display: block; width: 100%; }
+    table.vt thead { display: none; }
+    table.vt tr { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; background: #fff; }
+    table.vt tr:last-child { margin-bottom: 0; }
+    table.vt td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--paper-dim); white-space: normal; text-align: right; word-break: break-word; }
+    table.vt td:last-child { border-bottom: none; }
+    table.vt td[data-label]::before { content: attr(data-label); flex: none; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); text-align: left; }
+    table.vt td[colspan] { display: block; text-align: center; }
+
+    /* availability */
+    .shop-card { padding: 16px; gap: 14px; flex-wrap: nowrap; }
+    .shop-state { gap: 12px; min-width: 0; }
+    .shop-state h2 { font-size: 1.25rem; }
+    .shop-state p { font-size: .8rem; }
+    .slots-head { align-items: flex-start; }
+    .slots-tools { width: 100%; }
+    .slots-tools .chip-btn { flex: 1; }
+    .slots { gap: 8px; }
+    .slot .box { padding: 12px 10px; font-size: .8rem; gap: 8px; min-height: 46px; }
+    .next-pill { display: block; border-radius: 12px; line-height: 1.4; }
+    .info-banner { font-size: .8rem; }
+  }
+  @media (max-width: 360px) {
+    .top-actions { grid-template-columns: 1fr 1fr; }
+    .top-actions .chip-btn:last-child { grid-column: 1 / -1; }
+    .stat .val { font-size: 1.35rem; }
+  }
+</style>
+</head>
+<body class="admin">
+
+<!-- ================= password gate (same password as print.html) ================= -->
+<div id="gate" class="gate">
+  <div class="gate-card" id="gateCard">
+    <div class="logo" style="justify-content:center;margin-bottom:6px;">Next<span class="dot">Print</span></div>
+    <p style="font-size:0.9rem;" id="gateIntro">Admin — staff only</p>
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-primary" id="unlockBtn" style="width:100%;justify-content:center;">Unlock</button>
+    <p class="hint" id="gateError" style="color:var(--red);margin-top:8px;"></p>
+  </div>
+</div>
+
+<!-- ================= dashboard ================= -->
+<div id="app" style="display:none;">
+  <div class="admin-wrap">
+
+    <div class="topbar">
+      <div>
+        <h1>Admin</h1>
+        <p class="sub">Visitors &amp; shop availability</p>
+      </div>
+      <div class="top-actions">
+        <a class="chip-btn" href="print.html">Print desk</a>
+        <a class="chip-btn" href="index.html" target="_blank" rel="noopener">View site</a>
+        <button class="chip-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </div>
+
+    <div class="seg" role="tablist">
+      <button type="button" class="active" data-panel="visitors">Visitors</button>
+      <button type="button" data-panel="availability">Availability</button>
+    </div>
+
+    <!-- ===== Visitors ===== -->
+    <section class="panel active" id="panel-visitors">
+      <div class="grid g-stats">
+        <div class="card stat accent"><div class="lbl">Total visits</div><div class="val" id="sTotal">–</div><div class="note">all pages, all time</div></div>
+        <div class="card stat"><div class="lbl">Today</div><div class="val" id="sToday">–</div><div class="note">visits since midnight</div></div>
+        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="sWeek">–</div><div class="note">visits</div></div>
+        <div class="card stat"><div class="lbl">Unique visitors</div><div class="val" id="sUnique">–</div><div class="note" id="sUniqueNote">by IP, recent log</div></div>
+      </div>
+
+      <div class="grid g-two">
+        <div class="card">
+          <h3>Visits — last 14 days <small id="chartNote"></small></h3>
+          <div class="chart" id="chart"></div>
+        </div>
+        <div class="card">
+          <h3>Pages <small>all time</small></h3>
+          <ul class="rank" id="pagesRank"><li class="empty">Loading…</li></ul>
+        </div>
+      </div>
+
+      <div class="grid g-two-even">
+        <div class="card">
+          <h3>Top locations <small>recent log</small></h3>
+          <ul class="rank" id="locRank"><li class="empty">Loading…</li></ul>
+        </div>
+        <div class="card">
+          <h3>Devices <small>recent log</small></h3>
+          <ul class="rank" id="devRank"><li class="empty">Loading…</li></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent visitors <small id="logNote"></small></h3>
+        <div class="tbl-wrap">
+          <table class="vt">
+            <thead><tr><th>When</th><th>Page</th><th>IP</th><th>Location</th><th>ISP</th><th>Device</th></tr></thead>
+            <tbody id="visitRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Availability ===== -->
+    <section class="panel" id="panel-availability">
+      <div class="info-banner" id="dbError"></div>
+
+      <div class="card shop-card closed" id="shopCard">
+        <div class="shop-state">
+          <span class="pulse"></span>
+          <div>
+            <h2 id="shopTitle">Loading…</h2>
+            <p id="shopSub">Fetching current status.</p>
+          </div>
+        </div>
+        <label class="switch" title="Shop open / closed">
+          <input type="checkbox" id="shopToggle" aria-label="Shop is open">
+          <span class="sl"></span>
+        </label>
+      </div>
+
+      <div class="card" id="slotsCard" style="display:none;">
+        <div class="slots-head">
+          <h3>Available time slots</h3>
+          <div class="slots-tools">
+            <button type="button" class="chip-btn" id="selAll">Select all</button>
+            <button type="button" class="chip-btn" id="selNone">Clear</button>
+          </div>
+        </div>
+        <p class="slots-help">The shop is closed. Tick the hours you will be available — visitors on the home page will see the next ticked slot. Times are in IST and repeat every day.</p>
+        <div class="slots" id="slots"></div>
+        <div class="next-pill" id="nextPill"></div>
+        <div class="save-note" id="saveNote"></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+const $ = id => document.getElementById(id);
+
+/* ---------- password check: same hash print.html uses (adminAuth/passwordHash) ---------- */
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function tryUnlock() {
+  $('gateError').textContent = '';
+  try {
+    const snap = await db.ref('adminAuth/passwordHash').once('value');
+    if (!snap.exists()) {
+      $('gateError').textContent = 'No password set yet. Open print.html once and create the password there.';
+      return;
+    }
+    if (await sha256Hex($('pw').value) === snap.val()) {
+      sessionStorage.setItem('np_admin_page_ok', '1');
+      showApp();
+    } else {
+      $('gateError').textContent = 'Incorrect password.';
+    }
+  } catch (err) {
+    $('gateError').textContent = 'Could not reach the database (' + (err.message || err) + ').';
+  }
+}
+$('unlockBtn').addEventListener('click', tryUnlock);
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+$('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('np_admin_page_ok');
+  location.reload();
+});
+
+let started = false;
+function showApp() {
+  $('gate').style.display = 'none';
+  $('app').style.display = 'block';
+  if (!started) { started = true; startVisitors(); startAvailability(); }
+}
+if (sessionStorage.getItem('np_admin_page_ok') === '1') showApp(); else $('pw').focus();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + btn.dataset.panel));
+}));
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const dayKey = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+/* ======================== VISITORS ======================== */
+function parseUA(ua) {
+  ua = ua || '';
+  let os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iOS/i.test(ua) ? 'iOS' : /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Other';
+  let br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+  return { os, br };
+}
+
+function rankList(el, entries, total) {
+  if (!entries.length) { el.innerHTML = '<li class="empty">No data yet.</li>'; return; }
+  const max = Math.max(...entries.map(e => e[1]));
+  el.innerHTML = entries.map(([k, v]) =>
+    `<li><div class="row"><span>${esc(k)}</span><b>${v}</b></div><div class="track"><div class="fill" style="width:${Math.max(4, v / max * 100)}%"></div></div></li>`
+  ).join('');
+}
+
+function topN(list, keyFn, n) {
+  const m = {};
+  list.forEach(v => { const k = keyFn(v); if (k) m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+function startVisitors() {
+  db.ref('stats/totalVisits').on('value', s => { $('sTotal').textContent = s.val() || 0; });
+
+  db.ref('stats/pageViews').on('value', s => {
+    const entries = Object.entries(s.val() || {}).sort((a, b) => b[1] - a[1]);
+    rankList($('pagesRank'), entries.map(([k, v]) => [k + '.html', v]));
+  });
+
+  db.ref('visitors').orderByKey().limitToLast(1000).on('value', snap => {
+    const list = Object.values(snap.val() || {}).filter(v => v && v.timestamp).sort((a, b) => b.timestamp - a.timestamp);
+
+    // headline numbers
+    const now = new Date();
+    const todayKey = dayKey(now);
+    const weekAgo = now.getTime() - 7 * 86400000;
+    $('sToday').textContent = list.filter(v => dayKey(new Date(v.timestamp)) === todayKey).length;
+    $('sWeek').textContent = list.filter(v => v.timestamp >= weekAgo).length;
+    const ips = new Set(list.map(v => v.ip).filter(Boolean));
+    $('sUnique').textContent = ips.size;
+    $('sUniqueNote').textContent = 'by IP, last ' + list.length + ' visits';
+
+    // 14-day chart
+    const days = [];
+    for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i); days.push(d); }
+    const counts = {};
+    list.forEach(v => { const k = dayKey(new Date(v.timestamp)); counts[k] = (counts[k] || 0) + 1; });
+    const max = Math.max(1, ...days.map(d => counts[dayKey(d)] || 0));
+    $('chart').innerHTML = days.map(d => {
+      const c = counts[dayKey(d)] || 0;
+      const isToday = dayKey(d) === todayKey;
+      return `<div class="col ${isToday ? 'today' : ''}"><div class="bar" style="height:${c / max * 100}%">${c ? `<span>${c}</span>` : ''}</div><div class="day">${d.getDate()}/${d.getMonth() + 1}</div></div>`;
+    }).join('');
+    $('chartNote').textContent = list.length >= 1000 ? 'based on latest 1000 visits' : '';
+
+    // breakdowns
+    rankList($('locRank'), topN(list, v => v.city ? (v.city + (v.region ? ', ' + v.region : '')) : v.country, 6));
+    rankList($('devRank'), topN(list, v => { const u = parseUA(v.userAgent); return u.os + ' · ' + u.br; }, 6));
+
+    // recent table
+    $('logNote').textContent = list.length ? 'latest ' + Math.min(25, list.length) + ' of ' + list.length : '';
+    $('visitRows').innerHTML = list.length ? list.slice(0, 25).map(v => {
+      const u = parseUA(v.userAgent);
+      const t = new Date(v.timestamp);
+      return `<tr>
+        <td data-label="When">${t.toLocaleDateString(undefined, { day:'2-digit', month:'short' })}, ${t.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' })}</td>
+        <td data-label="Page"><span class="pg">${esc(v.page || '—')}</span></td>
+        <td data-label="IP" class="mono">${esc(v.ip || '—')}</td>
+        <td data-label="Location">${esc([v.city, v.country].filter(Boolean).join(', ') || '—')}</td>
+        <td data-label="ISP">${esc(v.isp || '—')}</td>
+        <td data-label="Device">${esc(u.os)} · ${esc(u.br)}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="empty">No visits logged yet.</td></tr>';
+  }, err => {
+    $('visitRows').innerHTML = '<tr><td colspan="6" class="empty">Could not load visitors: ' + esc(err.message) + '</td></tr>';
+  });
+}
+
+/* ======================== AVAILABILITY ======================== */
+// Data layout in Realtime Database:
+//   shop/open        -> true | false
+//   shop/slots/<0-23> -> true when that hour (e.g. 10 = 10 AM–11 AM) is available
+const hourLabel = h => ((h % 12) || 12) + ' ' + (h % 24 < 12 ? 'AM' : 'PM');
+const slotLabel = h => hourLabel(h) + ' – ' + hourLabel((h + 1) % 24);
+const istHour = () => parseInt(new Intl.DateTimeFormat('en-GB', { hour:'2-digit', hour12:false, timeZone:'Asia/Kolkata' }).format(new Date()), 10) % 24;
+
+let shopOpen = false;
+let slots = {};
+let slotsBuilt = false;
+
+function buildSlots() {
+  if (slotsBuilt) return;
+  slotsBuilt = true;
+  $('slots').innerHTML = Array.from({ length: 24 }, (_, h) => `
+    <label class="slot" data-h="${h}">
+      <input type="checkbox" data-h="${h}">
+      <span class="box"><span class="tick">✓</span><span>${slotLabel(h)}</span></span>
+    </label>`).join('');
+  $('slots').addEventListener('change', e => {
+    const h = e.target.dataset.h;
+    if (h === undefined) return;
+    saveSlots({ [h]: e.target.checked });
+  });
+  $('selAll').addEventListener('click', () => saveSlots(Object.fromEntries(Array.from({ length: 24 }, (_, h) => [h, true]))));
+  $('selNone').addEventListener('click', () => saveSlots(Object.fromEntries(Array.from({ length: 24 }, (_, h) => [h, false]))));
+}
+
+let noteTimer;
+function flashSaved(msg) {
+  $('saveNote').style.color = 'var(--ok)';
+  $('saveNote').textContent = msg;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { $('saveNote').textContent = ''; }, 1800);
+}
+
+function saveSlots(changes) {
+  const updates = {};
+  Object.entries(changes).forEach(([h, v]) => { updates['shop/slots/' + h] = v; });
+  updates['shop/updatedAt'] = firebase.database.ServerValue.TIMESTAMP;
+  db.ref().update(updates)
+    .then(() => flashSaved('Saved ✓'))
+    .catch(showDbError);
+}
+
+function showDbError(err) {
+  const b = $('dbError');
+  b.style.display = 'block';
+  b.innerHTML = '<b>Could not save.</b> ' + esc(err.message || err) + ' — make sure your Firebase Realtime Database rules allow read/write on the <code>shop</code> path (see the note in the setup instructions).';
+}
+
+function renderAvailability() {
+  const card = $('shopCard');
+  card.classList.toggle('open', shopOpen);
+  card.classList.toggle('closed', !shopOpen);
+  $('shopToggle').checked = shopOpen;
+  $('shopTitle').textContent = shopOpen ? 'Shop is open' : 'Shop is closed';
+  $('shopSub').textContent = shopOpen
+    ? 'Visitors see “Shop is open” on the home page.'
+    : 'Visitors see “Shop is closed” plus your next available slot.';
+  $('slotsCard').style.display = shopOpen ? 'none' : 'block';
+
+  buildSlots();
+  const nowH = istHour();
+  document.querySelectorAll('.slot').forEach(l => {
+    const h = +l.dataset.h;
+    l.querySelector('input').checked = slots[h] === true;
+    l.classList.toggle('past', h < nowH);
+  });
+
+  const next = nextSlot(slots);
+  $('nextPill').textContent = next
+    ? 'Visitors currently see: Next available — ' + next.text
+    : 'No slots ticked — visitors will see “Shop is closed” with no next slot.';
+}
+
+// next available slot at or after the current IST hour, wrapping to tomorrow
+function nextSlot(map) {
+  const nowH = istHour();
+  for (let i = 0; i < 24; i++) {
+    const h = (nowH + i) % 24;
+    if (map[h] === true) {
+      const when = i === 0 ? 'Now' : (h > nowH ? 'Today' : 'Tomorrow');
+      return { hour: h, text: (i === 0 ? 'Now, ' : when + ', ') + slotLabel(h) };
+    }
+  }
+  return null;
+}
+
+function startAvailability() {
+  db.ref('shop').on('value', snap => {
+    const v = snap.val() || {};
+    shopOpen = v.open === true;
+    const raw = v.slots || {};
+    slots = {};
+    for (let h = 0; h < 24; h++) slots[h] = raw[h] === true;
+    renderAvailability();
+  }, showDbError);
+
+  $('shopToggle').addEventListener('change', e => {
+    db.ref().update({ 'shop/open': e.target.checked, 'shop/updatedAt': firebase.database.ServerValue.TIMESTAMP })
+      .catch(err => { e.target.checked = shopOpen; showDbError(err); });
+  });
+  setInterval(renderAvailability, 60000); // keep "past" hours and next-slot pill fresh
+}
+</script>
+</body>
+</html>

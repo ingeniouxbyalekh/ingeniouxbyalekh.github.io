@@ -9,42 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* ---- visitor stat tiles, scoped to this page ---- */
-  .stat-tiles {
-    display: flex;
-    gap: 10px;
-    margin: 16px 0 6px;
-  }
-  .stat-tile {
-    flex: 1;
-    min-width: 0;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 12px 10px;
-    text-align: center;
-  }
-  .stat-label {
-    font-size: 0.68rem;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .stat-value {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 600;
-    font-size: 1.3rem;
-    color: var(--ink);
-  }
-  @media (max-width: 480px) {
-    .stat-tiles { gap: 6px; }
-    .stat-tile { padding: 8px 4px; }
-    .stat-label { font-size: 0.6rem; }
-    .stat-value { font-size: 1.05rem; }
+  .dash-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  #clearAllBtn { padding:8px 14px; font-size:0.88rem; }
+  #clearAllBtn:disabled { opacity:.6; cursor:wait; }
+  @media (max-width:560px) {
+    .dash-tools { width:100%; justify-content:space-between; }
+    .dash-tools .tabs { flex:1; }
+    .dash-tools .tab { flex:1; padding:8px 6px; }
   }
 </style>
 </head>
@@ -64,6 +35,7 @@
       <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
       <nav>
         <button type="button" class="link-btn" id="showChangePw" style="border:none;background:none;font-family:inherit;font-size:0.95rem;cursor:pointer;color:var(--ink);">Change password</button>
+        <a href="admin.html">Admin</a>
         <a href="index.html">Home page</a>
       </nav>
     </div>
@@ -85,25 +57,13 @@
 
     <div class="dash-header">
       <h1 style="font-size:1.6rem;margin:0;">Print desk</h1>
-      <div class="tabs">
-        <button class="tab active" data-filter="pending">Pending</button>
-        <button class="tab" data-filter="printed">Printed</button>
-        <button class="tab" data-filter="all">All</button>
-      </div>
-    </div>
-
-    <div class="stat-tiles">
-      <div class="stat-tile">
-        <div class="stat-label">Total visitors</div>
-        <div class="stat-value" id="statTotalVisits">–</div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-label">Visitor page: index</div>
-        <div class="stat-value" id="statIndexVisits">–</div>
-      </div>
-      <div class="stat-tile">
-        <div class="stat-label">Visitor page: printrequest</div>
-        <div class="stat-value" id="statPrintrequestVisits">–</div>
+      <div class="dash-tools">
+        <div class="tabs">
+          <button class="tab active" data-filter="pending">Pending</button>
+          <button class="tab" data-filter="printed">Printed</button>
+          <button class="tab" data-filter="all">All</button>
+        </div>
+        <button type="button" class="btn-sm cancel-btn" id="clearAllBtn" onclick="clearAll()" style="display:none;">Clear all</button>
       </div>
     </div>
 
@@ -329,27 +289,6 @@ document.getElementById('cpSave').addEventListener('click', async () => {
     .catch(() => { cpError.textContent = 'Could not update password. Try again.'; });
 });
 
-// ---- visitor stat tiles ----
-let statsStarted = false;
-function startVisitorStats() {
-  if (statsStarted) return;
-  statsStarted = true;
-
-  const totalEl = document.getElementById('statTotalVisits');
-  const indexEl = document.getElementById('statIndexVisits');
-  const printrequestEl = document.getElementById('statPrintrequestVisits');
-
-  db.ref('stats/totalVisits').on('value', snap => {
-    totalEl.textContent = snap.val() || 0;
-  });
-  db.ref('stats/pageViews/index').on('value', snap => {
-    indexEl.textContent = snap.val() || 0;
-  });
-  db.ref('stats/pageViews/printrequest').on('value', snap => {
-    printrequestEl.textContent = snap.val() || 0;
-  });
-}
-
 // ---- dashboard state ----
 let allRequests = [];
 let currentFilter = 'pending';
@@ -367,8 +306,6 @@ function startDashboard() {
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     render();
   });
-
-  startVisitorStats();
 
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -442,6 +379,47 @@ function startDashboard() {
     }
   };
 
+  // ---- clear every request currently shown in the active tab: removes
+  // their files from Cloudinary, then deletes the records in one go ----
+  window.clearAll = async function () {
+    const visible = currentFilter === 'all'
+      ? allRequests
+      : allRequests.filter(r => (r.status || 'pending') === currentFilter);
+    if (!visible.length) return;
+
+    const label = currentFilter === 'all' ? '' : currentFilter + ' ';
+    if (!confirm(`Clear all ${visible.length} ${label}request${visible.length === 1 ? '' : 's'}?\n\nThis will permanently delete the requests and their files. This cannot be undone.`)) {
+      return;
+    }
+
+    const btn = document.getElementById('clearAllBtn');
+    btn.disabled = true;
+    const failed = [];
+    try {
+      let done = 0;
+      for (const req of visible) {
+        btn.textContent = `Clearing ${++done}/${visible.length}…`;
+        for (const f of (req.files || [])) {
+          const ok = await deleteCloudinaryFile(f);
+          if (!ok) failed.push(f.name);
+        }
+      }
+      const updates = {};
+      visible.forEach(r => { updates['printRequests/' + r.id] = null; });
+      await db.ref().update(updates);
+    } catch (err) {
+      alert('Could not clear all requests: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Clear all';
+      render();
+    }
+
+    if (failed.length) {
+      alert('Requests cleared. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
+    }
+  };
+
   window.cancelRequest = async function (id) {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
@@ -470,6 +448,9 @@ function render() {
   const filtered = currentFilter === 'all'
     ? allRequests
     : allRequests.filter(r => (r.status || 'pending') === currentFilter);
+
+  const clearBtn = document.getElementById('clearAllBtn');
+  if (clearBtn && !clearBtn.disabled) clearBtn.style.display = filtered.length ? '' : 'none';
 
   if (filtered.length === 0) {
     listEl.innerHTML = `<div class="empty-state"><p>No ${currentFilter === 'all' ? '' : currentFilter} requests right now.</p></div>`;

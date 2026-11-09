@@ -35,12 +35,13 @@ const CONFIG = {
   },
 
   // --- Payment ---------------------------------------------------
-  // Razorpay checkout. "Pay now" opens the Razorpay popup for the
-  // estimated amount; "Pay after delivery" saves the request without
-  // collecting payment. This is a client-only integration (no backend
-  // to create signed orders or verify payments server-side) — fine for
-  // a low-stakes print-shop counter flow, but note that payment
-  // confirmation is trusted from the browser response only.
+  // Razorpay checkout. Customers tap "Upload Files", get their token,
+  // and the "Pay now" button then appears on the token screen (opens
+  // the Razorpay popup and marks that request as paid). This is a
+  // client-only integration (no backend to create signed orders or
+  // verify payments server-side) — fine for a low-stakes print-shop
+  // counter flow, but note that payment confirmation is trusted from
+  // the browser response only.
   paymentsEnabled: true,
   razorpay: {
     keyId: "rzp_live_TOsCHwGP3tNy9c",
