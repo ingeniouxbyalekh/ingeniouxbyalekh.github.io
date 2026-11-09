@@ -280,7 +280,7 @@
             <button type="button" class="chip-btn" id="selNone">Clear</button>
           </div>
         </div>
-        <p class="slots-help">The shop is closed. Tick the hours you will be available — visitors on the home page will see the next ticked slot. Times are in IST and repeat every day.</p>
+        <p class="slots-help">Tick the hours you will be available. The home page shows “Shop is open” during a ticked hour, and otherwise shows the next upcoming run of consecutive ticked hours (e.g. 7, 8, 9 ticked → “7 AM – 10 AM”). Times are in IST and repeat every day.</p>
         <div class="slots" id="slots"></div>
         <div class="next-pill" id="nextPill"></div>
         <div class="save-note" id="saveNote"></div>
@@ -428,7 +428,7 @@ function startVisitors() {
 // Data layout in Realtime Database:
 //   shop/open        -> true | false
 //   shop/slots/<0-23> -> true when that hour (e.g. 10 = 10 AM–11 AM) is available
-const hourLabel = h => ((h % 12) || 12) + ' ' + (h % 24 < 12 ? 'AM' : 'PM');
+const hourLabel = h => { h = ((h % 24) + 24) % 24; return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); };
 const slotLabel = h => hourLabel(h) + ' – ' + hourLabel((h + 1) % 24);
 const istHour = () => parseInt(new Intl.DateTimeFormat('en-GB', { hour:'2-digit', hour12:false, timeZone:'Asia/Kolkata' }).format(new Date()), 10) % 24;
 
@@ -476,19 +476,30 @@ function showDbError(err) {
   b.innerHTML = '<b>Could not save.</b> ' + esc(err.message || err) + ' — make sure your Firebase Realtime Database rules allow read/write on the <code>shop</code> path (see the note in the setup instructions).';
 }
 
+// length of the consecutive ticked run starting at hour `start` (capped at 24)
+function runLength(map, start) {
+  let n = 0;
+  while (n < 24 && map[(start + n) % 24] === true) n++;
+  return n;
+}
+
 function renderAvailability() {
+  const nowH = istHour();
+  const slotOpen = slots[nowH] === true;
+  const isOpen = shopOpen || slotOpen;
   const card = $('shopCard');
-  card.classList.toggle('open', shopOpen);
-  card.classList.toggle('closed', !shopOpen);
+  card.classList.toggle('open', isOpen);
+  card.classList.toggle('closed', !isOpen);
   $('shopToggle').checked = shopOpen;
-  $('shopTitle').textContent = shopOpen ? 'Shop is open' : 'Shop is closed';
+  $('shopTitle').textContent = isOpen ? 'Shop is open' : 'Shop is closed';
   $('shopSub').textContent = shopOpen
-    ? 'Visitors see “Shop is open” on the home page.'
-    : 'Visitors see “Shop is closed” plus your next available slot.';
-  $('slotsCard').style.display = shopOpen ? 'none' : 'block';
+    ? 'Manually switched on — visitors see “Shop is open”. Switch off to follow your ticked slots.'
+    : slotOpen
+      ? 'Open automatically — the current hour is one of your ticked slots.'
+      : 'Visitors see “Shop is closed” plus your next available slot.';
+  $('slotsCard').style.display = 'block';
 
   buildSlots();
-  const nowH = istHour();
   document.querySelectorAll('.slot').forEach(l => {
     const h = +l.dataset.h;
     l.querySelector('input').checked = slots[h] === true;
@@ -496,19 +507,28 @@ function renderAvailability() {
   });
 
   const next = nextSlot(slots);
-  $('nextPill').textContent = next
-    ? 'Visitors currently see: Next available — ' + next.text
-    : 'No slots ticked — visitors will see “Shop is closed” with no next slot.';
+  if (shopOpen) {
+    $('nextPill').textContent = 'Visitors currently see: Shop is open (manual switch is on)';
+  } else if (slotOpen) {
+    const left = runLength(slots, nowH);
+    $('nextPill').textContent = 'Visitors currently see: Shop is open' + (left < 24 ? ' until ' + hourLabel(nowH + left) : '');
+  } else {
+    $('nextPill').textContent = next
+      ? 'Visitors currently see: Next available — ' + next.text
+      : 'No slots ticked — visitors will see “Shop is closed” with no next slot.';
+  }
 }
 
-// next available slot at or after the current IST hour, wrapping to tomorrow
+// next upcoming slot after the current hour: the first ticked hour plus the
+// consecutive ticked hours after it (7,8,9 ticked -> "7 AM – 10 AM")
 function nextSlot(map) {
   const nowH = istHour();
-  for (let i = 0; i < 24; i++) {
+  for (let i = 1; i < 24; i++) {
     const h = (nowH + i) % 24;
     if (map[h] === true) {
-      const when = i === 0 ? 'Now' : (h > nowH ? 'Today' : 'Tomorrow');
-      return { hour: h, text: (i === 0 ? 'Now, ' : when + ', ') + slotLabel(h) };
+      const len = runLength(map, h);
+      const when = h > nowH ? 'Today' : 'Tomorrow';
+      return { hour: h, text: when + ', ' + hourLabel(h) + ' – ' + hourLabel(h + len) };
     }
   }
   return null;

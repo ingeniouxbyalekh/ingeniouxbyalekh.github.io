@@ -197,7 +197,8 @@
 <script>
 /* ---- live shop status from Firebase (set in admin.html) ----
    shop/open  -> true = open, false = closed
-   shop/slots -> { "10": true, ... } hours available while closed (IST)  */
+   shop/slots -> { "10": true, ... } ticked hours (IST). Shop shows open during a ticked hour;
+   otherwise the next run of consecutive ticked hours is shown as the next slot. */
 (function () {
   if (typeof firebase === 'undefined' || typeof CONFIG === 'undefined') return;
   if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
@@ -208,31 +209,47 @@
   var sub = document.getElementById('ssSub');
   var state = null;
 
-  function hourLabel(h) { return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); }
-  function slotLabel(h) { return hourLabel(h) + ' \u2013 ' + hourLabel((h + 1) % 24); }
+  function hourLabel(h) { h = ((h % 24) + 24) % 24; return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); }
   function istHour() {
     return parseInt(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }).format(new Date()), 10) % 24;
+  }
+  // Length of the consecutive ticked run that starts at hour `start`
+  // (e.g. 7,8,9 ticked -> run of 3 from 7). Capped at 24 so an all-ticked day can't loop.
+  function runLength(start) {
+    var n = 0;
+    while (n < 24 && state.slots[(start + n) % 24] === true) n++;
+    return n;
   }
 
   function render() {
     if (!state) return;
     box.classList.remove('is-open', 'is-closed');
-    if (state.open) {
+    var nowH = istHour();
+
+    // Open if admin switched the shop on manually, OR the current hour is a ticked slot
+    if (state.open || state.slots[nowH] === true) {
       box.classList.add('is-open');
       title.textContent = 'Shop is open';
-      sub.textContent = 'You can upload your files now.';
+      var left = state.open ? 0 : runLength(nowH);
+      sub.textContent = (left > 0 && left < 24)
+        ? 'Open until ' + hourLabel(nowH + left) + '. You can upload your files now.'
+        : 'You can upload your files now.';
       return;
     }
+
     box.classList.add('is-closed');
     title.textContent = 'Shop is closed';
-    var nowH = istHour(), found = null;
-    for (var i = 0; i < 24; i++) {
+
+    // Next upcoming slot = first ticked hour after now, extended over the
+    // consecutive ticked hours that follow it (7,8,9 -> "7 AM \u2013 10 AM").
+    var found = null;
+    for (var i = 1; i < 24; i++) {
       var h = (nowH + i) % 24;
-      if (state.slots[h] === true) { found = { h: h, i: i, later: h > nowH }; break; }
+      if (state.slots[h] === true) { found = { h: h, len: runLength(h), later: h > nowH }; break; }
     }
     if (!found) { sub.textContent = 'No slot available right now.'; return; }
-    var when = found.i === 0 ? 'Now' : (found.later ? 'Today' : 'Tomorrow');
-    sub.textContent = 'Next available slot: ' + when + ', ' + slotLabel(found.h);
+    var when = found.later ? 'Today' : 'Tomorrow';
+    sub.textContent = 'Next available slot: ' + when + ', ' + hourLabel(found.h) + ' \u2013 ' + hourLabel(found.h + found.len);
   }
 
   db.ref('shop').on('value', function (snap) {
