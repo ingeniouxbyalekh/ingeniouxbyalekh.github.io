@@ -7,6 +7,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+  .rate-note { margin: 8px 0 0; font-size: .78rem; line-height: 1.3; color: var(--ink-soft); display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+  .rate-note .ofr-badge { font-weight: 700; font-size: .62rem; letter-spacing: .08em; text-transform: uppercase; padding: 2px 6px; border-radius: 6px; color: #fff; background: linear-gradient(135deg, #ff9d1c, #ff6a00); }
+  .rate-note.offer-on { padding: 5px 10px; border-radius: 9px; background: linear-gradient(100deg, #fff6e6, #ffe6bd); border: 1.5px dashed #f09a1a; color: #5a3200; }
+  .rate-note.offer-on strong { color: #e85d00; }
+  .rate-note.offer-on s { color: #a07a4a; }
+  .rate-note.nudge { padding: 5px 10px; border-radius: 9px; background: #fff8ec; border: 1.5px dashed #f5c37a; color: #7a4a10; }
+  .rate-note.nudge strong { color: #e85d00; }
+</style>
 </head>
 <body class="request-page" data-page="printrequest">
 
@@ -188,14 +197,53 @@ function effectivePages(f) {
   return f.pageCount || 1;
 }
 
-function ratePerPage(printType) {
-  if (printType === 'color') return CONFIG.pricing.color;
+// Total pages printed for one file = pages x copies (copies count towards the offer)
+function totalPages(f) { return effectivePages(f) * (f.copies || 1); }
+
+// Bulk offer: files with 10 or more pages get a lower B&W / colour rate.
+function offerApplies(f) {
+  const o = CONFIG.offer;
+  return !!o && f.printType !== 'photo' && totalPages(f) >= o.minPages;
+}
+
+function ratePerPage(printType, offer) {
   if (printType === 'photo') return CONFIG.pricing.photoPaper;
-  return CONFIG.pricing.blackAndWhite;
+  if (printType === 'color') return offer ? CONFIG.offer.color : CONFIG.pricing.color;
+  return offer ? CONFIG.offer.blackAndWhite : CONFIG.pricing.blackAndWhite;
+}
+
+function fileRate(f) {
+  return ratePerPage(f.printType, offerApplies(f));
 }
 
 function filePrice(f) {
-  return effectivePages(f) * ratePerPage(f.printType) * (f.copies || 1);
+  return effectivePages(f) * fileRate(f) * (f.copies || 1);
+}
+
+function rateNoteState(f) {
+  const o = CONFIG.offer;
+  if (f.printType === 'photo' || !o) return { cls: 'rate-note', html: '' };
+  const pages = totalPages(f);
+  const reg = ratePerPage(f.printType, false);
+  const off = ratePerPage(f.printType, true);
+  if (offerApplies(f)) {
+    const saved = pages * (reg - off);
+    return { cls: 'rate-note offer-on', html: `<span class="ofr-badge">Offer applied</span><span><strong>₹${off}</strong>/page <s>₹${reg}</s> · you save <strong>₹${saved}</strong></span>` };
+  }
+  const known = f.kind !== 'doc' && f.pageCount;
+  if (known && pages < o.minPages) {
+    const need = o.minPages - pages;
+    return { cls: 'rate-note nudge', html: `<span class="ofr-badge">Bulk offer</span><span>Print <strong>${need} more page${need > 1 ? 's' : ''}</strong> (pages × copies) to get <strong>₹${off}</strong>/page (now ₹${reg})</span>` };
+  }
+  return { cls: 'rate-note nudge', html: `<span class="ofr-badge">Bulk offer</span><span>₹${reg}/page · <strong>₹${off}</strong>/page from ${o.minPages} pages</span>` };
+}
+
+function updateRateNote(f) {
+  const el = document.getElementById('rate-' + f.id);
+  if (!el) return;
+  const n = rateNoteState(f);
+  el.className = n.cls;
+  el.innerHTML = n.html;
 }
 
 function recalcPrice() {
@@ -225,6 +273,7 @@ function escapeAttr(str) { return escapeHtml(str); }
 function updateCardPrice(f) {
   const el = document.getElementById('price-' + f.id);
   if (el) el.textContent = '₹' + filePrice(f);
+  updateRateNote(f);
 }
 
 function renderFileList() {
@@ -262,6 +311,7 @@ function renderFileList() {
           <input type="number" class="ft-copies" min="1" value="${f.copies}">
         </div>
       </div>
+      <p id="rate-${f.id}" class="${rateNoteState(f).cls}">${rateNoteState(f).html}</p>
       <div class="pages-block">
         <label class="pages-label">Pages · ${pageInfo}</label>
         <div class="page-mode">

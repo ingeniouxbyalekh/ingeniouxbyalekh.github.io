@@ -520,6 +520,7 @@ function renderCard(r) {
       <div class="req-top-grid">
         <div class="req-col req-col-left">
           <div class="req-token">${escapeHtml(String(r.token || '—'))}</div>
+          <div class="req-price">₹${r.amount || 0}<small>${r.paymentStatus === 'paid' ? 'paid' : 'to pay'}</small></div>
           ${status === 'printed' ? `<span class="pill ${status}">${status}</span>` : ''}
         </div>
         <div class="req-col req-col-mid">

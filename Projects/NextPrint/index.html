@@ -94,6 +94,21 @@
   .ink .cmy i { width: 14px; height: 14px; }
   .rates .name { flex: 1; font-weight: 500; }
   .rates .price { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em; }
+  .rates li { flex-wrap: wrap; row-gap: 8px; padding-bottom: 12px; }
+  .rates .name { flex: 1; }
+  /* bulk-offer coupon strip (amber) */
+  .deal { flex: 1 0 100%; display: flex; align-items: center; gap: 9px; padding: 5px 10px; border-radius: 11px; position: relative;
+    background: linear-gradient(100deg, #fff6e6 0%, #ffe6bd 100%); border: 1.5px dashed #f09a1a; color: #5a3200; }
+  .deal::before, .deal::after { content: ""; position: absolute; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--paper); border: 1.5px dashed #f09a1a; }
+  .deal::before { left: -6px; clip-path: inset(0 0 0 50%); } .deal::after { right: -6px; clip-path: inset(0 50% 0 0); }
+  .deal-ic { flex: none; width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, #ff9d1c, #ff6a00); box-shadow: 0 4px 10px -4px rgba(255,106,0,.7); }
+  .deal-txt { flex: 1; display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 7px; line-height: 1.2; }
+  .deal-txt b { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: #c25400; }
+  .deal-txt span { font-size: .78rem; font-weight: 500; }
+  .deal-price { display: flex; align-items: baseline; gap: 6px; }
+  .deal-price s { font-size: .74rem; color: #a07a4a; }
+  .deal-price strong { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.15rem; letter-spacing: -.02em; color: #e85d00; }
+  .deal-price small { font-size: .7rem; color: #7a5a30; }
   .rates .price small { font-family: "Instrument Sans", sans-serif; font-weight: 500; font-size: .8rem; color: var(--mute); letter-spacing: 0; }
 
   /* ---- pickup + do-not-disturb ---- */
@@ -161,8 +176,8 @@
   </section>
 
   <ul class="rates">
-    <li><span class="ink"><span class="k"></span></span><span class="name">Black &amp; white</span><span class="price">₹4 <small>/ page</small></span></li>
-    <li><span class="ink"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span></span><span class="name">Colour</span><span class="price">₹7 <small>/ page</small></span></li>
+    <li><span class="ink"><span class="k"></span></span><span class="name">Black &amp; white</span><span class="price">₹4 <small>/ page</small></span><div class="deal"><span class="deal-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></span><span class="deal-txt"><b>Bulk offer</b><span>10+ pages</span></span><span class="deal-price"><s>₹4</s><strong>₹3</strong><small>/ page</small></span></div></li>
+    <li><span class="ink"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span></span><span class="name">Colour</span><span class="price">₹8 <small>/ page</small></span><div class="deal"><span class="deal-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></span><span class="deal-txt"><b>Bulk offer</b><span>10+ pages</span></span><span class="deal-price"><s>₹8</s><strong>₹7</strong><small>/ page</small></span></div></li>
   </ul>
 
   <section class="pickup">

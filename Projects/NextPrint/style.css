@@ -624,6 +624,8 @@ a { color: var(--red); }
 .req-col-mid { border-right: 1px solid var(--line); }
 .req-col-left .who { font-family: "Fraunces", serif; font-size: 1.15rem; }
 .req-token { font-family: "Fraunces", serif; font-size: 2rem; font-weight: 600; letter-spacing: 0.03em; }
+.req-price { margin-top: 2px; font-family: "IBM Plex Sans", sans-serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+.req-price small { font-weight: 500; font-size: 0.72rem; color: var(--ink-soft); margin-left: 3px; }
 .req-col-mid .file-preview-list { text-align: center; }
 .req-datetime { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.5; }
 .req-actions-row { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }

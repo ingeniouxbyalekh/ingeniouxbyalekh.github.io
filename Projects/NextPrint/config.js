@@ -51,8 +51,15 @@ const CONFIG = {
   // Amounts are in rupees per page.
   pricing: {
     blackAndWhite: 4,
-    color: 7,
+    color: 8,
     photoPaper: 30,
+  },
+  // Bulk offer: a file with minPages pages OR MORE is charged these
+  // lower per-page rates instead (photo paper has no offer).
+  offer: {
+    minPages: 10,
+    blackAndWhite: 3,
+    color: 7,
   },
 
   // --- Token ---------------------------------------------------
