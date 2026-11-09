@@ -2,190 +2,194 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e9ecf1">
 <title>NextPrint</title>
 <meta name="description" content="Fast, Convenient & High-Quality Printing">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* ---- simple mobile-first home screen, scoped to this page ---- */
-  body.home-simple {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+  :root {
+    --bg: #e9ecf1;  --paper: #ffffff;  --key: #16161a;  --mute: #5d6370;  --rule: #dfe3ea;
+    --c: #00a3e0;  --m: #e6007e;  --y: #ffd400;
+    --open: #0f9158;  --closed: #e6007e;
+    --state: var(--mute);
   }
-  .home-wrap {
-    width: 100%;
-    max-width: 420px;
-    margin: 0 auto;
-    padding: 28px 20px 40px;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .home-brand {
-    text-align: center;
-    margin-bottom: 22px;
-  }
-  .home-brand .logo {
-    font-size: 1.5rem;
-  }
-  .home-tiles {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-  .tile {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 18px 14px;
-    text-align: center;
-  }
-  .tile-full {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    text-align: left;
-    gap: 12px;
-  }
-  .tile-icon {
-    font-size: 1.6rem;
-    line-height: 1;
-    margin-bottom: 8px;
-    display: block;
-  }
-  .tile-full .tile-icon {
-    margin-bottom: 0;
-  }
-  .tile-label {
-    font-size: 0.78rem;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    margin-bottom: 4px;
-  }
-  .tile-value {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 600;
-    font-size: 1.15rem;
-    color: var(--ink);
-  }
-  .tile-price .tile-value {
-    font-size: 1.4rem;
-  }
-  .tile-price .tile-value span {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--ink-soft);
-    font-family: "IBM Plex Sans", sans-serif;
-  }
-  .tile-dnd {
-    grid-column: 1 / -1;
-    padding: 14px;
-    font-size: 0.9rem;
-    color: var(--ink);
-  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--key); font-family: "Instrument Sans", system-ui, sans-serif;
+    line-height: 1.45; -webkit-font-smoothing: antialiased; min-height: 100vh; min-height: 100dvh; }
+  .app { max-width: 440px; margin: 0 auto; padding: calc(18px + env(safe-area-inset-top)) 16px calc(112px + env(safe-area-inset-bottom)); }
 
-  .home-cta {
-    margin-top: 14px;
-  }
-  .home-cta .btn {
-    width: 100%;
-    justify-content: center;
-    padding: 16px;
-    font-size: 1.05rem;
-    border-radius: 10px;
-  }
-  .home-fine {
-    text-align: center;
-    margin-top: 18px;
-    font-size: 0.78rem;
-    color: var(--ink-soft);
-  }
+  /* ---- top bar ---- */
+  .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .mark { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.45rem; letter-spacing: -.03em; color: var(--key); text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+  .cmy { display: inline-flex; }
+  .cmy i { width: 12px; height: 12px; border-radius: 50%; mix-blend-mode: multiply; margin-right: -4px; }
+  .cmy i:nth-child(1) { background: var(--c); } .cmy i:nth-child(2) { background: var(--m); } .cmy i:nth-child(3) { background: var(--y); }
+  .room { font-size: .82rem; font-weight: 600; padding: 7px 12px; border-radius: 999px; background: var(--paper); border: 1px solid var(--rule); }
 
-  /* ---- shop status banner (driven by admin.html) ---- */
-  .shop-status {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 16px 18px;
-    border-radius: 12px;
-    border: 1.5px solid var(--line);
-    background: #fff;
-    margin-bottom: 14px;
-    transition: background .3s, border-color .3s;
-  }
-  .shop-status .dot-live {
-    width: 14px; height: 14px; border-radius: 50%;
-    background: #b9b5a8; flex: none;
-  }
-  .shop-status .ss-title {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 600; font-size: 1.25rem; line-height: 1.2;
-  }
-  .shop-status .ss-sub { font-size: 0.85rem; color: var(--ink-soft); margin-top: 2px; }
-  .shop-status.is-open { background: #eaf5ee; border-color: var(--ok); }
-  .shop-status.is-open .dot-live {
-    background: var(--ok);
-    box-shadow: 0 0 0 0 rgba(47,122,77,.5);
-    animation: livePulse 1.8s infinite;
-  }
-  .shop-status.is-closed { background: #fbeceb; border-color: var(--red); }
-  .shop-status.is-closed .dot-live { background: var(--red); }
-  @keyframes livePulse {
-    70% { box-shadow: 0 0 0 12px rgba(47,122,77,0); }
-    100% { box-shadow: 0 0 0 0 rgba(47,122,77,0); }
+  /* ---- printer slot + the sheet that prints the shop status ---- */
+  .feed { position: relative; min-height: 262px; }
+  .slot { position: relative; z-index: 2; height: 22px; border-radius: 11px; background: var(--key);
+    box-shadow: inset 0 5px 7px rgba(0,0,0,.55), 0 1px 0 #fff; }
+  .led { position: absolute; right: 12px; top: 7px; width: 8px; height: 8px; border-radius: 50%; background: #4a4d57; transition: background .4s, box-shadow .4s; }
+  .is-open .led { background: #35e08e; box-shadow: 0 0 10px 2px rgba(53,224,142,.8); }
+  .is-closed .led { background: #ff4fa8; box-shadow: 0 0 10px 2px rgba(255,79,168,.8); }
+  .wait { position: absolute; top: 46px; left: 0; right: 0; text-align: center; color: var(--mute); font-size: .95rem; }
+  .feed.ready .wait { display: none; }
+  .feed.ready .led { animation: none; }
+  .feed:not(.ready) .led { animation: blink 1s steps(2) infinite; background: #f5a623; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  .sheetwrap { position: relative; z-index: 1; margin: -9px 14px 0; filter: drop-shadow(0 14px 14px rgba(22,22,26,.16)); }
+  .sheet { position: relative; background: var(--paper); padding: 30px 22px 30px; clip-path: inset(0 0 102% 0); }
+  .sheet::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 9px;
+    background: conic-gradient(from 135deg at 50% 0, var(--paper) 90deg, transparent 0) 0 0 / 18px 9px; }
+  .sheet.print { clip-path: inset(0 0 -12px 0); animation: print 1.15s steps(16, end) both, feedout .9s cubic-bezier(.2,.8,.25,1) both; }
+  @keyframes print { from { clip-path: inset(0 0 102% 0); } to { clip-path: inset(0 0 -12px 0); } }
+  @keyframes feedout { from { transform: translateY(-28px); } to { transform: none; } }
+
+  .regs { position: absolute; top: 12px; right: 16px; display: flex; gap: 4px; }
+  .regs i { width: 7px; height: 7px; }
+  .regs i:nth-child(1) { background: var(--c); } .regs i:nth-child(2) { background: var(--m); }
+  .regs i:nth-child(3) { background: var(--y); } .regs i:nth-child(4) { background: var(--key); }
+
+  .headline { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 2.55rem; line-height: 1; letter-spacing: -.035em; margin: 6px 0 10px; color: var(--state); }
+  .is-open { --state: var(--open); } .is-closed { --state: var(--closed); }
+  .detail { font-size: 1.02rem; color: var(--key); margin: 0; max-width: 30ch; }
+  .chip { display: none; margin-top: 18px; align-items: center; gap: 12px; padding: 9px 18px 9px 9px; border-radius: 18px; gap: 14px; user-select: none; -webkit-user-select: none;
+    background: color-mix(in srgb, var(--state) 10%, #fff); border: 1px solid color-mix(in srgb, var(--state) 22%, #fff); }
+  .chip.show { display: flex; width: 100%; justify-content: space-between; }
+  .cr { text-align: right; display: grid; line-height: 1.15; }
+  .rv { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.12rem; letter-spacing: -.02em; color: var(--key); }
+  .rs { font-size: .78rem; color: var(--mute); margin-top: 3px; }
+  .ci { width: 40px; height: 40px; border-radius: 50%; background: var(--state); color: #fff; display: grid; place-items: center; flex: none; }
+  .ci .hand { transform-origin: 12px 12px; animation: tick 8s linear infinite; }
+  @keyframes tick { to { transform: rotate(360deg); } }
+  .ct { display: grid; line-height: 1.1; }
+  .cl { font-size: .78rem; color: var(--mute); font-weight: 500; }
+  .cv { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -.025em; color: var(--state); margin-top: 3px; }
+  .cv.bump { animation: bump .4s cubic-bezier(.2,.8,.2,1); }
+  @keyframes bump { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* hour ruler: each block is one hour, filled = open */
+  .ruler { margin-top: 24px; padding-top: 12px; border-top: 1.5px dashed var(--rule); display: none; }
+  .ruler.show { display: block; }
+  .bar { display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; }
+  .hr { height: 22px; border-radius: 3px; background: #e6e9ef; position: relative; transition: background .35s; }
+  .hr.on { background: var(--open); }
+  .hr.now::before { content: ""; position: absolute; left: 50%; top: -10px; margin-left: -4px; border: 4px solid transparent; border-top: 6px solid var(--key); border-bottom: 0; animation: nudge 1.6s ease-in-out infinite; }
+  @keyframes nudge { 50% { transform: translateY(2px); } }
+  .axis { display: flex; justify-content: space-between; margin-top: 8px; font-size: .68rem; color: var(--mute); }
+
+  /* ---- rate card ---- */
+  .rates { margin: 22px 0 0; padding: 0; list-style: none; background: var(--paper); border-radius: 18px; border: 1px solid var(--rule); }
+  .rates li { display: flex; align-items: center; gap: 12px; padding: 16px 18px; transition: background .15s; }
+  .rates li + li { border-top: 1px solid var(--rule); }
+  .rates li:active { background: #f4f6f9; }
+  .ink { width: 30px; display: inline-flex; justify-content: center; flex: none; }
+  .ink .k { width: 16px; height: 16px; border-radius: 50%; background: var(--key); }
+  .ink .cmy i { width: 14px; height: 14px; }
+  .rates .name { flex: 1; font-weight: 500; }
+  .rates .price { font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -.02em; }
+  .rates .price small { font-family: "Instrument Sans", sans-serif; font-weight: 500; font-size: .8rem; color: var(--mute); letter-spacing: 0; }
+
+  /* ---- pickup + do-not-disturb ---- */
+  .pickup { margin-top: 14px; display: flex; align-items: center; gap: 16px; padding: 14px 18px 14px 14px; background: var(--paper); border: 1px solid var(--rule); border-radius: 18px; }
+  .plate { flex: none; width: 66px; height: 66px; border-radius: 14px; background: var(--key); color: #fff; display: grid; place-items: center;
+    font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.75rem; letter-spacing: -.03em;
+    box-shadow: inset 0 0 0 3px var(--key), inset 0 0 0 4.5px rgba(255,255,255,.35); }
+  .pickup h2 { margin: 0 0 2px; font-family: "Bricolage Grotesque", sans-serif; font-weight: 800; font-size: 1.12rem; letter-spacing: -.015em; line-height: 1.2; }
+  .pickup p { margin: 0; font-size: .88rem; color: var(--mute); }
+
+  .dnd { margin-top: 10px; display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 14px; border: 1.5px dashed #c9cfda; color: var(--mute); font-size: .9rem;
+    transition: background .4s, border-color .4s, color .4s; }
+  .dnd svg { flex: none; }
+  body[data-shop="closed"] .dnd { background: color-mix(in srgb, var(--closed) 8%, #fff); border-color: var(--closed); color: var(--key); }
+  body[data-shop="closed"] .dnd svg { color: var(--closed); animation: wobble .7s ease .9s 1; transform-origin: 50% 10%; }
+  @keyframes wobble { 25% { transform: rotate(14deg); } 50% { transform: rotate(-11deg); } 75% { transform: rotate(6deg); } }
+
+  .fine { text-align: center; margin: 30px 0 0; font-size: .76rem; color: var(--mute); display: grid; gap: 6px; justify-items: center; }
+  .fine .cmy i { width: 9px; height: 9px; }
+  .fine span { max-width: 28ch; }
+
+  /* ---- thumb-zone upload button ---- */
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 28px 16px calc(14px + env(safe-area-inset-bottom));
+    background: linear-gradient(to top, var(--bg) 55%, rgba(233,236,241,0)); pointer-events: none; }
+  .go { pointer-events: auto; max-width: 408px; margin: 0 auto; display: flex; align-items: center; justify-content: center; gap: 10px; height: 58px;
+    border-radius: 18px; background: var(--key); color: #fff; text-decoration: none; font-weight: 600; font-size: 1.06rem;
+    box-shadow: 0 14px 26px -12px rgba(22,22,26,.7); transition: transform .14s ease, box-shadow .14s ease; }
+  .go:active { transform: scale(.96); box-shadow: 0 6px 14px -8px rgba(22,22,26,.7); }
+  .go svg { transition: transform .25s ease; } .go:active svg { transform: translateY(-4px); }
+  .go .cmy i { width: 9px; height: 9px; mix-blend-mode: screen; margin-right: -3px; }
+
+  @media (max-width: 350px) { .headline { font-size: 2.1rem; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
   }
 </style>
 </head>
-<body class="home-simple" data-page="index">
+<body data-page="index">
+<div class="app">
 
-<div class="home-wrap">
+  <header class="top">
+    <a href="index.html" class="mark"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span>NextPrint</a>
+    <span class="room">Room No. 136</span>
+  </header>
 
-  <div class="home-brand">
-    <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
-  </div>
-
-  <div class="shop-status" id="shopStatus" aria-live="polite">
-    <span class="dot-live"></span>
-    <div>
-      <div class="ss-title" id="ssTitle">Checking shop status…</div>
-      <div class="ss-sub" id="ssSub"></div>
-    </div>
-  </div>
-
-  <div class="home-tiles">
-    <div class="tile tile-price">
-      <span class="tile-icon">⚫</span>
-      <div class="tile-label">Black &amp; White</div>
-      <div class="tile-value">₹4 <span>/ page</span></div>
-    </div>
-    <div class="tile tile-price">
-      <span class="tile-icon">🎨</span>
-      <div class="tile-label">Colour</div>
-      <div class="tile-value">₹7 <span>/ page</span></div>
-    </div>
-
-    <div class="tile tile-full">
-      <span class="tile-icon">📍</span>
-      <div>
-        <div class="tile-label">Print available at</div>
-        <div class="tile-value">Room No. 136</div>
+  <section class="feed" id="feed" aria-live="polite">
+    <div class="slot"><span class="led"></span></div>
+    <p class="wait">Checking shop status…</p>
+    <div class="sheetwrap">
+      <div class="sheet" id="sheet">
+        <span class="regs" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <h1 class="headline" id="ssTitle">Shop status</h1>
+        <p class="detail" id="ssSub"></p>
+        <div class="chip" id="ssChip">
+          <span class="ci" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path class="hand" d="M12 12V6.5"/></svg></span>
+          <span class="ct"><span class="cl" id="chipLabel"></span><b class="cv" id="chipValue"></b></span>
+          <span class="cr"><b class="rv" id="chipRv"></b><span class="rs" id="chipRs"></span></span>
+        </div>
+        <div class="ruler" id="ruler">
+          <div class="bar" id="bar" role="img" aria-label="Open hours today"></div>
+          <div class="axis"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>12 AM</span></div>
+        </div>
       </div>
     </div>
+  </section>
 
-    <div class="tile tile-dnd">🔕 Outside this time: Do not disturb</div>
+  <ul class="rates">
+    <li><span class="ink"><span class="k"></span></span><span class="name">Black &amp; white</span><span class="price">₹4 <small>/ page</small></span></li>
+    <li><span class="ink"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span></span><span class="name">Colour</span><span class="price">₹7 <small>/ page</small></span></li>
+  </ul>
+
+  <section class="pickup">
+    <span class="plate" aria-hidden="true">136</span>
+    <div>
+      <h2>Pick up at Room No. 136</h2>
+      <p>Show your token at the print desk.</p>
+    </div>
+  </section>
+
+  <div class="dnd">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.7 3A6 6 0 0 1 18 8c0 2.6.6 4.4 1.3 5.6M17 17H3s3-2 3-9c0-.6.1-1.1.2-1.6M10.3 21a1.9 1.9 0 0 0 3.4 0M2 2l20 20"/></svg>
+    <span>Outside shop hours, please do not disturb.</span>
   </div>
 
-  <div class="home-cta">
-    <a href="upload.html" class="btn btn-primary">Upload Files</a>
-  </div>
+  <footer class="fine">
+    <span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span>Fast, convenient, high-quality printing.</span>
+    <span>© <span id="year"></span> NextPrint</span>
+  </footer>
+</div>
 
-  <p class="home-fine">© <span id="year"></span> NextPrint</p>
+<div class="dock">
+  <a href="upload.html" class="go">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></svg>
+    Upload files
+  </a>
 </div>
 
 <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
@@ -196,60 +200,111 @@
 <script src="analytics.js"></script>
 <script>
 /* ---- live shop status from Firebase (set in admin.html) ----
-   shop/open  -> true = open, false = closed
-   shop/slots -> { "10": true, ... } ticked hours (IST). Shop shows open during a ticked hour;
+   shop/open  -> true = manually open
+   shop/slots -> { "10": true, ... } ticked hours (IST). Shop is open during a ticked hour;
    otherwise the next run of consecutive ticked hours is shown as the next slot. */
 (function () {
   if (typeof firebase === 'undefined' || typeof CONFIG === 'undefined') return;
   if (!firebase.apps.length) firebase.initializeApp(CONFIG.firebase);
   var db = firebase.database();
 
-  var box = document.getElementById('shopStatus');
+  var feed = document.getElementById('feed');
+  var sheet = document.getElementById('sheet');
   var title = document.getElementById('ssTitle');
   var sub = document.getElementById('ssSub');
-  var state = null;
+  var chip = document.getElementById('ssChip');
+  var chipLabel = document.getElementById('chipLabel');
+  var chipValue = document.getElementById('chipValue');
+  var chipRv = document.getElementById('chipRv');
+  var chipRs = document.getElementById('chipRs');
+  var ruler = document.getElementById('ruler');
+  var bar = document.getElementById('bar');
+  var state = null, lastKey = '';
 
   function hourLabel(h) { h = ((h % 24) + 24) % 24; return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); }
-  function istHour() {
-    return parseInt(new Intl.DateTimeFormat('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }).format(new Date()), 10) % 24;
+  function istNow() {
+    var p = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Kolkata' }).formatToParts(new Date());
+    var o = {}; p.forEach(function (x) { o[x.type] = parseInt(x.value, 10); });
+    return { h: o.hour % 24, m: o.minute };
   }
-  // Length of the consecutive ticked run that starts at hour `start`
-  // (e.g. 7,8,9 ticked -> run of 3 from 7). Capped at 24 so an all-ticked day can't loop.
   function runLength(start) {
     var n = 0;
     while (n < 24 && state.slots[(start + n) % 24] === true) n++;
     return n;
   }
+  function dur(mins) {
+    var h = Math.floor(mins / 60), m = mins % 60;
+    return h ? h + ' h' + (m ? ' ' + m + ' min' : '') : Math.max(m, 1) + ' min';
+  }
+
+  function paintBar(nowH) {
+    if (!bar.children.length) {
+      for (var h = 0; h < 24; h++) {
+        var c = document.createElement('div');
+        c.className = 'hr';
+        c.title = hourLabel(h) + ' \u2013 ' + hourLabel(h + 1);
+        bar.appendChild(c);
+      }
+    }
+    for (var i = 0; i < 24; i++) {
+      bar.children[i].classList.toggle('on', state.slots[i] === true);
+      bar.children[i].classList.toggle('now', i === nowH);
+    }
+    ruler.classList.add('show');
+  }
+
+  // print the sheet again only when the open/closed state actually changes
+  function reprint(key) {
+    if (key === lastKey) return;
+    lastKey = key;
+    feed.classList.add('ready');
+    sheet.classList.remove('print'); void sheet.offsetWidth; sheet.classList.add('print');
+  }
 
   function render() {
     if (!state) return;
-    box.classList.remove('is-open', 'is-closed');
-    var nowH = istHour();
+    var t = istNow(), nowH = t.h, key, chipL = '', chipV = '', rv = '', rs = '';
+    feed.classList.remove('is-open', 'is-closed');
 
-    // Open if admin switched the shop on manually, OR the current hour is a ticked slot
     if (state.open || state.slots[nowH] === true) {
-      box.classList.add('is-open');
-      title.textContent = 'Shop is open';
+      feed.classList.add('is-open');
+      key = 'open';
       var left = state.open ? 0 : runLength(nowH);
-      sub.textContent = (left > 0 && left < 24)
-        ? 'Open until ' + hourLabel(nowH + left) + '. You can upload your files now.'
-        : 'You can upload your files now.';
-      return;
+      title.textContent = 'We\u2019re open';
+      if (left > 0 && left < 24) {
+        sub.textContent = 'Upload your files now.';
+        chipL = 'Closes in'; chipV = dur(left * 60 - t.m);
+        rv = hourLabel(nowH + left); rs = 'Closing time';
+      } else {
+        sub.textContent = 'Upload your files now.';
+      }
+    } else {
+      feed.classList.add('is-closed');
+      key = 'closed';
+      title.textContent = 'We\u2019re closed';
+      var found = null;
+      for (var i = 1; i < 24; i++) {
+        var h = (nowH + i) % 24;
+        if (state.slots[h] === true) { found = { h: h, i: i, len: runLength(h), later: h > nowH }; break; }
+      }
+      if (!found) { sub.textContent = 'No slot available right now.'; }
+      else {
+        sub.textContent = 'Next available slot';
+        chipL = 'Opens in'; chipV = dur(found.i * 60 - t.m);
+        rv = hourLabel(found.h) + ' \u2013 ' + hourLabel(found.h + found.len); rs = found.later ? 'Today' : 'Tomorrow';
+      }
     }
-
-    box.classList.add('is-closed');
-    title.textContent = 'Shop is closed';
-
-    // Next upcoming slot = first ticked hour after now, extended over the
-    // consecutive ticked hours that follow it (7,8,9 -> "7 AM \u2013 10 AM").
-    var found = null;
-    for (var i = 1; i < 24; i++) {
-      var h = (nowH + i) % 24;
-      if (state.slots[h] === true) { found = { h: h, len: runLength(h), later: h > nowH }; break; }
+    document.body.dataset.shop = key;
+    chip.classList.toggle('show', !!chipV);
+    chipLabel.textContent = chipL;
+    chipRv.textContent = rv;
+    chipRs.textContent = rs;
+    if (chipValue.textContent !== chipV) {
+      chipValue.textContent = chipV;
+      chipValue.classList.remove('bump'); void chipValue.offsetWidth; chipValue.classList.add('bump');
     }
-    if (!found) { sub.textContent = 'No slot available right now.'; return; }
-    var when = found.later ? 'Today' : 'Tomorrow';
-    sub.textContent = 'Next available slot: ' + when + ', ' + hourLabel(found.h) + ' \u2013 ' + hourLabel(found.h + found.len);
+    paintBar(nowH);
+    reprint(key);
   }
 
   db.ref('shop').on('value', function (snap) {
@@ -257,10 +312,11 @@
     state = { open: v.open === true, slots: v.slots || {} };
     render();
   }, function () {
-    title.textContent = 'Shop status unavailable';
-    sub.textContent = '';
+    title.textContent = 'Status unavailable';
+    sub.textContent = 'Check your connection and refresh.';
+    reprint('error');
   });
-  setInterval(render, 60000);
+  setInterval(render, 30000);
 })();
 </script>
 </body>
