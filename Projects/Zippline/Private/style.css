@@ -575,7 +575,7 @@ form.composer .btn { border-radius: 22px; padding: 11px 24px; }
   width: min(28vw, 180px); aspect-ratio: 3 / 4; object-fit: cover;
   border-radius: var(--r-md); border: 1px solid rgba(255,255,255,.4);
   box-shadow: 0 16px 34px -12px rgba(0,0,0,.7);
-  background: #1b2040; transform: scaleX(-1);
+  background: #1b2040; transform: none; /* true image, no mirroring */
   cursor: pointer;
 }
 .call-avatar {
