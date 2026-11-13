@@ -962,16 +962,60 @@
     return null;
   }
 
+  // Selfie mirroring: flips the front-camera picture left↔right BEFORE it is
+  // shown or sent, so the preview on your screen and the video the other
+  // person receives are identical, with the sides you see in a mirror.
+  // Returns a track that behaves like the camera track (enabled / stop work).
+  function mirrorVideoTrack(srcTrack) {
+    if (!srcTrack || !HTMLCanvasElement.prototype.captureStream) return srcTrack;
+    try {
+      const vid = document.createElement("video");
+      vid.muted = true; vid.playsInline = true;
+      vid.srcObject = new MediaStream([srcTrack]);
+      vid.play().catch(() => {});
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      const outTrack = canvas.captureStream(30).getVideoTracks()[0];
+      let stopped = false;
+      const timer = setInterval(() => {
+        if (stopped || !vid.videoWidth || vid.readyState < 2) return;
+        const w = vid.videoWidth, h = vid.videoHeight;
+        if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(vid, 0, 0, w, h);
+        ctx.restore();
+      }, 33);
+      const origStop = outTrack.stop.bind(outTrack);
+      outTrack.stop = () => {
+        stopped = true; clearInterval(timer);
+        try { srcTrack.stop(); } catch (e) {}
+        vid.srcObject = null;
+        origStop();
+      };
+      return outTrack;
+    } catch (e) {
+      return srcTrack; // if mirroring isn't possible, fall back to the plain camera
+    }
+  }
+
   async function getMedia(withVideo) {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       throw new Error("Calls need a secure page (https or localhost).");
     }
     try {
-      return await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         // Keep the camera's 4:3 shape, just ask for a sharper capture at that ratio.
         video: withVideo ? { width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } } : false,
         audio: true
       });
+      if (withVideo) {
+        const raw = stream.getVideoTracks()[0];
+        const mirrored = mirrorVideoTrack(raw);
+        if (mirrored !== raw) { stream.removeTrack(raw); stream.addTrack(mirrored); }
+      }
+      return stream;
     } catch (e) {
       throw new Error(withVideo
         ? "Could not use the camera and microphone. Allow access in your browser and try again."
@@ -1458,7 +1502,8 @@
           audio: false
         });
       }
-      const newTrack = newStream.getVideoTracks()[0];
+      let newTrack = newStream.getVideoTracks()[0];
+      if (facing === "user") newTrack = mirrorVideoTrack(newTrack); // selfie view only; rear camera stays as-is
       newTrack.enabled = wasEnabled;
       if (sender) await sender.replaceTrack(newTrack);
       localStream.addTrack(newTrack);
