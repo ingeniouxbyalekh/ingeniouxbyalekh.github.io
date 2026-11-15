@@ -9,72 +9,273 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  .dash-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  #clearAllBtn { padding:8px 14px; font-size:0.88rem; }
+  /* ===== Print desk — redesign ===== */
+  .pd-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:18px; }
+  .pd-head h1 { font-family:"Fraunces", Georgia, serif; font-size:1.8rem; margin:0; line-height:1.1; }
+  .pd-head .pd-sub { margin:4px 0 0; font-size:.84rem; color:var(--ink-soft, #62625c); }
+  .pd-tools { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+
+  .pd-tabs { display:inline-flex; gap:2px; padding:3px; border-radius:13px; background:#ebe8dd; }
+  .pd-tab { display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; font:inherit; font-size:.86rem; font-weight:500; color:var(--ink-soft, #62625c); padding:7px 13px; border-radius:10px; cursor:pointer; }
+  .pd-tab .n { font-size:.7rem; font-weight:600; padding:1px 7px; border-radius:999px; background:rgba(0,0,0,.07); }
+  .pd-tab.active { background:#fff; color:var(--ink, #17181c); font-weight:600; box-shadow:0 1px 3px rgba(23,24,28,.16); }
+
+  .pd-switch { display:inline-flex; align-items:center; gap:8px; border:1.5px solid #cfd8d2; background:#fff; border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:.84rem; font-weight:600; color:#3c4a41; cursor:pointer; transition:background .15s, border-color .15s; }
+  .pd-switch .track { position:relative; width:34px; height:20px; border-radius:999px; background:#c9cfcb; transition:background .15s; flex:none; }
+  .pd-switch .track::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
+  .pd-switch svg { width:15px; height:15px; color:#25d366; flex:none; }
+  .pd-switch .n { font-size:.7rem; padding:1px 7px; border-radius:999px; background:rgba(0,0,0,.07); font-weight:600; }
+  .pd-switch[aria-checked="true"] { background:#f1faf4; border-color:#9fd6b2; color:#14532d; }
+  .pd-switch[aria-checked="true"] .track { background:#25d366; }
+  .pd-switch[aria-checked="true"] .track::after { transform:translateX(14px); }
+
+  .pd-list { display:flex; flex-direction:column; gap:12px; }
+  .pd-card { display:grid; grid-template-columns:auto 1fr auto; gap:6px 16px; align-items:center; background:#fff; border:1px solid var(--line, #e3e0d4); border-radius:18px; padding:14px 16px; box-shadow:0 1px 2px rgba(23,24,28,.05), 0 6px 18px rgba(23,24,28,.05); }
+  .pd-card.wa { border-color:#b5e0c3; background:linear-gradient(100deg, #eefaf2, #fff 60%); }
+  .pd-token { min-width:88px; text-align:center; padding:9px 12px 8px; border-radius:14px; background:#17181c; color:#fff; }
+  .pd-token small { display:block; font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
+  .pd-token b { display:block; font-family:"Fraunces", Georgia, serif; font-size:1.75rem; line-height:1.05; font-weight:600; }
+  .pd-card.wa .pd-token { background:#128c4a; }
+
+  .pd-main { min-width:0; }
+  .pd-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:.7rem; font-weight:600; letter-spacing:.02em; padding:3px 9px; border-radius:999px; background:#eee; color:#444; }
+  .chip svg { width:12px; height:12px; }
+  .chip.wa { background:#25d366; color:#fff; }
+  .chip.paid { background:#dff1e5; color:#1f5a37; }
+  .chip.topay { background:#fdf0d9; color:#8a5200; }
+  .chip.glossy { background:#efe6fb; color:#5b34a0; }
+  .chip.printed { background:#e6e6e6; color:#555; text-transform:capitalize; }
+  .pd-files { font-size:.92rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pd-files.wa { display:flex; align-items:center; gap:6px; color:#14532d; white-space:normal; }
+  .pd-files.wa svg { width:16px; height:16px; color:#25d366; flex:none; }
+  .pd-files .more { color:var(--ink-soft, #62625c); font-weight:400; }
+  .pd-meta { margin-top:3px; font-size:.78rem; color:var(--ink-soft, #62625c); }
+  .pd-meta b { color:var(--ink, #17181c); font-weight:600; }
+
+  .pd-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
+  .pd-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--line, #d9d6c8); background:#fff; color:var(--ink, #17181c); border-radius:11px; padding:8px 14px; font:inherit; font-size:.84rem; font-weight:600; text-decoration:none; cursor:pointer; }
+  .pd-btn:active { transform:scale(.97); }
+  .pd-btn.primary { background:var(--ink, #17181c); border-color:var(--ink, #17181c); color:#fff; }
+  .pd-btn.wa { background:#25d366; border-color:#25d366; color:#fff; }
+  .pd-btn.danger { color:#a02722; border-color:#efc9c6; }
+  .pd-btn.sm { padding:6px 11px; font-size:.78rem; border-radius:9px; }
+  .pd-btn:disabled { opacity:.6; cursor:wait; }
+
+  .pd-body { grid-column:1 / -1; margin-top:8px; padding-top:12px; border-top:1px dashed var(--line, #ddd9ca); display:flex; flex-direction:column; gap:10px; }
+  .pd-spec { display:flex; flex-wrap:wrap; gap:14px; font-size:.86rem; color:var(--ink-soft, #62625c); }
+  .pd-spec b { color:var(--ink, #17181c); }
+  .pd-note { margin:0; font-size:.86rem; }
+  .pd-file { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; background:#faf9f4; font-size:.84rem; }
+  .pd-file span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .pd-body-actions { display:flex; flex-wrap:wrap; gap:8px; }
+
+  .pd-empty { text-align:center; color:var(--ink-soft, #62625c); padding:56px 10px; background:#fff; border:1px dashed var(--line, #d9d6c8); border-radius:18px; }
+  .pd-hidden-note { text-align:center; font-size:.82rem; color:#3c4a41; padding:10px; border-radius:12px; background:#f1faf4; border:1px dashed #9fd6b2; }
+  .pd-hidden-note button { border:0; background:none; font:inherit; font-weight:700; color:#128c4a; text-decoration:underline; cursor:pointer; padding:0 2px; }
   #clearAllBtn:disabled { opacity:.6; cursor:wait; }
-  @media (max-width:560px) {
-    .dash-tools { width:100%; justify-content:space-between; }
-    .dash-tools .tabs { flex:1; }
-    .dash-tools .tab { flex:1; padding:8px 6px; }
+
+  @media (max-width:640px) {
+    .pd-tools { width:100%; justify-content:space-between; }
+    .pd-card { grid-template-columns:auto 1fr; }
+    .pd-actions { grid-column:1 / -1; justify-content:stretch; }
+    .pd-actions .pd-btn { flex:1; }
+    .pd-token { min-width:72px; }
+    .pd-token b { font-size:1.45rem; }
   }
-  .req-card.req-wa { border-left: 4px solid #25d366; background: linear-gradient(90deg, #f1faf4, transparent 45%); }
-  .wa-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 6px; padding: 3px 9px 3px 6px; border-radius: 999px; background: #25d366; color: #fff; font-size: .72rem; font-weight: 600; letter-spacing: .02em; }
-  .wa-badge svg { width: 13px; height: 13px; }
-  .wa-note { display: flex; align-items: center; gap: 6px; font-size: .86rem; font-weight: 500; color: #14532d; }
+
+  /* ===== v3: gate, app bar, stats, toolbar, modal ===== */
+  body { background:#f4f2ea; font-family:"IBM Plex Sans", -apple-system, "Segoe UI", sans-serif; color:#17181c; }
+  button, input, select { font:inherit; }
+  .pd-wrap { max-width:980px; margin:0 auto; padding:0 16px; }
+
+  .pd-gate { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:radial-gradient(900px 500px at 15% 10%, #fde9e7, transparent 60%), radial-gradient(800px 500px at 90% 90%, #e3eefb, transparent 60%), #f4f2ea; }
+  .pd-gate-card { width:100%; max-width:380px; display:flex; flex-direction:column; gap:12px; background:#fff; border:1px solid #e3e0d4; border-radius:24px; padding:30px 26px 26px; box-shadow:0 20px 50px rgba(23,24,28,.12); text-align:center; }
+  .pd-gate-card > * { order:1; }
+  .pd-gate-logo { order:-2; font-family:"Fraunces", Georgia, serif; font-size:1.7rem; font-weight:600; }
+  .pd-gate-logo span, .pd-logo span { color:#c6332e; }
+  .pd-gate-lock { order:-1; width:54px; height:54px; margin:0 auto; border-radius:50%; background:#17181c; color:#fff; display:grid; place-items:center; }
+  .pd-gate-lock svg { width:24px; height:24px; }
+  .pd-gate-intro { order:0; margin:0 0 4px; font-size:.92rem; color:#62625c; }
+  .pd-gate-err { order:5; margin:0; min-height:1.2em; font-size:.84rem; color:#c6332e; }
+  .pd-field { position:relative; display:block; }
+  .pd-field input, .pd-input { width:100%; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fcfbf7; border-radius:13px; padding:12px 14px; font-size:16px; outline:none; transition:border-color .15s; }
+  .pd-field input:focus, .pd-input:focus { border-color:#17181c; background:#fff; }
+  .pd-field input { padding-right:62px; }
+  .pd-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:none; color:#62625c; font-size:.78rem; font-weight:600; padding:8px; cursor:pointer; }
+  .pd-btn.block { width:100%; padding:12px 14px; font-size:.95rem; border-radius:13px; }
+
+  .pd-bar { position:sticky; top:0; z-index:30; background:rgba(244,242,234,.92); backdrop-filter:blur(10px); border-bottom:1px solid #e3e0d4; }
+  .pd-bar-in { display:flex; align-items:center; gap:12px; height:56px; }
+  .pd-logo { font-family:"Fraunces", Georgia, serif; font-size:1.3rem; font-weight:600; color:#17181c; text-decoration:none; }
+  .pd-live { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:#2f7a4d; background:#e6f3ea; padding:3px 9px; border-radius:999px; }
+  .pd-live i { width:7px; height:7px; border-radius:50%; background:#2f7a4d; animation:pdpulse 1.6s infinite; }
+  @keyframes pdpulse { 50% { opacity:.3; } }
+  .pd-nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
+  .pd-link { font-size:.86rem; font-weight:500; color:#17181c; text-decoration:none; padding:7px 10px; border-radius:9px; }
+  .pd-link:hover, .pd-icon:hover { background:#ebe8dd; }
+  .pd-icon { width:36px; height:36px; border:0; background:transparent; border-radius:10px; display:grid; place-items:center; color:#17181c; cursor:pointer; }
+  .pd-icon svg { width:19px; height:19px; }
+  .pd-icon.off { color:#a9a79c; }
+
+  .pd-stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:16px 0 12px; }
+  .pd-stat { background:#fff; border:1px solid #e3e0d4; border-radius:16px; padding:11px 14px; }
+  .pd-stat small { display:block; font-size:.66rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#62625c; }
+  .pd-stat b { display:block; margin-top:2px; font-family:"Fraunces", Georgia, serif; font-size:1.55rem; line-height:1.1; font-weight:600; }
+  .pd-stat.wa b { color:#128c4a; } .pd-stat.due b { color:#a56200; } .pd-stat.ok b { color:#2f7a4d; }
+
+  .pd-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
+  .pd-search { position:relative; flex:1 1 220px; }
+  .pd-search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:#8a887d; pointer-events:none; }
+  .pd-search input { width:100%; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fff; border-radius:12px; padding:10px 12px 10px 34px; font-size:16px; outline:none; }
+  .pd-search input:focus { border-color:#17181c; }
+  .pd-select { border:1.5px solid #ddd9ca; background:#fff; border-radius:12px; padding:9px 12px; font-size:.86rem; font-weight:500; color:#17181c; }
+  .pd-seg { display:inline-flex; gap:2px; padding:3px; border-radius:12px; background:#ebe8dd; }
+  .pd-seg button { border:0; background:transparent; padding:6px 11px; border-radius:9px; font-size:.8rem; font-weight:500; color:#62625c; cursor:pointer; }
+  .pd-seg button.active { background:#fff; color:#17181c; font-weight:600; box-shadow:0 1px 3px rgba(23,24,28,.16); }
+  .pd-row2 { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .pd-row2 .grp { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+
+  .pd-modal { position:fixed; inset:0; z-index:60; background:rgba(23,24,28,.45); overflow-y:auto; padding:14px; }
+  .pd-modal-card { max-width:380px; margin:12vh auto 0; background:#fff; border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 50px rgba(23,24,28,.25); }
+  .pd-modal-card h3 { margin:0 0 2px; font-family:"Fraunces", Georgia, serif; font-size:1.2rem; }
+  .pd-modal-card .hint { margin:0; font-size:.84rem; min-height:1.1em; }
+  .pd-modal-card .row { display:flex; gap:8px; }
+  .pd-modal-card .row .pd-btn { flex:1; }
+  .pd-toast { position:fixed; left:50%; bottom:22px; transform:translate(-50%, 30px); opacity:0; pointer-events:none; background:#17181c; color:#fff; padding:10px 16px; border-radius:12px; font-size:.86rem; font-weight:500; transition:all .25s; z-index:90; max-width:90vw; }
+  .pd-toast.show { opacity:1; transform:translate(-50%, 0); }
+  #print-frame { position:absolute; width:0; height:0; border:0; }
+  .pd-card .pd-actions .pd-btn.ok { color:#1f5a37; border-color:#b5e0c3; background:#f1faf4; }
+  @media (max-width:640px) {
+    .pd-stats { grid-template-columns:repeat(2, 1fr); }
+    .pd-link { display:none; }
+  }
+
+  /* ===== login redesign ===== */
+  .pd-login { width:100%; max-width:800px; display:grid; grid-template-columns:1fr 1fr; background:#fff; border:1px solid #e3e0d4; border-radius:28px; overflow:hidden; box-shadow:0 24px 60px rgba(23,24,28,.14); }
+  .pd-login .pd-gate-card { max-width:none; border:0; box-shadow:none; border-radius:0; justify-content:center; padding:44px 36px; text-align:left; background:#fff; }
+  .pd-login .pd-gate-lock { margin:0 0 6px; }
+  .pd-login .pd-gate-intro { margin:0; font-size:.88rem; color:#8a4b00; background:#fdf0d9; border-radius:12px; padding:10px 12px; text-align:left; }
+  .pd-login .pd-gate-intro:empty { display:none; }
+  .pd-login .pd-gate-err { text-align:left; }
+  .pd-login-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:10px; padding:28px 24px; color:#fff; background:radial-gradient(260px 200px at 30% 20%, rgba(198,51,46,.55), transparent 70%), radial-gradient(240px 200px at 80% 90%, rgba(31,95,168,.5), transparent 70%), #17181c; min-height:340px; }
+  .pd-art-logo { align-self:flex-start; font-family:"Fraunces", Georgia, serif; font-size:1.55rem; font-weight:600; }
+  .pd-art-logo span { color:#ff6b64; }
+  .pd-art-printer { width:100%; max-width:230px; height:auto; filter:drop-shadow(0 14px 22px rgba(0,0,0,.4)); }
+  .pd-art-paper { animation:pdfeed 3.2s ease-in-out infinite; }
+  @keyframes pdfeed { 0% { transform:translateY(-64px); } 55%, 80% { transform:translateY(0); } 100% { transform:translateY(0); opacity:0; } }
+  .pd-led { animation:pdblink 1s steps(2) infinite; }
+  .pd-led2 { animation-delay:.5s; }
+  @keyframes pdblink { 50% { opacity:.25; } }
+  .pd-art-room { align-self:flex-start; font-size:.74rem; font-weight:600; letter-spacing:.06em; padding:5px 11px; border-radius:999px; background:rgba(255,255,255,.12); }
+  @media (max-width:700px) {
+    .pd-login { grid-template-columns:1fr; max-width:400px; }
+    .pd-login-art { min-height:0; padding:18px 20px; flex-direction:row; flex-wrap:wrap; justify-content:space-between; }
+    .pd-art-printer { max-width:110px; order:3; }
+    .pd-art-room { align-self:center; }
+    .pd-login .pd-gate-card { padding:26px 22px; }
+  }
 </style>
 </head>
 <body>
 
-<div id="gate" class="gate">
-  <div class="gate-card" id="gateCard">
-    <div class="logo" style="justify-content:center;margin-bottom:6px;">Next<span class="dot">Print</span></div>
-    <p style="font-size:0.9rem;" id="gateIntro">Print desk — staff only</p>
-    <p class="hint" id="gateError" style="color:var(--red);margin-top:6px;"></p>
+<div id="gate" class="pd-gate">
+  <div class="pd-login">
+    <aside class="pd-login-art" aria-hidden="true">
+      <div class="pd-art-logo">Next<span>Print</span></div>
+      <svg class="pd-art-printer" viewBox="0 0 220 170">
+        <defs><clipPath id="pdOut"><rect x="0" y="136" width="220" height="40"/></clipPath></defs>
+        <g clip-path="url(#pdOut)">
+          <g class="pd-art-paper">
+            <rect x="70" y="128" width="80" height="62" rx="4" fill="#fff"/>
+            <rect x="80" y="142" width="60" height="4" rx="2" fill="#d8d5c8"/>
+            <rect x="80" y="152" width="46" height="4" rx="2" fill="#d8d5c8"/>
+            <rect x="80" y="162" width="54" height="4" rx="2" fill="#d8d5c8"/>
+          </g>
+        </g>
+        <rect x="26" y="70" width="168" height="70" rx="16" fill="#2c2e36"/>
+        <rect x="26" y="70" width="168" height="26" rx="14" fill="#3a3d47"/>
+        <rect x="52" y="112" width="116" height="8" rx="4" fill="#101114"/>
+        <circle class="pd-led" cx="48" cy="83" r="4" fill="#25d366"/>
+        <circle class="pd-led pd-led2" cx="62" cy="83" r="4" fill="#ff9d1c"/>
+        <rect x="70" y="24" width="80" height="52" rx="5" fill="#f4f2ea"/>
+        <rect x="80" y="36" width="60" height="4" rx="2" fill="#cfcbbb"/>
+        <rect x="80" y="46" width="44" height="4" rx="2" fill="#cfcbbb"/>
+        <rect x="70" y="62" width="80" height="14" fill="#2c2e36" opacity="0"/>
+      </svg>
+    </aside>
+    <div class="pd-gate-card" id="gateCard">
+      <p class="pd-gate-intro" id="gateIntro"></p>
+      <p class="pd-gate-err" id="gateError"></p>
+    </div>
   </div>
 </div>
 
 <div id="dashboard" style="display:none;">
-  <header class="site-header">
-    <div class="wrap">
-      <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
-      <nav>
-        <button type="button" class="link-btn" id="showChangePw" style="border:none;background:none;font-family:inherit;font-size:0.95rem;cursor:pointer;color:var(--ink);">Change password</button>
-        <a href="admin.html" target="_blank">Admin</a>
-        <a href="index.html" target="_blank">Home page</a>
+  <header class="pd-bar">
+    <div class="pd-wrap pd-bar-in">
+      <a href="index.html" class="pd-logo">Next<span>Print</span></a>
+      <span class="pd-live"><i></i>Live</span>
+      <nav class="pd-nav">
+        <button type="button" class="pd-icon" id="soundToggle" title="Sound for new requests"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></button>
+        <a href="admin.html" target="_blank" class="pd-link">Admin</a>
+        <a href="index.html" target="_blank" class="pd-link">Home</a>
+        <button type="button" class="pd-icon" id="showChangePw" title="Change password"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg></button>
+        <button type="button" class="pd-icon" id="lockBtn" title="Lock desk" onclick="lockDesk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></button>
       </nav>
     </div>
   </header>
 
-  <div class="wrap">
-    <div class="change-pw-panel" id="changePwPanel" style="display:none;">
-      <h3 style="font-size:1rem;margin-bottom:12px;">Change password</h3>
-      <input type="password" id="cpCurrent" placeholder="Current password">
-      <input type="password" id="cpNew" placeholder="New password">
-      <input type="password" id="cpConfirm" placeholder="Confirm new password">
-      <p class="hint" id="cpError" style="color:var(--red);"></p>
-      <p class="hint" id="cpSuccess" style="color:var(--ok);"></p>
-      <div style="display:flex;gap:10px;">
-        <button type="button" class="btn-sm" id="cpSave">Save new password</button>
-        <button type="button" class="btn-sm" id="cpCancel">Cancel</button>
-      </div>
-    </div>
-
-    <div class="dash-header">
-      <h1 style="font-size:1.6rem;margin:0;">Print desk</h1>
-      <div class="dash-tools">
-        <div class="tabs">
-          <button class="tab active" data-filter="pending">Pending</button>
-          <button class="tab" data-filter="printed">Printed</button>
-          <button class="tab" data-filter="all">All</button>
+  <div class="pd-wrap">
+    <div class="pd-modal" id="changePwPanel" style="display:none;">
+      <div class="pd-modal-card">
+        <h3>Change password</h3>
+        <input type="password" class="pd-input" id="cpCurrent" placeholder="Current password" autocomplete="current-password">
+        <input type="password" class="pd-input" id="cpNew" placeholder="New password" autocomplete="new-password">
+        <input type="password" class="pd-input" id="cpConfirm" placeholder="Confirm new password" autocomplete="new-password">
+        <p class="hint" id="cpError" style="color:#c6332e;"></p>
+        <p class="hint" id="cpSuccess" style="color:#2f7a4d;"></p>
+        <div class="row">
+          <button type="button" class="pd-btn" id="cpCancel">Close</button>
+          <button type="button" class="pd-btn primary" id="cpSave">Save password</button>
         </div>
-        <button type="button" class="btn-sm cancel-btn" id="clearAllBtn" onclick="clearAll()" style="display:none;">Clear all</button>
       </div>
     </div>
 
-    <div class="dash-body" id="requestList">
-      <p style="text-align:center;color:var(--ink-soft);padding:60px 0;">Loading requests…</p>
+    <div class="pd-stats">
+      <div class="pd-stat"><small>Pending</small><b id="st-pending">0</b></div>
+      <div class="pd-stat due"><small>To collect</small><b id="st-due">₹0</b></div>
+      <div class="pd-stat ok"><small>Already paid</small><b id="st-paid">₹0</b></div>
+      <div class="pd-stat wa"><small>On WhatsApp</small><b id="st-wa">0</b></div>
+    </div>
+
+    <div class="pd-toolbar">
+      <label class="pd-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" id="searchBox" placeholder="Search token, file or note  ( / )" autocomplete="off"></label>
+      <div class="pd-seg" id="payFilter"><button class="active" data-pay="any">Any</button><button data-pay="paid">Paid</button><button data-pay="unpaid">Unpaid</button></div>
+      <select class="pd-select" id="sortSel" aria-label="Sort"><option value="paid">Paid first</option><option value="new">Newest</option><option value="old">Oldest</option><option value="amt">Highest ₹</option></select>
+    </div>
+
+    <div class="pd-row2">
+      <div class="pd-tabs" role="tablist">
+        <button class="pd-tab active" data-filter="pending">Pending <span class="n" id="cnt-pending">0</span></button>
+        <button class="pd-tab" data-filter="printed">Printed <span class="n" id="cnt-printed">0</span></button>
+        <button class="pd-tab" data-filter="all">All <span class="n" id="cnt-all">0</span></button>
+      </div>
+      <div class="grp">
+        <button type="button" class="pd-switch" id="waToggle" role="switch" aria-checked="true" title="Show or hide WhatsApp requests">
+          <span class="track"></span>
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+          <span id="waLabel">WhatsApp</span><span class="n" id="waCount">0</span>
+        </button>
+        <button type="button" class="pd-btn danger sm" id="clearAllBtn" onclick="clearAll()" style="display:none;">Clear all</button>
+      </div>
+    </div>
+
+    <div class="pd-list" id="requestList">
+      <div class="pd-empty">Loading requests…</div>
     </div>
   </div>
+  <div class="pd-toast" id="pdToast"></div>
 </div>
 
 <iframe id="print-frame"></iframe>
@@ -101,15 +302,28 @@ const gateError = document.getElementById('gateError');
 const dashboard = document.getElementById('dashboard');
 
 // ---- render either "create password" (first run) or "enter password" ----
+function wireEyes(root) {
+  root.querySelectorAll('.pd-eye').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const inp = btn.parentElement.querySelector('input');
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+    });
+  });
+}
+
 function renderCreatePasswordForm() {
-  gateIntro.textContent = 'Set up the print desk password — this is your first time here.';
+  gateIntro.textContent = 'First time here — create a password for the print desk.';
   const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
   wrap.innerHTML = `
-    <input type="password" id="newPw" placeholder="Create a password">
-    <input type="password" id="confirmPw" placeholder="Confirm password">
-    <button class="btn btn-primary" id="createBtn" style="width:100%;justify-content:center;">Create password &amp; unlock</button>
+    <label class="pd-field"><input type="password" id="newPw" placeholder="Create a password" autocomplete="new-password"><button type="button" class="pd-eye">Show</button></label>
+    <label class="pd-field"><input type="password" id="confirmPw" placeholder="Confirm password" autocomplete="new-password"><button type="button" class="pd-eye">Show</button></label>
+    <button class="pd-btn primary block" id="createBtn">Create password &amp; unlock</button>
   `;
   gateCard.appendChild(wrap);
+  wireEyes(wrap);
 
   document.getElementById('createBtn').addEventListener('click', async () => {
     const pw = document.getElementById('newPw').value;
@@ -131,13 +345,14 @@ function renderCreatePasswordForm() {
 }
 
 function renderLoginForm() {
-  gateIntro.textContent = 'Print desk — staff only';
   const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
   wrap.innerHTML = `
-    <input type="password" id="passcodeInput" placeholder="Password" autofocus>
-    <button class="btn btn-primary" id="unlockBtn" style="width:100%;justify-content:center;">Unlock</button>
+    <label class="pd-field"><input type="password" id="passcodeInput" placeholder="Password" autocomplete="current-password" autofocus><button type="button" class="pd-eye">Show</button></label>
+    <button class="pd-btn primary block" id="unlockBtn">Unlock desk</button>
   `;
   gateCard.appendChild(wrap);
+  wireEyes(wrap);
 
   const passcodeInput = document.getElementById('passcodeInput');
 
@@ -170,7 +385,7 @@ function makeSessionId() {
 // remove any form elements appended to the gate card so we can render
 // a fresh login form on top of the original logo/intro/error nodes
 function resetGateCard() {
-  while (gateCard.children.length > 3) {
+  while (gateCard.children.length > 2) {
     gateCard.removeChild(gateCard.lastChild);
   }
   gateError.textContent = '';
@@ -239,6 +454,28 @@ function unlock() {
   }
 })();
 
+// ---- desk toolbar: search, payment filter, sort, sound ----
+document.getElementById('searchBox').addEventListener('input', e => { searchQ = e.target.value.trim().toLowerCase(); render(); });
+document.querySelectorAll('#payFilter button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#payFilter button').forEach(x => x.classList.toggle('active', x === b));
+  payFilter = b.dataset.pay; render();
+}));
+document.getElementById('sortSel').addEventListener('change', e => { sortMode = e.target.value; render(); });
+document.getElementById('soundToggle').addEventListener('click', () => {
+  soundOn = !soundOn;
+  try { localStorage.setItem('np_sound', soundOn ? '1' : '0'); } catch (e) {}
+  render(); toast(soundOn ? 'Sound on for new requests' : 'Sound off');
+  if (soundOn) beep();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && dashboard.style.display !== 'none') {
+    e.preventDefault(); document.getElementById('searchBox').focus();
+  }
+  if (e.key === 'Escape') { changePwPanel.style.display = 'none'; }
+});
+setInterval(() => { if (dashboard.style.display !== 'none' && !busyEditing()) render(); }, 60000); // refresh "x min ago"
+function busyEditing() { return document.activeElement && document.activeElement.id === 'searchBox'; }
+
 // ---- change password (from inside the dashboard) ----
 const showChangePw = document.getElementById('showChangePw');
 const changePwPanel = document.getElementById('changePwPanel');
@@ -250,6 +487,7 @@ showChangePw.addEventListener('click', () => {
   cpError.textContent = '';
   cpSuccess.textContent = '';
 });
+changePwPanel.addEventListener('click', e => { if (e.target === changePwPanel) changePwPanel.style.display = 'none'; });
 document.getElementById('cpCancel').addEventListener('click', () => {
   changePwPanel.style.display = 'none';
 });
@@ -298,6 +536,108 @@ let allRequests = [];
 let currentFilter = 'pending';
 let dbStarted = false;
 let expandedIds = new Set(); // request ids whose "Details" panel is open
+let showWA = true; // show/hide WhatsApp requests (remembered on this device)
+try { showWA = localStorage.getItem('np_showWA') !== '0'; } catch (e) {}
+
+const WA_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
+
+let searchQ = '', payFilter = 'any', sortMode = 'paid';
+let soundOn = true; try { soundOn = localStorage.getItem('np_sound') !== '0'; } catch (e) {}
+let knownIds = null;
+
+function matchesStatus(r) { return currentFilter === 'all' || (r.status || 'pending') === currentFilter; }
+function matchesSearch(r) {
+  if (!searchQ) return true;
+  const hay = [r.token, r.notes, ...(r.files || []).map(f => f.name)].join(' ').toLowerCase();
+  return hay.includes(searchQ);
+}
+function matchesPay(r) {
+  if (payFilter === 'any') return true;
+  return payFilter === 'paid' ? r.paymentStatus === 'paid' : r.paymentStatus !== 'paid';
+}
+// what the desk currently shows: tab + WhatsApp switch + search + payment filter
+function visibleRequests() {
+  return allRequests.filter(r => matchesStatus(r) && matchesSearch(r) && matchesPay(r) && (showWA || r.source !== 'whatsapp'));
+}
+
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const m = Math.floor((Date.now() - ts) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + ' hr ago';
+  return Math.floor(h / 24) + ' d ago';
+}
+
+function toast(msg) {
+  const t = document.getElementById('pdToast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function beep() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175].forEach((f, i) => {
+      const o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + i * 0.17;
+      o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(0.14, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + 0.16);
+      o.start(t0); o.stop(t0 + 0.17);
+    });
+  } catch (e) {}
+}
+
+// chime + toast when a brand-new pending request arrives (not on first load)
+function notifyNew(list) {
+  const ids = new Set(list.map(r => r.id));
+  if (knownIds) {
+    const fresh = list.filter(r => !knownIds.has(r.id) && (r.status || 'pending') === 'pending');
+    if (fresh.length) {
+      if (soundOn) beep();
+      toast('New request · token ' + fresh.map(r => r.token || '—').join(', '));
+    }
+  }
+  knownIds = ids;
+}
+
+window.markPaid = async function (id) {
+  const req = allRequests.find(r => r.id === id);
+  if (!req) return;
+  if (!confirm('Mark token ' + (req.token || '') + ' as paid (₹' + (req.amount || 0) + ') at the counter?')) return;
+  try {
+    await db.ref('printRequests/' + id).update({
+      paymentStatus: 'paid', paidAmount: req.amount || 0, paymentMethod: 'counter',
+      paidAt: firebase.database.ServerValue.TIMESTAMP,
+    });
+    toast('Token ' + (req.token || '') + ' marked paid');
+  } catch (err) { alert('Could not update: ' + (err.message || err)); }
+};
+
+window.setAmount = async function (id) {
+  const req = allRequests.find(r => r.id === id);
+  if (!req) return;
+  const v = prompt('Amount to collect for token ' + (req.token || '') + ' (₹):', req.amount || '');
+  if (v === null) return;
+  const n = Math.round(Number(v));
+  if (!isFinite(n) || n < 0) { alert('Enter a valid amount.'); return; }
+  try { await db.ref('printRequests/' + id).update({ amount: n }); toast('Amount set to ₹' + n); }
+  catch (err) { alert('Could not update: ' + (err.message || err)); }
+};
+
+window.lockDesk = function () {
+  try { localStorage.removeItem('np_session_id'); sessionStorage.removeItem('np_admin_ok'); } catch (e) {}
+  location.reload();
+};
+
+window.toggleWA = function () {
+  showWA = !showWA;
+  try { localStorage.setItem('np_showWA', showWA ? '1' : '0'); } catch (e) {}
+  render();
+};
 
 function startDashboard() {
   if (dbStarted) return;
@@ -308,12 +648,15 @@ function startDashboard() {
     allRequests = Object.entries(data)
       .map(([id, val]) => ({ id, ...val }))
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    notifyNew(allRequests);
     render();
   });
 
-  document.querySelectorAll('.tab').forEach(tab => {
+  document.getElementById('waToggle').addEventListener('click', () => window.toggleWA());
+
+  document.querySelectorAll('.pd-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.pd-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentFilter = tab.dataset.filter;
       render();
@@ -365,7 +708,7 @@ function startDashboard() {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
 
-    if (!confirm(`Mark "${req.name || 'this request'}" as printed?\n\nThis will permanently delete the request and its files.`)) {
+    if (!confirm(`Mark "${req.name || ('token ' + (req.token || ''))}" as printed?\n\nThis will permanently delete the request and its files.`)) {
       return;
     }
 
@@ -386,9 +729,7 @@ function startDashboard() {
   // ---- clear every request currently shown in the active tab: removes
   // their files from Cloudinary, then deletes the records in one go ----
   window.clearAll = async function () {
-    const visible = currentFilter === 'all'
-      ? allRequests
-      : allRequests.filter(r => (r.status || 'pending') === currentFilter);
+    const visible = visibleRequests(); // hidden WhatsApp requests are never cleared
     if (!visible.length) return;
 
     const label = currentFilter === 'all' ? '' : currentFilter + ' ';
@@ -428,7 +769,7 @@ function startDashboard() {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
 
-    if (!confirm(`Cancel "${req.name || 'this request'}"?\n\nThis will permanently delete the request and its files.`)) {
+    if (!confirm(`Cancel "${req.name || ('token ' + (req.token || ''))}"?\n\nThis will permanently delete the request and its files.`)) {
       return;
     }
 
@@ -447,29 +788,53 @@ function startDashboard() {
   };
 }
 
+function updateToolbar() {
+  const pool = allRequests.filter(r => showWA || r.source !== 'whatsapp');
+  document.getElementById('cnt-pending').textContent = pool.filter(r => (r.status || 'pending') === 'pending').length;
+  document.getElementById('cnt-printed').textContent = pool.filter(r => r.status === 'printed').length;
+  document.getElementById('cnt-all').textContent = pool.length;
+  const sw = document.getElementById('waToggle');
+  sw.setAttribute('aria-checked', String(showWA));
+  document.getElementById('waCount').textContent = allRequests.filter(r => r.source === 'whatsapp' && matchesStatus(r)).length;
+  document.getElementById('waLabel').textContent = showWA ? 'WhatsApp shown' : 'WhatsApp hidden';
+
+  const pend = pool.filter(r => (r.status || 'pending') === 'pending');
+  const sum = a => a.reduce((t, r) => t + (Number(r.amount) || 0), 0);
+  document.getElementById('st-pending').textContent = pend.length;
+  document.getElementById('st-due').textContent = '₹' + sum(pend.filter(r => r.paymentStatus !== 'paid'));
+  document.getElementById('st-paid').textContent = '₹' + sum(pend.filter(r => r.paymentStatus === 'paid'));
+  document.getElementById('st-wa').textContent = allRequests.filter(r => r.source === 'whatsapp' && (r.status || 'pending') === 'pending').length;
+  document.title = (pend.length ? '(' + pend.length + ') ' : '') + 'Print desk — NextPrint';
+  document.getElementById('soundToggle').classList.toggle('off', !soundOn);
+}
+
 function render() {
   const listEl = document.getElementById('requestList');
-  const filtered = currentFilter === 'all'
-    ? allRequests
-    : allRequests.filter(r => (r.status || 'pending') === currentFilter);
+  updateToolbar();
+  const filtered = visibleRequests();
+  const hiddenWA = showWA ? 0 : allRequests.filter(r => r.source === 'whatsapp' && matchesStatus(r)).length;
 
   const clearBtn = document.getElementById('clearAllBtn');
   if (clearBtn && !clearBtn.disabled) clearBtn.style.display = filtered.length ? '' : 'none';
 
+  const hiddenNote = hiddenWA
+    ? `<div class="pd-hidden-note">${hiddenWA} WhatsApp request${hiddenWA === 1 ? '' : 's'} hidden · <button type="button" onclick="toggleWA()">Show</button></div>`
+    : '';
+
   if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="empty-state"><p>No ${currentFilter === 'all' ? '' : currentFilter} requests right now.</p></div>`;
+    listEl.innerHTML = `<div class="pd-empty">No ${currentFilter === 'all' ? '' : currentFilter + ' '}requests right now.</div>${hiddenNote}`;
     return;
   }
 
-  // Paid requests float to the top; order within each group (paid / unpaid)
-  // is otherwise unchanged, since Array.sort is stable.
   const sorted = filtered.slice().sort((a, b) => {
-    const aPaid = a.paymentStatus === 'paid' ? 1 : 0;
-    const bPaid = b.paymentStatus === 'paid' ? 1 : 0;
-    return bPaid - aPaid;
+    if (sortMode === 'new') return (b.createdAt || 0) - (a.createdAt || 0);
+    if (sortMode === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
+    if (sortMode === 'amt') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
+    // default: paid first, then newest (Array.sort is stable)
+    return (b.paymentStatus === 'paid' ? 1 : 0) - (a.paymentStatus === 'paid' ? 1 : 0);
   });
 
-  listEl.innerHTML = sorted.map(r => renderCard(r)).join('');
+  listEl.innerHTML = sorted.map(r => renderCard(r)).join('') + hiddenNote;
 }
 
 function printTypeLabel(t) {
@@ -481,68 +846,74 @@ function printTypeLabel(t) {
 function renderCard(r) {
   const status = r.status || 'pending';
   const files = r.files || [];
+  const isWA = r.source === 'whatsapp';
   const expanded = expandedIds.has(r.id);
   const hasPhotoPaper = files.some(f => f.printType === 'photo');
-  const isWA = r.source === 'whatsapp';
-  const waIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
-
-  const filePreviewHtml = files.length
-    ? `<div class="file-preview-list">${files.map(f => `<div class="fp-name">${escapeHtml(f.name)}</div>`).join('')}</div>`
-    : '';
-
   const pdfCount = files.filter(f => (f.format || '').toLowerCase() === 'pdf').length;
+  const paid = r.paymentStatus === 'paid';
+
+  const chips = [
+    isWA ? `<span class="chip wa">${WA_ICON}WhatsApp</span>` : '',
+    (!isWA || (r.amount || 0) > 0) ? (paid ? '<span class="chip paid">Paid</span>' : '<span class="chip topay">To pay</span>') : '',
+    hasPhotoPaper ? '<span class="chip glossy">Glossy</span>' : '',
+    status === 'printed' ? '<span class="chip printed">printed</span>' : '',
+  ].join('');
+
+  const shown = files.slice(0, 2).map(f => escapeHtml(f.name)).join(', ');
+  const more = files.length > 2 ? ` <span class="more">+${files.length - 2} more</span>` : '';
+  const filesLine = isWA
+    ? `<div class="pd-files wa">${WA_ICON}Files sent on WhatsApp</div>`
+    : `<div class="pd-files" title="${escapeAttr(files.map(f => f.name).join(', '))}">${shown}${more}</div>`;
+
+  const when = `<span title="${escapeAttr(formatDateTime(r.createdAt).replace('<br>', ' · '))}">${timeAgo(r.createdAt)}</span>`;
+  const metaLine = isWA
+    ? `<div class="pd-meta">${(r.amount || 0) > 0 ? '<b>₹' + r.amount + '</b> ' + (paid ? 'paid' : 'to pay') + ' · ' : 'Amount not set · '}${when}</div>`
+    : `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${files.length} file${files.length === 1 ? '' : 's'} · ${when}</div>`;
 
   const filesHtml = files.map((f) => {
     const printable = isPrintable(f);
     const actionBtn = printable
-      ? `<button type="button" class="btn-sm" onclick="printFile('${escapeAttr(f.url)}')">Open &amp; print</button>`
-      : `<a class="btn-sm" href="${escapeAttr(f.url)}" target="_blank" rel="noopener">Download</a>`;
+      ? `<button type="button" class="pd-btn sm" onclick="printFile('${escapeAttr(f.url)}')">Open &amp; print</button>`
+      : `<a class="pd-btn sm" href="${escapeAttr(f.url)}" target="_blank" rel="noopener">Download</a>`;
     const pagesLabel = f.pageMode === 'custom' ? `pages ${escapeHtml(f.pages || '')}` : 'all pages';
     return `
-      <div class="req-file">
-        <span class="fname">${escapeHtml(f.name)} — ${printTypeLabel(f.printType)}, ${pagesLabel}, ${f.copies || 1}× copies</span>
-        <div class="actions">${actionBtn}</div>
+      <div class="pd-file">
+        <span>${escapeHtml(f.name)} — ${printTypeLabel(f.printType)}, ${pagesLabel}, ${f.copies || 1}× copies</span>
+        ${actionBtn}
       </div>`;
   }).join('');
 
   const bodyHtml = expanded ? `
-      <div class="req-body">
-        <div class="spec-line">
-          ${isWA ? '<span><b>WhatsApp</b> request — files arrive in chat</span>' : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>
-          <span><b>₹${r.amount || 0}</b> estimated</span>`}
+      <div class="pd-body">
+        <div class="pd-spec">
+          ${isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
+                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> estimated</span>`}
         </div>
-        ${r.notes ? `<p style="font-size:0.88rem;">Note: ${escapeHtml(r.notes)}</p>` : ''}
-        <div class="req-files">${filesHtml}</div>
-        <div class="req-actions">
-          ${pdfCount > 0 ? `<button type="button" class="btn-sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
-          ${status !== 'printed' ? `<button type="button" class="btn-sm mark" onclick="markPrinted('${r.id}')">Mark as printed</button>` : ''}
+        ${r.notes && !isWA ? `<p class="pd-note">Note: ${escapeHtml(r.notes)}</p>` : ''}
+        ${filesHtml}
+        <div class="pd-body-actions">
+          ${pdfCount > 0 ? `<button type="button" class="pd-btn sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
+          ${status !== 'printed' ? `<button type="button" class="pd-btn sm primary" onclick="markPrinted('${r.id}')">Mark as printed</button>` : ''}
         </div>
       </div>` : '';
 
   return `
-    <div class="req-card req-card-grid${isWA ? ' req-wa' : ''}" id="card-${r.id}">
-      ${r.paymentStatus === 'paid' ? '<span class="paid-badge">Paid</span>' : ''}
-      ${hasPhotoPaper ? '<span class="glossy-badge">GlossyPage</span>' : ''}
-      <div class="req-top-grid">
-        <div class="req-col req-col-left">
-          <div class="req-token">${escapeHtml(String(r.token || '—'))}</div>
-          ${isWA ? `<span class="wa-badge">${waIcon}WhatsApp</span>` : `<div class="req-price">₹${r.amount || 0}<small>${r.paymentStatus === 'paid' ? 'paid' : 'to pay'}</small></div>`}
-          ${status === 'printed' ? `<span class="pill ${status}">${status}</span>` : ''}
-        </div>
-        <div class="req-col req-col-mid">
-          ${isWA ? `<div class="wa-note">${waIcon.replace('<svg ', '<svg width="16" height="16" ')}Files sent on WhatsApp</div>` : filePreviewHtml}
-        </div>
-        <div class="req-col req-col-right">
-          <div class="req-datetime">${formatDateTime(r.createdAt)}</div>
-          <div class="req-actions-row">
-            <button type="button" class="btn-sm" onclick="mergeAndPrint('${r.id}')">Print</button>
-            <button type="button" class="btn-sm" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide' : 'Details'}</button>
-            <button type="button" class="btn-sm cancel-btn" onclick="cancelRequest('${r.id}')">Cancel</button>
-          </div>
-        </div>
+    <article class="pd-card${isWA ? ' wa' : ''}" id="card-${r.id}">
+      <div class="pd-token"><small>Token</small><b>${escapeHtml(String(r.token || '—'))}</b></div>
+      <div class="pd-main">
+        <div class="pd-chips">${chips}</div>
+        ${filesLine}
+        ${metaLine}
+      </div>
+      <div class="pd-actions">
+        <button type="button" class="pd-btn ${isWA ? 'wa' : 'primary'}" onclick="mergeAndPrint('${r.id}')">Print</button>
+        ${isWA && status !== 'printed' ? `<button type="button" class="pd-btn" onclick="setAmount('${r.id}')">${(r.amount || 0) > 0 ? 'Edit ₹' : 'Set ₹'}</button>` : ''}
+        ${status !== 'printed' && !paid && (r.amount || 0) > 0 ? `<button type="button" class="pd-btn ok" onclick="markPaid('${r.id}')">Paid</button>` : ''}
+        <button type="button" class="pd-btn" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide' : 'Details'}</button>
+        <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
       </div>
       ${bodyHtml}
-    </div>`;
+    </article>`;
 }
 
 // ---- toggle the details panel for one request, open below its tile ----
