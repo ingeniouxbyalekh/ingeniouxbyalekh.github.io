@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-<rect width="512" height="512" fill="#000"/>
+<rect x="0" y="0" width="512" height="512" fill="#000"/>
 <g transform="translate(256 256) scale(0.37) translate(-982 -932.5)">
 <g fill="#fff" stroke="#fff" stroke-width="1.5" stroke-linejoin="round">
 <path fill-rule="evenodd" d="M650 552a61 61 0 1 0 .01 0ZM650 580a33 33 0 1 1-.01 0Z"/>
