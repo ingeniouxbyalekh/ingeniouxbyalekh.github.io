@@ -65,6 +65,27 @@
   .go:active { transform:scale(.97); }
   .go:disabled { background:#a9aeb9; box-shadow:none; cursor:default; }
   .go strong { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.2rem; }
+  .slip .tk { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:3.2rem; letter-spacing:.14em; line-height:1.1; margin:8px 0 6px; text-align:center; background:var(--key); color:#fff; border-radius:14px; padding:12px 0 12px .14em; }
+  .slip .copy { display:block; margin:0 auto 10px; border:1.5px solid var(--rule); background:var(--paper); border-radius:999px; padding:7px 16px; font:600 .84rem "Instrument Sans",sans-serif; cursor:pointer; }
+  .slip .err { color:#b3261e; font-weight:600; }
+  .slip .where { text-align:center; margin:0 0 6px; font-weight:600; }
+  .survey { position:relative; margin-top:16px; padding:16px 0 4px; text-align:center; border-top:1.5px dashed var(--rule); }
+  .survey h4 { margin:0 0 6px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; }
+  .survey .skip { position:absolute; top:10px; right:0; font-size:.74rem; color:var(--mute); background:var(--bg); border:0; border-radius:999px; padding:5px 12px; cursor:pointer; }
+  .stars { display:flex; justify-content:center; gap:4px; }
+  .stars button { border:0; background:none; font-size:2rem; line-height:1; color:#cfd3dc; cursor:pointer; padding:2px 4px; }
+  .stars button.on { color:#f5a300; }
+  .rate-label { font-size:.82rem; color:var(--mute); min-height:1.2em; margin-bottom:4px; }
+  .s-more { display:none; text-align:left; margin-top:8px; }
+  .s-more.show { display:block; }
+  .s-title { font-size:.86rem; font-weight:600; text-align:center; margin-bottom:8px; }
+  .s-opts { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:10px; }
+  .s-opts label { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--rule); border-radius:999px; font-size:.82rem; cursor:pointer; }
+  .s-opts input { accent-color:var(--key); }
+  .survey textarea { width:100%; min-height:62px; border:1px solid var(--rule); border-radius:12px; padding:10px; font:inherit; resize:vertical; }
+  .s-send { width:100%; margin-top:8px; height:44px; border:0; border-radius:12px; background:var(--key); color:#fff; font:600 .95rem "Instrument Sans",sans-serif; cursor:pointer; }
+  .s-send:disabled { background:#a9aeb9; }
+  .thanks { padding:14px 0; font-weight:600; text-align:center; }
 </style>
 </head>
 <body>
@@ -86,6 +107,10 @@
   <button class="go" id="go" disabled><span id="goLabel">Select a notebook</span><strong id="goTotal"></strong></button>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="config.js"></script>
 <script>
 /* Edit names, prices and colours here */
 var PRODUCTS = [
@@ -97,6 +122,11 @@ var qty = {};
 var list = document.getElementById('list');
 var go = document.getElementById('go');
 var slip = document.getElementById('slip');
+var busy = false;
+var db = null;
+try { firebase.initializeApp(CONFIG.firebase); db = firebase.database(); } catch (e) { console.error(e); }
+
+function esc(t) { return String(t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
 
 PRODUCTS.forEach(function (p) {
   qty[p.id] = 0;
@@ -127,21 +157,191 @@ function totals() {
 }
 function update() {
   var s = totals();
-  go.disabled = s.n === 0;
-  document.getElementById('goLabel').textContent = s.n ? 'Reserve ' + s.n + (s.n > 1 ? ' items' : ' item') : 'Select a notebook';
+  go.disabled = s.n === 0 || busy;
+  document.getElementById('goLabel').textContent = s.n ? 'Pay now \u00B7 ' + s.n + (s.n > 1 ? ' items' : ' item') : 'Select a notebook';
   document.getElementById('goTotal').textContent = s.n ? '\u20B9' + s.t : '';
 }
-go.onclick = function () {
-  var s = totals(), rows = '';
-  PRODUCTS.forEach(function (p) {
-    if (qty[p.id]) rows += '<li><span>' + qty[p.id] + ' \u00D7 ' + p.name + ' (\u20B9' + p.price + '/copy)</span><span>\u20B9' + qty[p.id] * p.price + '</span></li>';
+// Same sequential 4-digit token as the print requests (1001-9999),
+// advanced atomically so two customers never get the same number.
+async function nextToken() {
+  var r = await db.ref('tokenCounter/current').transaction(function (cur) {
+    if (!cur || cur >= 9999) return 1001;
+    return cur + 1;
   });
-  var code = 'NB-' + Math.floor(1000 + Math.random() * 9000);
-  slip.innerHTML = '<h3>Show this at Room 136</h3><small>Order code ' + code + '</small><ul>' + rows +
-    '<li class="tot"><span>Total to pay</span><span>\u20B9' + s.t + '</span></li></ul><small>Pay at the print desk when you collect.</small>';
+  return String(r.snapshot.val());
+}
+
+function resetCart() {
+  PRODUCTS.forEach(function (p) {
+    qty[p.id] = 0;
+    document.getElementById('q-' + p.id).textContent = 0;
+    document.getElementById('s-' + p.id).textContent = '';
+  });
+  update();
+}
+
+function showSlip(html) {
+  slip.innerHTML = html;
   slip.classList.add('show');
   slip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+go.onclick = function () {
+  if (busy) return;
+  var s = totals();
+  if (!s.n) return;
+  if (!db || !CONFIG.paymentsEnabled || !window.Razorpay) {
+    showSlip('<p class="err">Online payment is unavailable right now. Please try again in a moment.</p>');
+    return;
+  }
+  var items = PRODUCTS.filter(function (p) { return qty[p.id]; }).map(function (p) {
+    return { id: p.id, name: p.name, qty: qty[p.id], price: p.price, total: qty[p.id] * p.price };
+  });
+  var total = s.t, processing = false;
+  busy = true; update();
+  slip.classList.remove('show');
+
+  var rzp = new Razorpay({
+    key: CONFIG.razorpay.keyId,
+    amount: Math.round(total * 100),
+    currency: 'INR',
+    name: 'NextPrint',
+    description: 'Notebooks (' + s.n + (s.n > 1 ? ' items' : ' item') + ')',
+    handler: function (resp) { processing = true; finishOrder(items, total, resp.razorpay_payment_id); },
+    modal: { ondismiss: function () { if (!processing) { busy = false; update(); } } }
+  });
+  rzp.on('payment.failed', function (resp) {
+    busy = false; update();
+    var d = resp && resp.error && resp.error.description;
+    showSlip('<p class="err">Payment failed' + (d ? ': ' + esc(d) : '.') + ' You can try again.</p>');
+  });
+  rzp.open();
 };
+
+// Payment succeeded -> now (and only now) generate the token and save the
+// order to printRequests so it appears on the print desk (print.html).
+async function finishOrder(items, total, paymentId) {
+  showSlip('<h3>Payment received</h3><small>Generating your token…</small>');
+  try {
+    var token = await nextToken();
+    var ref = db.ref('printRequests').push();
+    await ref.set({
+      token: token,
+      status: 'pending',
+      source: 'notebook',
+      items: items,
+      amount: total,
+      paidAmount: total,
+      paymentStatus: 'paid',
+      paymentId: paymentId,
+      paymentMethod: 'razorpay',
+      notes: 'Notebook order',
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    });
+    resetCart();
+    busy = false; update();
+    renderToken(token, items, total, ref.key);
+  } catch (err) {
+    busy = false; update();
+    showSlip('<p class="err">Payment went through (ID: ' + esc(paymentId) + ') but we could not create your token (' + esc(err && err.message || err) + ').</p><small>Please show this payment ID at Room 136 to collect your notebooks.</small>');
+  }
+}
+
+function renderToken(token, items, total, key) {
+  var rows = items.map(function (i) {
+    return '<li><span>' + i.qty + ' × ' + esc(i.name) + '</span><span>₹' + i.total + '</span></li>';
+  }).join('');
+  showSlip(
+    '<h3>Payment successful ✓</h3><small>Your token number</small>' +
+    '<div class="tk" id="tkCode">' + esc(token) + '</div>' +
+    '<button type="button" class="copy" id="copyTk">Copy token</button>' +
+    '<p class="where">📍 Show it at Room 136 to collect</p>' +
+    '<ul>' + rows + '<li class="tot"><span>Paid</span><span>₹' + total + '</span></li></ul>' +
+    '<div class="survey" id="survey">' +
+      '<button type="button" class="skip" id="sSkip">Skip</button>' +
+      '<h4>How was your experience?</h4>' +
+      '<div class="stars" id="sStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">' +
+        [1,2,3,4,5].map(function (n) { return '<button type="button" data-n="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>'; }).join('') +
+      '</div>' +
+      '<div class="rate-label" id="rLabel">Tap a star (optional)</div>' +
+      '<div class="s-more" id="sMore"><div class="s-title" id="sTitle"></div><div class="s-opts" id="sOpts"></div>' +
+        '<textarea id="sComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>' +
+        '<button type="button" class="s-send" id="sSend">Submit feedback</button></div>' +
+    '</div>'
+  );
+  var cb = document.getElementById('copyTk');
+  cb.onclick = function () {
+    var done = function (t) { cb.textContent = t; setTimeout(function () { cb.textContent = 'Copy token'; }, 1800); };
+    try { navigator.clipboard.writeText(token).then(function () { done('Copied ✓'); }, function () { done('Press and hold to copy'); }); }
+    catch (e) { done('Press and hold to copy'); }
+  };
+  initSurvey(token, key);
+}
+
+// Same feedback flow as the upload page: saved to feedback/ and added to
+// the running totals in ratingStats/ so the admin averages include it.
+var RATE_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+var SURVEY_OPTIONS = {
+  1: { title: 'Sorry about that. What went wrong?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Wrong notebook choices', 'Other'] },
+  2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Few notebook choices', 'Other'] },
+  3: { title: 'Thanks! What could be better?', opts: ['Easier to use', 'Lower prices', 'More notebook choices', 'Smoother payment', 'Other'] },
+  4: { title: 'Glad it went well! What worked?', opts: ['Easy to use', 'Fair prices', 'Smooth payment', 'Good notebooks', 'Just minor issues'] },
+  5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Great prices', 'Easy payment', 'Good notebooks', 'Will use again'] }
+};
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+function initSurvey(token, requestKey) {
+  var box = document.getElementById('survey');
+  var stars = [].slice.call(document.querySelectorAll('#sStars button'));
+  var more = document.getElementById('sMore'), opts = document.getElementById('sOpts');
+  var rating = 0;
+  document.getElementById('sSkip').onclick = function () { box.remove(); };
+  stars.forEach(function (btn) {
+    btn.onclick = function () {
+      var n = Number(btn.dataset.n), changed = n !== rating;
+      rating = n;
+      stars.forEach(function (b) {
+        b.classList.toggle('on', Number(b.dataset.n) <= n);
+        b.setAttribute('aria-checked', String(Number(b.dataset.n) === n));
+      });
+      document.getElementById('rLabel').textContent = RATE_LABELS[n];
+      if (changed) {
+        var cfg = SURVEY_OPTIONS[n];
+        document.getElementById('sTitle').textContent = cfg.title;
+        opts.innerHTML = cfg.opts.map(function (o) { return '<label><input type="checkbox" value="' + o + '"><span>' + o + '</span></label>'; }).join('');
+      }
+      more.classList.add('show');
+    };
+  });
+  document.getElementById('sSend').onclick = function () {
+    if (!rating) return;
+    var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
+    var reasons = [].slice.call(opts.querySelectorAll('input:checked')).map(function (i) { return i.value; });
+    var comment = document.getElementById('sComment').value.trim().slice(0, 500);
+    var dk = dayKey(new Date()), r = rating;
+    db.ref('feedback').push({
+      rating: r, reasons: reasons, comment: comment, token: token, requestKey: requestKey, source: 'notebook',
+      day: dk, createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function () {
+      return db.ref('ratingStats/days/' + dk).transaction(function (cur) {
+        cur = cur || { count: 0, sum: 0 };
+        return { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + r };
+      });
+    }).then(function () {
+      return db.ref('ratingStats/total').transaction(function (cur) {
+        cur = cur || { count: 0, sum: 0 };
+        var out = { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + r };
+        for (var i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === r ? 1 : 0);
+        return out;
+      });
+    }).then(function () {
+      box.innerHTML = '<div class="thanks">🙏 Thanks for your feedback!</div>';
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = 'Submit feedback';
+      alert('Could not send feedback right now. You can skip it, no problem.');
+    });
+  };
+}
 update();
 </script>
 </body>

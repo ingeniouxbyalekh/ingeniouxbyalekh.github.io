@@ -44,6 +44,9 @@
   .chip.wa { background:#25d366; color:#fff; }
   .chip.paid { background:#dff1e5; color:#1f5a37; }
   .chip.topay { background:#fdf0d9; color:#8a5200; }
+  .chip.nb { background:#e3f0fb; color:#16507f; }
+  .pd-card.nb { border-color:#b9d6ee; background:linear-gradient(100deg, #eef6fd, #fff 60%); }
+  .pd-card.nb .pd-token { background:#1f6fb0; }
   .chip.glossy { background:#efe6fb; color:#5b34a0; }
   .chip.printed { background:#e6e6e6; color:#555; text-transform:capitalize; }
   .pd-files { font-size:.92rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -548,7 +551,7 @@ let knownIds = null;
 function matchesStatus(r) { return currentFilter === 'all' || (r.status || 'pending') === currentFilter; }
 function matchesSearch(r) {
   if (!searchQ) return true;
-  const hay = [r.token, r.notes, ...(r.files || []).map(f => f.name)].join(' ').toLowerCase();
+  const hay = [r.token, r.notes, ...(r.files || []).map(f => f.name), ...(r.items || []).map(i => i.name)].join(' ').toLowerCase();
   return hay.includes(searchQ);
 }
 function matchesPay(r) {
@@ -708,7 +711,9 @@ function startDashboard() {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
 
-    if (!confirm(`Mark "${req.name || ('token ' + (req.token || ''))}" as printed?\n\nThis will permanently delete the request and its files.`)) {
+    if (!confirm(req.source === 'notebook'
+      ? `Mark notebook order (token ${req.token || ''}) as handed over?\n\nThis will remove it from the list.`
+      : `Mark "${req.name || ('token ' + (req.token || ''))}" as printed?\n\nThis will permanently delete the request and its files.`)) {
       return;
     }
 
@@ -847,6 +852,9 @@ function renderCard(r) {
   const status = r.status || 'pending';
   const files = r.files || [];
   const isWA = r.source === 'whatsapp';
+  const isNB = r.source === 'notebook';
+  const items = r.items || [];
+  const itemCount = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
   const expanded = expandedIds.has(r.id);
   const hasPhotoPaper = files.some(f => f.printType === 'photo');
   const pdfCount = files.filter(f => (f.format || '').toLowerCase() === 'pdf').length;
@@ -854,6 +862,7 @@ function renderCard(r) {
 
   const chips = [
     isWA ? `<span class="chip wa">${WA_ICON}WhatsApp</span>` : '',
+    isNB ? '<span class="chip nb">📓 Notebook</span>' : '',
     (!isWA || (r.amount || 0) > 0) ? (paid ? '<span class="chip paid">Paid</span>' : '<span class="chip topay">To pay</span>') : '',
     hasPhotoPaper ? '<span class="chip glossy">Glossy</span>' : '',
     status === 'printed' ? '<span class="chip printed">printed</span>' : '',
@@ -861,12 +870,17 @@ function renderCard(r) {
 
   const shown = files.slice(0, 2).map(f => escapeHtml(f.name)).join(', ');
   const more = files.length > 2 ? ` <span class="more">+${files.length - 2} more</span>` : '';
-  const filesLine = isWA
+  const itemsText = items.map(i => (Number(i.qty) || 0) + ' × ' + escapeHtml(i.name)).join(', ');
+  const filesLine = isNB
+    ? `<div class="pd-files" title="${escapeAttr(items.map(i => i.qty + ' × ' + i.name).join(', '))}">${itemsText}</div>`
+    : isWA
     ? `<div class="pd-files wa">${WA_ICON}Files sent on WhatsApp</div>`
     : `<div class="pd-files" title="${escapeAttr(files.map(f => f.name).join(', '))}">${shown}${more}</div>`;
 
   const when = `<span title="${escapeAttr(formatDateTime(r.createdAt).replace('<br>', ' · '))}">${timeAgo(r.createdAt)}</span>`;
-  const metaLine = isWA
+  const metaLine = isNB
+    ? `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${itemCount} notebook${itemCount === 1 ? '' : 's'} · ${when}</div>`
+    : isWA
     ? `<div class="pd-meta">${(r.amount || 0) > 0 ? '<b>₹' + r.amount + '</b> ' + (paid ? 'paid' : 'to pay') + ' · ' : 'Amount not set · '}${when}</div>`
     : `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${files.length} file${files.length === 1 ? '' : 's'} · ${when}</div>`;
 
@@ -886,19 +900,20 @@ function renderCard(r) {
   const bodyHtml = expanded ? `
       <div class="pd-body">
         <div class="pd-spec">
-          ${isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
+          ${isNB ? `<span><b>${itemCount}</b> notebook${itemCount === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}`
+          : isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
                  : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> estimated</span>`}
         </div>
         ${r.notes && !isWA ? `<p class="pd-note">Note: ${escapeHtml(r.notes)}</p>` : ''}
-        ${filesHtml}
+        ${isNB ? items.map(i => `<div class="pd-file"><span>${Number(i.qty) || 0} × ${escapeHtml(i.name)} — ₹${i.total != null ? i.total : (Number(i.qty) || 0) * (Number(i.price) || 0)}</span></div>`).join('') : filesHtml}
         <div class="pd-body-actions">
           ${pdfCount > 0 ? `<button type="button" class="pd-btn sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
-          ${status !== 'printed' ? `<button type="button" class="pd-btn sm primary" onclick="markPrinted('${r.id}')">Mark as printed</button>` : ''}
+          ${status !== 'printed' ? `<button type="button" class="pd-btn sm primary" onclick="markPrinted('${r.id}')">${isNB ? 'Mark as handed over' : 'Mark as printed'}</button>` : ''}
         </div>
       </div>` : '';
 
   return `
-    <article class="pd-card${isWA ? ' wa' : ''}" id="card-${r.id}">
+    <article class="pd-card${isWA ? ' wa' : isNB ? ' nb' : ''}" id="card-${r.id}">
       <div class="pd-token"><small>Token</small><b>${escapeHtml(String(r.token || '—'))}</b></div>
       <div class="pd-main">
         <div class="pd-chips">${chips}</div>
@@ -906,7 +921,7 @@ function renderCard(r) {
         ${metaLine}
       </div>
       <div class="pd-actions">
-        <button type="button" class="pd-btn ${isWA ? 'wa' : 'primary'}" onclick="mergeAndPrint('${r.id}')">Print</button>
+        ${isNB ? (status !== 'printed' ? `<button type="button" class="pd-btn primary" onclick="markPrinted('${r.id}')">Handed over</button>` : '') : `<button type="button" class="pd-btn ${isWA ? 'wa' : 'primary'}" onclick="mergeAndPrint('${r.id}')">Print</button>`}
         ${isWA && status !== 'printed' ? `<button type="button" class="pd-btn" onclick="setAmount('${r.id}')">${(r.amount || 0) > 0 ? 'Edit ₹' : 'Set ₹'}</button>` : ''}
         ${status !== 'printed' && !paid && (r.amount || 0) > 0 ? `<button type="button" class="pd-btn ok" onclick="markPaid('${r.id}')">Paid</button>` : ''}
         <button type="button" class="pd-btn" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide' : 'Details'}</button>
