@@ -751,6 +751,7 @@
   let allUsers = {};       // id -> {id, username, photoUrl}  — everyone who has opened the community
   let friendSet = new Set(); // ids of my friends
   let blockedMine = new Set(), blockedMe = new Set(); // people I blocked / who blocked me (never listed)
+  let specialSet = new Set();                         // special accounts: friends with everyone, can't be blocked
   let usersLoaded = false, friendsLoaded = false;
   let presence = {};       // id -> true
   let lastSeen = {};       // id -> timestamp (ms) of when they last went offline
@@ -864,6 +865,12 @@
       friendsLoaded = true;
       rebuildUsers();
     }));
+    unsubs.push(onValue(ref(db, "special_user"), (s) => {
+      specialSet = new Set();
+      s.forEach((c) => { if (c.val() !== false) specialSet.add(c.key); });
+      if (me) me.isSpecial = specialSet.has(me.id);
+      rebuildUsers();
+    }));
     unsubs.push(onValue(ref(db, "blocks/" + me.id), (s) => { blockedMine = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
     unsubs.push(onValue(ref(db, "blockedBy/" + me.id), (s) => { blockedMe = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
     unsubs.push(onValue(query(ref(db, "stories"), orderByChild("ts"), startAt(Date.now() - STORY_DAY)), (s) => {
@@ -906,7 +913,14 @@
 
   function rebuildUsers() {
     users = {};
-    for (const id in allUsers) if (id === me.id || (friendSet.has(id) && !blockedMine.has(id) && !blockedMe.has(id))) users[id] = allUsers[id];
+    const iAmSpecial = !!me.isSpecial;
+    for (const id in allUsers) {
+      if (id === me.id) { users[id] = allUsers[id]; continue; }
+      const theirSpecial = specialSet.has(id);
+      // Blocks never apply to a special account, and a special account is never blocked by anyone.
+      const blocked = (blockedMine.has(id) && !theirSpecial) || (blockedMe.has(id) && !iAmSpecial);
+      if ((friendSet.has(id) || theirSpecial || iAmSpecial) && !blocked) users[id] = allUsers[id];
+    }
     onUsersChanged();
   }
 

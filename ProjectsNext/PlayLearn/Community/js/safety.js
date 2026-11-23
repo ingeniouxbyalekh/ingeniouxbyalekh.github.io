@@ -29,18 +29,21 @@
   let me = null, mine = new Set(), theirs = new Set(), change = () => {};
   const S = (window.Safety = {
     dialog,
-    hidden: (id) => mine.has(id) || theirs.has(id),   // blocked either way
-    isBlocked: (id) => mine.has(id),                  // I blocked them
-    blockedMe: (id) => theirs.has(id),                // they blocked me
+    // Blocks never apply to a special account, and a special account is never blocked by anyone.
+    hidden: (id) => S.isBlocked(id) || S.blockedMe(id),                       // blocked either way
+    isBlocked: (id) => !Auth.isSpecial(id) && mine.has(id),                   // I blocked them
+    blockedMe: (id) => !(me && Auth.isSpecial(me.id)) && theirs.has(id),      // they blocked me
     ready: null,
     start(p, cb) {
       me = p; change = cb || change;
-      let n = 0, done; S.ready = new Promise((r) => (done = r));
+      let n = 0, done; const blocksReady = new Promise((r) => (done = r));
+      S.ready = Promise.all([blocksReady, Auth.specialReady]); Auth.onSpecial(() => change());
       const watch = (path, set) => { let first = true; db.ref(path).on("value", (s) => { set(new Set(Object.keys(s.val() || {}))); if (first) { first = false; if (++n === 2) done(); } change(); }); };
       watch("blocks/" + me.id, (v) => (mine = v));
       watch("blockedBy/" + me.id, (v) => (theirs = v));
     },
     async block(id, name, quiet) {
+      if (Auth.isSpecial(id)) return false;
       if (!quiet && !confirm(`Block ${name || "this person"}?\n\nYou won't see each other's posts or comments, and you'll be unfriended.`)) return false;
       try {
         await db.ref().update({
@@ -69,7 +72,7 @@
       const ta = el("textarea"); ta.maxLength = 300; ta.placeholder = "Add details (optional)";
       card.append(opts, ta);
       let also = null;
-      if (o.uid !== me.id && !mine.has(o.uid)) {
+      if (o.uid !== me.id && !mine.has(o.uid) && !Auth.isSpecial(o.uid)) {
         const l = el("label", "opt"); also = el("input"); also.type = "checkbox";
         l.append(also, el("span", "", "Also block " + (o.name || "this person"))); card.append(l);
       }
@@ -92,7 +95,7 @@
       const { card, close } = dialog("Blocked users");
       const note = el("p", "muted", "Loading…"), box = el("ul", "list");
       card.append(note, box, btn("Close", close, "btn sm ghost full"));
-      const ids = [...mine];
+      const ids = [...mine].filter((id) => S.isBlocked(id));
       if (!ids.length) { note.textContent = "You haven't blocked anyone."; return; }
       const recs = await Promise.all(ids.map((id) => db.ref("users/" + id).once("value").then((s) => ({ id, ...(s.val() || {}) })).catch(() => ({ id }))));
       note.textContent = "Blocked people can't see your posts or comments, and you can't see theirs.";

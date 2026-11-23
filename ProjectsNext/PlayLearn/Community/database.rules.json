@@ -177,7 +177,7 @@
         ".read": true,
         ".write": true,
         "$other": {
-          ".validate": "newData.isNumber()"
+          ".validate": "newData.isNumber() && !(root.child('special_user').child($other).exists() && root.child('special_user').child($other).val() !== false)"
         }
       }
     },
@@ -186,7 +186,7 @@
         ".read": true,
         ".write": true,
         "$other": {
-          ".validate": "newData.val() === true"
+          ".validate": "newData.val() === true && !(root.child('special_user').child($uid).exists() && root.child('special_user').child($uid).val() !== false)"
         }
       }
     },

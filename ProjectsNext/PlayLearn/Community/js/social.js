@@ -12,6 +12,8 @@
   const ava = (m, c) => { const a = el("span", c || "av"); UI.face(a, m.username, m.photoUrl); return a; };
   const btn = (x, fn, c) => { const b = el("button", c || "btn sm", x); b.onclick = fn; return b; };
   const people = () => [...members].map(([id, m]) => ({ id, ...m })).filter((m) => m.username && https(m.photoUrl) && !Safety.hidden(m.id));
+  // Friends = real friends, plus (automatically) every special account, and everyone if I am special.
+  const isF = (id) => friends.has(id) || Auth.isSpecial(id) || (!!me && Auth.isSpecial(me.id));
   const run = (u) => db.ref().update(u).then(() => true, (e) => { alert("Something went wrong (" + ((e && (e.code || e.message)) || "unknown error") + "). If this says PERMISSION_DENIED, publish the new database.rules.json in Firebase. Otherwise check your connection."); return false; });
   const ago = (t) => { const s = (Date.now() - t) / 1000; return s < 60 ? "just now" : s < 3600 ? ((s / 60) | 0) + "m ago" : s < 86400 ? ((s / 3600) | 0) + "h ago" : ((s / 86400) | 0) + "d ago"; };
   const byOnline = (a, b) => (online.has(b.id) - online.has(a.id)) || a.username.localeCompare(b.username);
@@ -21,10 +23,10 @@
     cancel: (id) => run({ [`requests/${id}/${me.id}`]: null, [`sent/${me.id}/${id}`]: null, [`notifications/${id}/q_${me.id}`]: null }),
     accept: (id) => run({ [`friends/${me.id}/${id}`]: TS, [`friends/${id}/${me.id}`]: TS, [`requests/${me.id}/${id}`]: null, [`sent/${id}/${me.id}`]: null }).then((ok) => ok && Notify.push(id, "accept", {}, "a_" + me.id)),
     decline: (id) => run({ [`requests/${me.id}/${id}`]: null, [`sent/${id}/${me.id}`]: null }),
-    unfriend: (id) => confirm("Remove this friend?") && run({ [`friends/${me.id}/${id}`]: null, [`friends/${id}/${me.id}`]: null })
+    unfriend: (id) => !Auth.isSpecial(id) && !Auth.isSpecial(me.id) && confirm("Remove this friend?") && run({ [`friends/${me.id}/${id}`]: null, [`friends/${id}/${me.id}`]: null })
   };
   function action(m) {
-    if (friends.has(m.id)) return el("span", "tag", "Friends");
+    if (isF(m.id)) return el("span", "tag", "Friends");
     if (incoming.has(m.id)) return btn("Accept", () => A.accept(m.id));
     if (sent.has(m.id)) return btn("Requested ✕", () => A.cancel(m.id), "btn sm ghost");
     return btn("Add friend", () => A.add(m.id));
@@ -43,9 +45,9 @@
   /* ---- views: home (feed) and the friends page ---- */
   let view = "home", sect = "home";
   const hl = document.querySelector(".hl");
-  const suggested = () => people().filter((m) => m.id !== me.id && !friends.has(m.id) && !incoming.has(m.id))
+  const suggested = () => people().filter((m) => m.id !== me.id && !isF(m.id) && !incoming.has(m.id))
     .sort((a, b) => ((b.semester === me.semester) - (a.semester === me.semester)) || byOnline(a, b));
-  const frs = () => people().filter((m) => friends.has(m.id)).sort(byOnline);
+  const frs = () => people().filter((m) => m.id !== me.id && isF(m.id)).sort(byOnline);
 
   function mark() {
     const on = (sel, f) => document.querySelectorAll(sel).forEach((b) => b.classList.toggle("on", f));
@@ -93,7 +95,7 @@
   function fpage() {
     if (view !== "friends") return;
     const root = $("fmain"); root.textContent = "";
-    const reqs = people().filter((m) => incoming.has(m.id)), sg = suggested(), fr = frs();
+    const reqs = people().filter((m) => incoming.has(m.id) && !isF(m.id)), sg = suggested(), fr = frs();
     const sec = (title, list, mk, empty, more) => {
       const h = el("div", "fh"); h.append(el("h2", "", title));
       if (more) h.append(btn("See all", () => { sect = more; mark(); paint(); }, "link"));
@@ -103,7 +105,7 @@
     };
     const R = (m) => pcard(m, [btn("Confirm", () => A.accept(m.id), "btn full"), btn("Delete", () => A.decline(m.id), "btn ghost full")]);
     const S = (m) => pcard(m, [sent.has(m.id) ? btn("Cancel request", () => A.cancel(m.id), "btn ghost full") : btn("Add friend", () => A.add(m.id), "btn full")]);
-    const F = (m) => pcard(m, [btn("Message", () => (location.href = "chat.html"), "btn full"), btn("Unfriend", () => A.unfriend(m.id), "btn ghost full")]);
+    const F = (m) => pcard(m, [btn("Message", () => (location.href = "chat.html"), "btn full"), ...(Auth.isSpecial(m.id) || Auth.isSpecial(me.id) ? [] : [btn("Unfriend", () => A.unfriend(m.id), "btn ghost full")])]);
     if (sect === "req") sec("Friend requests", reqs, R, "No friend requests right now.");
     else if (sect === "sugg") sec("People you may know", sg, S, "No suggestions right now.");
     else if (sect === "all") sec(fr.length + (fr.length === 1 ? " friend" : " friends"), fr, F, "No friends yet. Add some from People you may know.");
@@ -115,10 +117,10 @@
 
   /* ---- sidebars ---- */
   function side() {
-    const rq = people().filter((m) => incoming.has(m.id)), rl = $("rq");
+    const rq = people().filter((m) => incoming.has(m.id) && !isF(m.id)), rl = $("rq");
     $("rq-wrap").hidden = !rq.length; rl.textContent = "";
     rq.slice(0, 3).forEach((m) => rl.append(row(m, [btn("Confirm", () => A.accept(m.id)), btn("Delete", () => A.decline(m.id), "btn sm ghost")], true)));
-    const cl = $("contacts"), fr = people().filter((m) => friends.has(m.id)).sort(byOnline);
+    const cl = $("contacts"), fr = frs();
     cl.textContent = ""; $("contacts-empty").hidden = fr.length > 0;
     fr.forEach((m) => { const li = row(m, []); li.classList.add("click"); li.onclick = () => (location.href = "chat.html"); cl.append(li); });
   }
@@ -258,7 +260,7 @@
   }
   function feed() {
     const show = (k, p) => mode === "saved" ? saved.has(k) : mode === "post" ? k === pid : mode === "group" ? !!groups[gid] && inG(gid) && p.gid === gid
-      : p.gid ? !!groups[p.gid] && inG(p.gid) : p.uid === me.id || friends.has(p.uid);
+      : p.gid ? !!groups[p.gid] && inG(p.gid) : p.uid === me.id || isF(p.uid);
     const vis = [...posts].filter(([k, p]) => !Safety.hidden(p.uid) && show(k, p)).sort((a, b) => (a[0] < b[0] ? 1 : -1));
     const sig = mode + gid + pid + vis.map(([k]) => k).join();
     if (sig === lastSig) return;                     // don't rebuild (and reset videos) when nothing changed
@@ -326,7 +328,7 @@
       const mem = gmembers[id] || {}, term = q.value.trim().toLowerCase();
       res.textContent = ""; cur.textContent = "";
       const cand = people().filter((m) => m.id !== me.id && !mem[m.id] && (!term || (m.username + " " + (m.regNo || "")).toLowerCase().includes(term)))
-        .sort((a, b) => (friends.has(b.id) - friends.has(a.id)) || byOnline(a, b)).slice(0, 20);
+        .sort((a, b) => (isF(b.id) - isF(a.id)) || byOnline(a, b)).slice(0, 20);
       cand.forEach((m) => res.append(row(m, [(invited[id] || {})[m.id]
         ? btn("Invited ✕", (e) => { e.target.disabled = true; run({ [`groupInvites/${m.id}/${id}`]: null, [`groupInvited/${id}/${m.id}`]: null, [`notifications/${m.id}/g_${id}_${m.id}`]: null }); }, "btn sm ghost")
         : btn("Invite", async (e) => {
@@ -436,7 +438,7 @@
 
   /* ---- realtime wiring ---- */
   function all() {
-    const n = people().filter((m) => incoming.has(m.id)).length, b = $("b-req");
+    const n = people().filter((m) => incoming.has(m.id) && !isF(m.id)).length, b = $("b-req");
     b.hidden = !n; b.textContent = n;
     search(); fpage(); gpage(); ghead(); comp(); side(); suggestions(); feed(); meta(); Stories.paint(view === "home" && mode === "all"); Notify.repaint();
     const gb = $("b-grp"), gn = pendingInv().length; gb.hidden = !gn; gb.textContent = gn;
@@ -449,7 +451,7 @@
   }
 
   function start(p) {
-    me = p; Safety.start(p, paint);
+    me = p; Safety.start(p, paint); Auth.onSpecial(paint);
     document.querySelectorAll("[data-go]").forEach((b) => (b.onclick = () => go(b.dataset.go)));
     document.querySelectorAll("[data-s]").forEach((b) => (b.onclick = () => { sect = b.dataset.s; window.scrollTo(0, 0); mark(); paint(); }));
     document.querySelectorAll("[data-menu]").forEach((b) => (b.onclick = () => { if (b.id === "me" && !matchMedia("(max-width:760px)").matches) return; $("menu").hidden = !$("menu").hidden; }));
@@ -470,7 +472,7 @@
     sb.classList.add("lnk"); sb.onclick = () => (location.href = "profile.html");
     composer(); mark();
     Notify.start(me, (n) => (n.postId ? openPost(n.postId) : n.type === "story" ? (n.sid && Stories.openStory(n.sid)) || go("home") : n.type === "group" ? go("groups") : go(n.type === "request" ? "fr-req" : "fr-home")));
-    Stories.start(me, { friends: () => friends, member: (id) => members.get(id), openPost });
+    Stories.start(me, { friends: () => ({ has: isF }), member: (id) => members.get(id), openPost });
     const qs = new URLSearchParams(location.search), pp = qs.get("p"), gg = qs.get("g"); const vv = qs.get("v"); if (pp) openPost(pp); else if (gg) go("g:" + gg); else if (["home", "saved", "groups", "fr-home", "fr-req"].includes(vv)) go(vv);   // opened from a shared link
     watch(db.ref("users"), (k, v) => members.set(k, v), (k) => members.delete(k));
     watch(db.ref("presence"), (k) => online.add(k), (k) => online.delete(k));

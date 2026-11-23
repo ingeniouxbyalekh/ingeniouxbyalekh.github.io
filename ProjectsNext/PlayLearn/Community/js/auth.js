@@ -5,6 +5,18 @@
   const shopDb = shopApp.database();
   const db = comApp.database();
 
+  // Special accounts: listed by the admin at special_user/<emailKey>. They are friends with everyone
+  // (no request needed) and nobody can block them. The interface never mentions any of this.
+  let specialSet = new Set(), specialDone;
+  const specialCbs = [], specialReady = new Promise((r) => (specialDone = r));
+  db.ref("special_user").on("value", (s) => {
+    const v = s.val() || {}, n = new Set();
+    Object.keys(v).forEach((k) => { if (v[k] !== false) n.add(k); });
+    specialSet = n; specialDone();
+    specialCbs.forEach((f) => { try { f(); } catch (e) {} });
+  }, () => specialDone());
+  const isSpecial = (id) => specialSet.has(id);
+
   const keyOf = (e) => String(e).trim().toLowerCase().replace(/\./g, ",");
   const https = (u) => (typeof u === "string" && /^https:\/\//i.test(u) ? u : "");
 
@@ -69,5 +81,5 @@
     };
   }
 
-  window.Auth = { db, shopDb, keyOf, https, pubId, session, profile };
+  window.Auth = { db, shopDb, keyOf, https, pubId, session, profile, isSpecial, specialIds: () => [...specialSet], onSpecial: (f) => specialCbs.push(f), specialReady };
 })();
