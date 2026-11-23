@@ -1723,22 +1723,36 @@ a { color: inherit; }
    weight/size combo — force it to plain, non-bold text. */
 #device-info-table td:nth-child(1) { font-weight: 400; }
 
-/* Customers table — Name/Email get 2x the width of Phone/Reg No.,
-   with the Save/Delete actions column keeping enough room for both
-   buttons on one line. table-layout:fixed makes these widths
-   authoritative so all 5 columns stay on a single row on desktop
-   instead of the actions wrapping onto their own line. */
+/* Students table — six columns on one row: Name, Phone, Email, Reg No.,
+   Type, and the Save/Delete actions. table-layout:fixed makes the widths
+   authoritative; the inputs drop their usual 130px min-width and the cells
+   use tighter side padding so nothing spills into the next column. */
 #customers-table { table-layout: fixed; }
-#customers-table th:nth-child(1), #customers-table td:nth-child(1) { width: 26.6667%; }
-#customers-table th:nth-child(2), #customers-table td:nth-child(2) { width: 13.3333%; }
-#customers-table th:nth-child(3), #customers-table td:nth-child(3) { width: 26.6667%; }
-#customers-table th:nth-child(4), #customers-table td:nth-child(4) { width: 13.3333%; }
-#customers-table td:nth-child(1), #customers-table td:nth-child(3) {
-  white-space: normal;
-  word-break: break-word;
-  overflow-wrap: anywhere;
+#customers-table th, #customers-table td { padding-left: 8px; padding-right: 8px; overflow: hidden; }
+#customers-table th:nth-child(1), #customers-table td:nth-child(1) { width: 20%; }
+#customers-table th:nth-child(2), #customers-table td:nth-child(2) { width: 13%; }
+#customers-table th:nth-child(3), #customers-table td:nth-child(3) { width: 25%; }
+#customers-table th:nth-child(4), #customers-table td:nth-child(4) { width: 12%; }
+#customers-table th:nth-child(5), #customers-table td:nth-child(5) { width: 12%; }
+#customers-table th:nth-child(6), #customers-table td:last-child { width: 18%; }
+#customers-table td input,
+#customers-table td select { width: 100%; min-width: 0; }
+#customers-table td:last-child { overflow: visible; }
+#customers-table td select {
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  padding: 7px 8px;
 }
-#customers-table td:last-child { width: 20%; }
+#customers-table td select:focus { border-color: var(--accent); outline: none; background: var(--bg-elevated); }
+/* On narrower screens keep the columns readable and scroll sideways instead of squashing. */
+@media (max-width: 1100px) {
+  .executive-table-wrap { overflow-x: auto; }
+  #customers-table { min-width: 980px; }
+}
 
 /* Activity log table — the generic "last column never wraps" rule
    above is wrong here: Details can contain long labels/URLs, so it

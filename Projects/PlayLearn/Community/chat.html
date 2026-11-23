@@ -699,6 +699,16 @@
   // Named app so it can never collide with anything else on the page.
   const app = initializeApp(firebaseConfig, "community");
   const db = getDatabase(app);
+  // The shop project is only read for each person's Type (users/<id>/type) — "special" accounts are
+  // friends with everyone and can't be blocked. Nothing else of the shop record is touched.
+  const shopApp = initializeApp({
+    apiKey: "AIzaSyABB2Tl_3umwwx1eXKsTiakCPJ3L5TP-yQ",
+    authDomain: "playlearn-cb8c1.firebaseapp.com",
+    databaseURL: "https://playlearn-cb8c1-default-rtdb.firebaseio.com",
+    projectId: "playlearn-cb8c1",
+    appId: "1:196791573453:web:429ca975f41f2af7a00284"
+  }, "shop");
+  const shopDb = getDatabase(shopApp);
 
   // Data lake (datalake.js): same behaviour as before — each write is also recorded in Firestore for future AI training.
   const _dl = (op, r, v) => { try { window.PLDL && window.PLDL.dbWrite(op, r, v); } catch (e) { /* never block a write */ } };
@@ -751,6 +761,17 @@
   let allUsers = {};       // id -> {id, username, photoUrl}  — everyone who has opened the community
   let friendSet = new Set(); // ids of my friends
   let blockedMine = new Set(), blockedMe = new Set(); // people I blocked / who blocked me (never listed)
+  let specialSet = new Set();                         // special accounts: friends with everyone, can't be blocked
+  const shopSpecial = new Set(), typeWatched = new Set();
+  const isSp = (id) => specialSet.has(id) || shopSpecial.has(id);   // special_user list OR Type = Special
+  function watchType(id) {
+    if (!id || typeWatched.has(id)) return;
+    typeWatched.add(id);
+    unsubs.push(onValue(ref(shopDb, "users/" + id + "/type"), (s) => {
+      if (s.val() === "special") shopSpecial.add(id); else shopSpecial.delete(id);
+      if (me) { me.isSpecial = isSp(me.id); rebuildUsers(); }
+    }, () => { /* can't read the type: treat as a regular account */ }));
+  }
   let usersLoaded = false, friendsLoaded = false;
   let presence = {};       // id -> true
   let lastSeen = {};       // id -> timestamp (ms) of when they last went offline
@@ -853,6 +874,7 @@
         const v = c.val() || {};
         if (!v.username) return;
         allUsers[c.key] = { id: c.key, username: v.username, photoUrl: safePhoto(v.photoUrl) };
+        watchType(c.key);
       });
       usersLoaded = true;
       rebuildUsers();
@@ -862,6 +884,12 @@
     unsubs.push(onValue(ref(db, "friends/" + me.id), (s) => {
       friendSet = new Set(Object.keys(s.val() || {}));
       friendsLoaded = true;
+      rebuildUsers();
+    }));
+    unsubs.push(onValue(ref(db, "special_user"), (s) => {
+      specialSet = new Set();
+      s.forEach((c) => { if (c.val() !== false) specialSet.add(c.key); });
+      if (me) me.isSpecial = isSp(me.id);
       rebuildUsers();
     }));
     unsubs.push(onValue(ref(db, "blocks/" + me.id), (s) => { blockedMine = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
@@ -906,7 +934,14 @@
 
   function rebuildUsers() {
     users = {};
-    for (const id in allUsers) if (id === me.id || (friendSet.has(id) && !blockedMine.has(id) && !blockedMe.has(id))) users[id] = allUsers[id];
+    const iAmSpecial = !!me.isSpecial;
+    for (const id in allUsers) {
+      if (id === me.id) { users[id] = allUsers[id]; continue; }
+      const theirSpecial = isSp(id);
+      // Blocks never apply to a special account, and a special account is never blocked by anyone.
+      const blocked = (blockedMine.has(id) && !theirSpecial) || (blockedMe.has(id) && !iAmSpecial);
+      if ((friendSet.has(id) || theirSpecial || iAmSpecial) && !blocked) users[id] = allUsers[id];
+    }
     onUsersChanged();
   }
 
@@ -2214,6 +2249,10 @@
     try {
       const sp = await get(ref(db, "special_user/" + id));
       me.isSpecial = sp.exists() && sp.val() !== false;
+    } catch (e) { /* treat as a regular account */ }
+    // ...or the executive panel's Type dropdown is set to Special.
+    try {
+      if ((await get(ref(shopDb, "users/" + id + "/type"))).val() === "special") { shopSpecial.add(id); me.isSpecial = true; }
     } catch (e) { /* treat as a regular account */ }
 
     if (leaving) return;

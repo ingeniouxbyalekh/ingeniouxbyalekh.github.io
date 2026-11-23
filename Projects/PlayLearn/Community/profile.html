@@ -149,7 +149,7 @@
   }
   const avatar = (m, c) => { const a = el("span", c || "av"); face(a, m.username, m.photoUrl); return a; };
 
-  let me, uid, people = {}, posts = [], likes = {}, fr = new Set(), myFr = new Set(), inc = new Set(), sent = new Set();
+  let me, uid, people = {}, posts = [], likes = {}, fr = new Set(), myFr = new Set(), frRaw = new Set(), myFrRaw = new Set(), inc = new Set(), sent = new Set();
   let online = false, tab = "posts", editBio = false, raf = 0, last = {};
   const render = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); };
 
@@ -157,7 +157,8 @@
     if (uid === me.id) return box.append(btn("Edit bio", () => { editBio = true; intro(); }, "btn sm ghost"));
     if (myFr.has(uid)) {
       const m = el("a", "btn sm", "💬 Message"); m.href = "chat.html";
-      box.append(el("span", "tag", "✓ Friends"), m, btn("Unfriend", () => confirm("Remove this friend?") && run({ [`friends/${me.id}/${uid}`]: null, [`friends/${uid}/${me.id}`]: null }), "btn sm ghost"));
+      box.append(el("span", "tag", "✓ Friends"), m);
+      if (!Auth.isSpecial(uid) && !Auth.isSpecial(me.id)) box.append(btn("Unfriend", () => confirm("Remove this friend?") && run({ [`friends/${me.id}/${uid}`]: null, [`friends/${uid}/${me.id}`]: null }), "btn sm ghost"));
     } else if (inc.has(uid)) {
       box.append(btn("Accept", () => run({ [`friends/${me.id}/${uid}`]: TS, [`friends/${uid}/${me.id}`]: TS, [`requests/${me.id}/${uid}`]: null, [`sent/${uid}/${me.id}`]: null })),
         btn("Decline", () => run({ [`requests/${me.id}/${uid}`]: null, [`sent/${uid}/${me.id}`]: null }), "btn sm ghost"));
@@ -169,8 +170,8 @@
     const w = el("div"), menu = el("div", "menu"), b = btn("⋯", () => { menu.hidden = !menu.hidden; w.style.zIndex = menu.hidden ? "" : "6"; }, "btn sm ghost");
     w.style.position = "relative"; menu.hidden = true; menu.style.cssText = "right:0;left:auto;width:170px;top:calc(100% + 6px);z-index:7";
     document.addEventListener("click", (e) => { if (!w.contains(e.target)) { menu.hidden = true; w.style.zIndex = ""; } });
-    menu.append(btn("Report", () => { menu.hidden = true; w.style.zIndex = ""; Safety.report({ type: "user", uid, name }); }, "mi"),
-      btn("Block", () => { menu.hidden = true; w.style.zIndex = ""; Safety.block(uid, name); }, "mi"));
+    menu.append(btn("Report", () => { menu.hidden = true; w.style.zIndex = ""; Safety.report({ type: "user", uid, name }); }, "mi"));
+    if (!Auth.isSpecial(uid)) menu.append(btn("Block", () => { menu.hidden = true; w.style.zIndex = ""; Safety.block(uid, name); }, "mi"));
     w.append(b, menu); return w;
   }
 
@@ -243,7 +244,19 @@
     }
   }
 
+  // Real friends plus the automatic ones: every special account is everyone's friend (and vice versa).
+  function derive() {
+    const eff = (owner, raw) => {
+      const s = new Set(raw);
+      if (Auth.isSpecial(owner)) Object.keys(people).forEach((id) => s.add(id));
+      else Auth.specialIds().forEach((id) => s.add(id));
+      s.delete(owner); return s;
+    };
+    fr = eff(uid, frRaw); myFr = eff(me.id, myFrRaw);
+  }
+
   function draw() {
+    derive();
     const m = people[uid] || {}, mine = uid === me.id, name = m.username || "?";
     document.title = name + " · OUTR-Community";
     const av = name + "|" + m.photoUrl + "|" + online;
@@ -262,7 +275,7 @@
     if (!mine && tab === "stories") tab = "posts";
     const pa = $("pact"); pa.textContent = "";
     if (!mine && Safety.isBlocked(uid)) pa.append(btn("Unblock", () => Safety.unblock(uid)));
-    else { friendBtns(pa); if (!mine) pa.append(more(name)); }
+    else { friendBtns(pa); if (!mine && !Auth.isSpecial(uid)) pa.append(more(name)); }
     document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("on", b.dataset.t === tab));
     if (!editBio) intro();
     const key = tab + (!mine && Safety.isBlocked(uid)) + (tab === "friends" ? [...fr].join() + [...myFr].join() : "") + (tab === "about" ? JSON.stringify(m) : "") + (tab === "stories" ? Stories.sig() : "");
@@ -350,7 +363,7 @@
     if (raw && uid === me.id && raw !== me.id && raw !== Auth.pubId(me.id)) uid = raw;   // unknown id -> "doesn't exist"
     if (raw) history.replaceState(null, "", uid === me.id ? "profile.html" : "profile.html?u=" + Auth.pubId(uid));   // never leave the email in the address bar
     face($("me-av"), p.username, p.photoUrl);
-    Safety.start(p, render); await Safety.ready;
+    Auth.watchSpecial(Object.keys(people)); Safety.start(p, render); await Safety.ready; Auth.onSpecial(render);
     if (uid !== me.id && Safety.blockedMe(uid)) { $("boot").textContent = "This profile isn't available."; return; }
     $("gear").onclick = () => ($("menu").hidden = !$("menu").hidden);
     $("m-blocked").onclick = () => { $("menu").hidden = true; Safety.list(); };
@@ -366,8 +379,8 @@
     const on = (path, fn) => db.ref(path).on("value", (s) => { fn(s.val()); render(); });
     const ids = (v) => new Set(Object.keys(v || {}));
     on("users/" + uid, (v) => { if (v) people[uid] = v; });
-    on("friends/" + uid, (v) => (fr = ids(v)));
-    on("friends/" + me.id, (v) => (myFr = ids(v)));
+    on("friends/" + uid, (v) => (frRaw = ids(v)));
+    on("friends/" + me.id, (v) => (myFrRaw = ids(v)));
     on("requests/" + me.id, (v) => (inc = ids(v)));
     on("sent/" + me.id, (v) => (sent = ids(v)));
     on("presence/" + uid, (v) => (online = !!v));

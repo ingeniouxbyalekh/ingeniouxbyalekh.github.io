@@ -237,7 +237,7 @@
     </details>
 
     <details class="executive-section is-collapsible">
-      <summary><h2>Customers</h2><span class="icon">+</span></summary>
+      <summary><h2>Students</h2><span class="icon">+</span></summary>
       
 
       <div class="executive-table-wrap">
@@ -248,11 +248,12 @@
               <th>Phone</th>
               <th>Email</th>
               <th>Reg No.</th>
+              <th>Type</th>
               <th></th>
             </tr>
           </thead>
           <tbody id="customers-table-body">
-            <tr><td colspan="5" class="executive-empty">Loading…</td></tr>
+            <tr><td colspan="6" class="executive-empty">Loading…</td></tr>
           </tbody>
         </table>
       </div>
@@ -851,8 +852,9 @@
   });
 
   /* ---------------------------------------------------------------
-     Customers — every /users/<emailKey> record, editable inline.
-     Name/Phone/Email/Reg No. are plain inputs; hitting Save either:
+     Students — every /users/<emailKey> record, editable inline.
+     Name/Phone/Email/Reg No. are plain inputs, Type is a Normal/Special
+     dropdown (defaults to Normal when a record has no type yet); hitting Save either:
        - updates name/phone in place (email unchanged, password left
          untouched via .update()), or
        - if the email changed: writes a brand-new /users/<newKey> row
@@ -878,12 +880,20 @@
     const phone = String(u.phone || "").replace(/"/g, "&quot;");
     const email = String(u.email || "").replace(/"/g, "&quot;");
     const regNo = String(u.regNo || "").replace(/"/g, "&quot;");
+    // Student type — "normal" unless the record says "special".
+    const type = u.type === "special" ? "special" : "normal";
     return `
       <tr data-key="${key}">
         <td><input type="text" class="cust-name" value="${name}" /></td>
         <td><input type="tel" class="cust-phone" value="${phone}" inputmode="numeric" maxlength="10" /></td>
         <td><input type="email" class="cust-email" value="${email}" /></td>
         <td><input type="text" class="cust-regno" value="${regNo}" /></td>
+        <td>
+          <select class="cust-type">
+            <option value="normal"${type === "normal" ? " selected" : ""}>Normal</option>
+            <option value="special"${type === "special" ? " selected" : ""}>Special</option>
+          </select>
+        </td>
         <td>
           <button type="button" class="btn btn-small executive-save-customer-btn">Save</button>
           <button type="button" class="btn btn-small btn-danger-outline executive-delete-customer-btn">Delete</button>
@@ -893,25 +903,25 @@
 
   async function loadCustomers() {
     const tbody = document.getElementById("customers-table-body");
-    tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Loading…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="executive-empty">Loading…</td></tr>`;
 
     if (!db) {
-      tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Firebase isn't initialized.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="executive-empty">Firebase isn't initialized.</td></tr>`;
       return;
     }
 
     try {
       const snap = await db.ref("users").once("value");
       if (!snap.exists()) {
-        tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">No customer accounts yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="executive-empty">No student accounts yet.</td></tr>`;
         return;
       }
       const users = snap.val();
       const keys = Object.keys(users).sort((a, b) => String(users[b].regNo || "").localeCompare(String(users[a].regNo || ""), undefined, { numeric: true }));
       tbody.innerHTML = keys.map((key) => customerRowHTML(key, users[key])).join("");
     } catch (err) {
-      console.error("Could not load customers:", err);
-      tbody.innerHTML = `<tr><td colspan="5" class="executive-empty">Couldn't load customers — try refreshing.</td></tr>`;
+      console.error("Could not load students:", err);
+      tbody.innerHTML = `<tr><td colspan="6" class="executive-empty">Couldn't load students — try refreshing.</td></tr>`;
     }
   }
 
@@ -929,17 +939,17 @@
     }
 
     if (deleteBtn) {
-      if (!confirm("Delete this customer account? This can't be undone.")) return;
+      if (!confirm("Delete this student account? This can't be undone.")) return;
       deleteBtn.disabled = true;
       try {
         await db.ref("users/" + originalKey).remove();
-        showToast("Customer removed");
+        showToast("Student removed");
         row.remove();
         if (!document.querySelector("#customers-table-body tr[data-key]")) {
-          document.getElementById("customers-table-body").innerHTML = `<tr><td colspan="5" class="executive-empty">No customer accounts yet.</td></tr>`;
+          document.getElementById("customers-table-body").innerHTML = `<tr><td colspan="6" class="executive-empty">No student accounts yet.</td></tr>`;
         }
       } catch (err) {
-        console.error("Could not delete customer:", err);
+        console.error("Could not delete student:", err);
         showToast("Couldn't delete — try again");
         deleteBtn.disabled = false;
       }
@@ -951,6 +961,7 @@
     const phone = row.querySelector(".cust-phone").value.trim();
     const email = row.querySelector(".cust-email").value.trim();
     const regNo = row.querySelector(".cust-regno").value.trim();
+    const type = row.querySelector(".cust-type").value === "special" ? "special" : "normal";
     if (!name || !email) {
       showToast("Name and email are required");
       return;
@@ -962,9 +973,9 @@
     saveBtn.textContent = "Saving…";
     try {
       if (newKey === originalKey) {
-        // Email unchanged — just update name/phone/regNo; password untouched.
-        await db.ref("users/" + originalKey).update({ name, phone, regNo, updatedAt: Date.now() });
-        showToast("Customer updated");
+        // Email unchanged — just update name/phone/regNo/type; password untouched.
+        await db.ref("users/" + originalKey).update({ name, phone, regNo, type, updatedAt: Date.now() });
+        showToast("Student updated");
       } else {
         // Email changed — refuse to silently overwrite a different
         // existing account that already sits at the new email.
@@ -1031,7 +1042,7 @@
         // /notifications/<pushId> can reference the account two ways:
         // a broadcast's own `email` targeting field, and a per-student
         // dismissal under `dismissedBy/<emailKey>`. Both get rewritten
-        // to the new key/address so a renamed customer doesn't fall
+        // to the new key/address so a renamed student doesn't fall
         // through an old broadcast's targeting or lose their dismissal.
         const notifMultiUpdates = {};
         if (notificationsSnap.exists()) {
@@ -1057,6 +1068,7 @@
           phone,
           email,
           regNo,
+          type,
           password: existingUser.password || "",
           updatedAt: now,
         });
@@ -1082,7 +1094,7 @@
         showToast("Email updated — account and history moved");
       }
     } catch (err) {
-      console.error("Could not save customer:", err);
+      console.error("Could not save student:", err);
       showToast("Couldn't save — try again");
     } finally {
       saveBtn.disabled = false;
