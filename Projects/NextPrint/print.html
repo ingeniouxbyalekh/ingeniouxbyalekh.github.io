@@ -178,6 +178,68 @@
     .pd-art-room { align-self:center; }
     .pd-login .pd-gate-card { padding:26px 22px; }
   }
+
+  /* ===== v4 redesign: earnings strip, price panel, grouped queue ===== */
+  .pd-earn { display:grid; grid-template-columns:minmax(220px,1.1fr) 2fr; gap:10px; margin:16px 0 14px; }
+  .pd-earn-main { position:relative; overflow:hidden; border-radius:20px; padding:16px 20px; color:#fff; background:radial-gradient(220px 140px at 90% 0%, rgba(198,51,46,.6), transparent 70%), radial-gradient(200px 140px at 0% 110%, rgba(31,95,168,.45), transparent 70%), #17181c; }
+  .pd-earn-main small { display:block; font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; opacity:.7; }
+  .pd-earn-main b { display:block; font-family:"Fraunces", Georgia, serif; font-size:2.5rem; line-height:1.05; font-weight:600; margin:4px 0 2px; }
+  .pd-earn-main span { font-size:.76rem; opacity:.7; }
+  .pd-earn-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .pd-earn-grid > div { background:#fff; border:1px solid #e3e0d4; border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; justify-content:center; }
+  .pd-earn-grid small { font-size:.66rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#62625c; }
+  .pd-earn-grid b { margin-top:3px; font-family:"Fraunces", Georgia, serif; font-size:1.6rem; line-height:1.1; font-weight:600; }
+  .pd-earn-grid .due b { color:#a56200; } .pd-earn-grid .today b { color:#2f7a4d; }
+
+  .pd-group { display:flex; align-items:center; gap:8px; margin:10px 2px 0; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#62625c; }
+  .pd-group:first-child { margin-top:0; }
+  .pd-group::after { content:""; flex:1; height:1px; background:#e3e0d4; }
+  .pd-group .n { font-size:.7rem; padding:1px 8px; border-radius:999px; background:#ebe8dd; letter-spacing:0; }
+  .pd-group.paid { color:#1f5a37; } .pd-group.paid .n { background:#dff1e5; }
+  .pd-group.unpaid { color:#8a5200; } .pd-group.unpaid .n { background:#fdf0d9; }
+
+  .pd-card { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"tk main price" "tk act act"; align-items:start; gap:8px 16px; border-radius:20px; }
+  .pd-card > .pd-token { grid-area:tk; align-self:center; }
+  .pd-card > .pd-main { grid-area:main; }
+  .pd-card > .pd-price { grid-area:price; }
+  .pd-card > .pd-actions { grid-area:act; justify-content:flex-start; }
+  .pd-card > .pd-body { grid-column:1 / -1; }
+  .pd-card.is-paid { border-left:4px solid #3f9a63; }
+  .pd-card.is-unpaid { border-left:4px solid #e0a210; }
+
+  .pd-price { min-width:210px; display:flex; flex-direction:column; gap:6px; align-items:stretch; padding:10px 12px; border-radius:14px; background:#faf9f4; border:1px solid #ebe8dd; }
+  .pd-price .exp { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:.74rem; color:#62625c; }
+  .pd-price .exp b { font-size:.95rem; color:#17181c; }
+  .pd-price .exp.muted b { color:#8a887d; font-weight:500; }
+  .pd-set { display:flex; align-items:center; gap:6px; }
+  .pd-set .cur { font-weight:600; color:#62625c; }
+  .pd-price-in { width:100%; min-width:0; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fff; border-radius:10px; padding:7px 9px; font-size:16px; font-weight:600; outline:none; }
+  .pd-price-in:focus { border-color:#17181c; }
+  .pd-price .st { font-size:.72rem; font-weight:600; }
+  .pd-price .st.set { color:#1f5a37; } .pd-price .st.est { color:#8a5200; } .pd-price .st.fixed { color:#16507f; }
+  .chip.priced { background:#e6f3ea; color:#1f5a37; }
+  .chip.partial { background:#fdf0d9; color:#8a5200; }
+
+  @media (max-width:760px) {
+    .pd-earn { grid-template-columns:1fr; }
+    .pd-card { grid-template-columns:auto minmax(0,1fr); grid-template-areas:"tk main" "price price" "act act"; }
+    .pd-price { min-width:0; }
+    .pd-card > .pd-actions .pd-btn { flex:1; }
+  }
+  @media (max-width:520px) { .pd-earn-grid { grid-template-columns:1fr 1fr; } .pd-earn-grid > div:last-child { grid-column:1 / -1; } .pd-earn-main b { font-size:2.1rem; } }
+
+  /* ===== v5: four actions per token ===== */
+  .pd-card > .pd-actions { display:flex; gap:8px; width:100%; }
+  .pd-card > .pd-actions .pd-btn { flex:1 1 0; min-width:0; justify-content:center; text-align:center; padding-left:6px; padding-right:6px; white-space:nowrap; }
+  .pd-btn.locked { opacity:.42; }
+  .pd-btn.done { opacity:1; cursor:default; background:#e6f3ea !important; color:#1f5a37 !important; border-color:#c9e4d1 !important; }
+  .pd-sub { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; }
+  .pd-link { border:0; background:none; padding:2px 0; font:inherit; font-size:.78rem; font-weight:600; color:#62625c; cursor:pointer; }
+  .pd-link:hover { color:#17181c; text-decoration:underline; }
+  .pd-price .exp.now b { font-size:1.05rem; }
+  .pd-gone { font-size:.72rem; color:#8a887d; }
+  .chip.printed { background:#e6f3ea; color:#1f5a37; }
+  @media (max-width:520px) { .pd-card > .pd-actions { flex-wrap:wrap; } .pd-card > .pd-actions .pd-btn { flex:1 1 calc(50% - 8px); } }
 </style>
 </head>
 <body>
@@ -245,17 +307,19 @@
       </div>
     </div>
 
-    <div class="pd-stats">
-      <div class="pd-stat"><small>Pending</small><b id="st-pending">0</b></div>
-      <div class="pd-stat due"><small>To collect</small><b id="st-due">₹0</b></div>
-      <div class="pd-stat ok"><small>Already paid</small><b id="st-paid">₹0</b></div>
-      <div class="pd-stat wa"><small>On WhatsApp</small><b id="st-wa">0</b></div>
-    </div>
+    <section class="pd-earn" aria-label="Earnings">
+      <div class="pd-earn-main"><small>Total earned</small><b id="st-earn">₹0</b><span>Kept safe when you clear tokens</span></div>
+      <div class="pd-earn-grid">
+        <div class="today"><small>Earned today</small><b id="st-today">₹0</b></div>
+        <div class="due"><small>To collect</small><b id="st-due">₹0</b></div>
+        <div><small>Pending tokens</small><b id="st-pending">0</b></div>
+      </div>
+    </section>
 
     <div class="pd-toolbar">
       <label class="pd-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" id="searchBox" placeholder="Search token, file or note  ( / )" autocomplete="off"></label>
       <div class="pd-seg" id="payFilter"><button class="active" data-pay="any">Any</button><button data-pay="paid">Paid</button><button data-pay="unpaid">Unpaid</button></div>
-      <select class="pd-select" id="sortSel" aria-label="Sort"><option value="paid">Paid first</option><option value="new">Newest</option><option value="old">Oldest</option><option value="amt">Highest ₹</option></select>
+      <select class="pd-select" id="sortSel" aria-label="Sort"><option value="paid">Paid first, then newest</option><option value="new">Newest</option><option value="old">Oldest</option><option value="amt">Highest ₹</option></select>
     </div>
 
     <div class="pd-row2">
@@ -270,7 +334,7 @@
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
           <span id="waLabel">WhatsApp</span><span class="n" id="waCount">0</span>
         </button>
-        <button type="button" class="pd-btn danger sm" id="clearAllBtn" onclick="clearAll()" style="display:none;">Clear all</button>
+        <button type="button" class="pd-btn danger sm" id="clearAllBtn" onclick="clearAll()" style="display:none;" title="Removes the tokens only. Earnings are kept.">Clear tokens</button>
       </div>
     </div>
 
@@ -534,11 +598,86 @@ document.getElementById('cpSave').addEventListener('click', async () => {
     .catch(() => { cpError.textContent = 'Could not update password. Try again.'; });
 });
 
+// ---- payment helpers ----
+function paidOf(r) {
+  if (r.paymentStatus === 'paid') return r.paidAmount != null ? Number(r.paidAmount) || 0 : Number(r.amount) || 0;
+  return Number(r.paidAmount) || 0;
+}
+function isPaid(r) { return r.paymentStatus === 'paid'; }
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+// ---- earnings ledger -------------------------------------------------
+// Money received is added to earnings/total (and earnings/days/<day>) and the
+// request remembers how much of it is already counted in earnedAmount. That
+// way "Clear tokens", "Printed" and "Cancel" can delete requests without ever
+// touching what has been earned, and nothing is counted twice.
+let earn = { total: 0, days: {} };
+const bankedLocal = {};      // request id -> amount already counted (instant, before Firebase echoes it)
+let banking = Promise.resolve(true);
+function unbanked(r) { return Math.max(0, paidOf(r) - Math.max(Number(r.earnedAmount) || 0, bankedLocal[r.id] || 0)); }
+
+function bankEarnings(list) {
+  banking = banking.then(async () => {
+    const rows = (list || allRequests).map(r => ({ r, d: unbanked(r) })).filter(x => x.d > 0);
+    if (!rows.length) return true;
+    const sum = rows.reduce((t, x) => t + x.d, 0);
+    const days = {};
+    rows.forEach(x => { const k = dayKey(new Date(x.r.paidAt || Date.now())); days[k] = (days[k] || 0) + x.d; });
+    const prev = {};
+    rows.forEach(x => { prev[x.r.id] = bankedLocal[x.r.id]; bankedLocal[x.r.id] = paidOf(x.r); });
+    try {
+      await db.ref('earnings/total').transaction(c => (Number(c) || 0) + sum);
+      for (const k of Object.keys(days)) await db.ref('earnings/days/' + k).transaction(c => (Number(c) || 0) + days[k]);
+      const upd = {};
+      rows.forEach(x => {
+        upd['printRequests/' + x.r.id + '/earnedAmount'] = paidOf(x.r);
+        upd['printRequests/' + x.r.id + '/earnedDay'] = dayKey(new Date(x.r.paidAt || Date.now()));
+      });
+      await db.ref().update(upd);
+      return true;
+    } catch (err) {
+      rows.forEach(x => { if (prev[x.r.id] === undefined) delete bankedLocal[x.r.id]; else bankedLocal[x.r.id] = prev[x.r.id]; });
+      console.error('earnings', err);
+      return false;
+    }
+  });
+  return banking;
+}
+// Cancel: whatever was counted for this token is taken back out of the
+// earnings, so a cancelled token never adds to them.
+function unbankEarnings(req) {
+  banking = banking.then(async () => {
+    const before = bankedLocal[req.id];
+    const counted = Math.max(Number(req.earnedAmount) || 0, before || 0);
+    bankedLocal[req.id] = Math.max(paidOf(req), counted);   // keeps the auto-counter from adding it back
+    if (counted <= 0) return true;
+    const dk = req.earnedDay || dayKey(new Date(req.paidAt || Date.now()));
+    try {
+      await db.ref('earnings/total').transaction(c => Math.max(0, (Number(c) || 0) - counted));
+      await db.ref('earnings/days/' + dk).transaction(c => c == null ? null : Math.max(0, (Number(c) || 0) - counted));
+      return true;
+    } catch (err) {
+      if (before === undefined) delete bankedLocal[req.id]; else bankedLocal[req.id] = before;
+      console.error('earnings', err);
+      return false;
+    }
+  });
+  return banking;
+}
+// every deletion goes through this: earnings are saved first, and if that
+// fails nothing is deleted
+async function bankOrWarn() {
+  const ok = await bankEarnings(allRequests);
+  if (!ok) alert('Could not save the earnings to Firebase, so nothing was deleted. Check that your database rules allow read/write on the "earnings" path.');
+  return ok;
+}
+
 // ---- dashboard state ----
 let allRequests = [];
 let currentFilter = 'pending';
 let dbStarted = false;
 let expandedIds = new Set(); // request ids whose "Details" panel is open
+let editingPrice = new Set(); // request ids whose price box is open
 let showWA = true; // show/hide WhatsApp requests (remembered on this device)
 try { showWA = localStorage.getItem('np_showWA') !== '0'; } catch (e) {}
 
@@ -610,25 +749,55 @@ function notifyNew(list) {
 window.markPaid = async function (id) {
   const req = allRequests.find(r => r.id === id);
   if (!req) return;
-  if (!confirm('Mark token ' + (req.token || '') + ' as paid (₹' + (req.amount || 0) + ') at the counter?')) return;
+  if (!(Number(req.amount) > 0)) { toast('Set the price first, then mark it as paid'); return; }
+  const bal = Math.max(0, (Number(req.amount) || 0) - paidOf(req));
+  if (!confirm('Token ' + (req.token || '') + ': received ₹' + bal + ' at the counter?')) return;
   try {
     await db.ref('printRequests/' + id).update({
-      paymentStatus: 'paid', paidAmount: req.amount || 0, paymentMethod: 'counter',
+      paymentStatus: 'paid', paidAmount: Number(req.amount) || 0, paymentMethod: 'counter',
       paidAt: firebase.database.ServerValue.TIMESTAMP,
     });
-    toast('Token ' + (req.token || '') + ' marked paid');
+    // add it to the earnings straight away
+    bankEarnings([Object.assign({}, req, { paymentStatus: 'paid', paidAmount: Number(req.amount) || 0, paidAt: Date.now() })]);
+    toast('Token ' + (req.token || '') + ' marked paid · earnings updated');
   } catch (err) { alert('Could not update: ' + (err.message || err)); }
 };
 
-window.setAmount = async function (id) {
+window.startPriceEdit = function (id) {
+  editingPrice.add(id);
+  render();
+  const inp = document.getElementById('pr-' + id);
+  if (inp) { inp.focus(); inp.select(); }
+};
+window.cancelPriceEdit = function (id) { editingPrice.delete(id); renderLater = false; render(); };
+
+// ---- the desk sets the price for a token. It is written to the request, so
+// token.html (watching it live) shows it straight away and the customer only
+// pays this amount. ----
+window.savePrice = async function (id) {
   const req = allRequests.find(r => r.id === id);
-  if (!req) return;
-  const v = prompt('Amount to collect for token ' + (req.token || '') + ' (₹):', req.amount || '');
-  if (v === null) return;
-  const n = Math.round(Number(v));
-  if (!isFinite(n) || n < 0) { alert('Enter a valid amount.'); return; }
-  try { await db.ref('printRequests/' + id).update({ amount: n }); toast('Amount set to ₹' + n); }
-  catch (err) { alert('Could not update: ' + (err.message || err)); }
+  const inp = document.getElementById('pr-' + id);
+  if (!req || !inp) return;
+  const n = Math.round(Number(inp.value));
+  if (inp.value === '' || !isFinite(n) || n < 0) { toast('Enter a valid price'); inp.focus(); return; }
+  const paid = paidOf(req);
+  if (paid > n && !confirm('Token ' + (req.token || '') + ' has already paid ₹' + paid + ', which is more than ₹' + n + '. Set it anyway?')) return;
+  try {
+    await db.ref('printRequests/' + id).update({
+      amount: n, priceSet: true, priceSetAt: firebase.database.ServerValue.TIMESTAMP,
+      paidAmount: paid, paymentStatus: (n > 0 && paid >= n) ? 'paid' : 'unpaid',
+    });
+    editingPrice.delete(id);
+    toast('Token ' + (req.token || '') + ' price set to ₹' + n);
+    inp.blur();
+    renderLater = false; render();
+  } catch (err) { alert('Could not update: ' + (err.message || err)); }
+};
+window.copyTokenLink = async function (id) {
+  const r = allRequests.find(x => x.id === id);
+  if (!r || !r.tokenHash) { toast('This older token has no link'); return; }
+  const url = new URL('token.html', location.href).href + '?h=' + encodeURIComponent(r.tokenHash + r.id);
+  try { await navigator.clipboard.writeText(url); toast('Token link copied'); } catch (e) { prompt('Copy this link:', url); }
 };
 
 window.lockDesk = function () {
@@ -653,7 +822,9 @@ function startDashboard() {
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     notifyNew(allRequests);
     render();
+    bankEarnings(allRequests);
   });
+  db.ref('earnings').on('value', snap => { earn = Object.assign({ total: 0, days: {} }, snap.val() || {}); render(); });
 
   document.getElementById('waToggle').addEventListener('click', () => window.toggleWA());
 
@@ -707,66 +878,78 @@ function startDashboard() {
     }
   }
 
-  window.markPrinted = async function (id) {
+  // Completed: only for paid tokens. The token leaves the pending list and is
+  // kept in the Printed tab; its uploaded files are deleted from Cloudinary.
+  window.completeRequest = async function (id) {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
+    const isStoreOrder = req.source === 'store' || req.source === 'notebook';
 
-    if (!confirm((req.source === 'store' || req.source === 'notebook')
-      ? `Mark store order (token ${req.token || ''}) as handed over?\n\nThis will remove it from the list.`
-      : `Mark "${req.name || ('token ' + (req.token || ''))}" as printed?\n\nThis will permanently delete the request and its files.`)) {
+    if (!isPaid(req)) {
+      toast('Mark token ' + (req.token || '') + ' as paid first. It can only be completed once paid.');
+      return;
+    }
+    if (!confirm(isStoreOrder
+      ? `Complete store order (token ${req.token || ''}) — handed over?\n\nIt moves to the Printed tab.`
+      : `Complete token ${req.token || ''} — printed?\n\nIt moves to the Printed tab and its uploaded files are deleted.`)) {
       return;
     }
 
+    if (!(await bankOrWarn())) return;
     const files = req.files || [];
     const failed = [];
-    for (const f of files) {
-      const ok = await deleteCloudinaryFile(f);
-      if (!ok) failed.push(f.name);
-    }
+    await Promise.all(files.map(async f => { if (!f.removed && !(await deleteCloudinaryFile(f))) failed.push(f.name); }));
 
-    await db.ref('printRequests/' + id).remove();
+    try {
+      await db.ref('printRequests/' + id).update({
+        status: 'printed',
+        printedAt: firebase.database.ServerValue.TIMESTAMP,
+        files: files.map(f => ({ name: f.name, printType: f.printType || null, format: f.format || null, pageMode: f.pageMode || null, pages: f.pages || null, pageCount: f.pageCount || null, copies: f.copies || 1, removed: true })),
+      });
+      expandedIds.delete(id);
+      toast('Token ' + (req.token || '') + ' completed');
+    } catch (err) { alert('Could not complete: ' + (err.message || err)); return; }
 
     if (failed.length) {
-      alert('Request deleted. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
+      alert('Completed. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
     }
   };
 
-  // ---- clear every request currently shown in the active tab: removes
-  // their files from Cloudinary, then deletes the records in one go ----
+  // ---- "Clear tokens": removes EVERY token (all tabs, filters and hidden
+  // WhatsApp ones). Earnings are saved first and are never touched. The
+  // tokens are deleted straight away; their Cloudinary files are cleaned up
+  // afterwards, so a slow or failing file delete can't leave tokens behind. ----
   window.clearAll = async function () {
-    const visible = visibleRequests(); // hidden WhatsApp requests are never cleared
-    if (!visible.length) return;
+    const all = allRequests.slice();
+    if (!all.length) return;
 
-    const label = currentFilter === 'all' ? '' : currentFilter + ' ';
-    if (!confirm(`Clear all ${visible.length} ${label}request${visible.length === 1 ? '' : 's'}?\n\nThis will permanently delete the requests and their files. This cannot be undone.`)) {
+    if (!confirm(`Clear all ${all.length} token${all.length === 1 ? '' : 's'}?\n\nThis deletes every token (pending, printed and WhatsApp) and their files. Your earnings are kept. This cannot be undone.`)) {
       return;
     }
+    if (!(await bankOrWarn())) return;
 
     const btn = document.getElementById('clearAllBtn');
     btn.disabled = true;
+    btn.textContent = 'Clearing…';
     const failed = [];
     try {
-      let done = 0;
-      for (const req of visible) {
-        btn.textContent = `Clearing ${++done}/${visible.length}…`;
-        for (const f of (req.files || [])) {
-          const ok = await deleteCloudinaryFile(f);
-          if (!ok) failed.push(f.name);
-        }
-      }
       const updates = {};
-      visible.forEach(r => { updates['printRequests/' + r.id] = null; });
+      all.forEach(r => { updates['printRequests/' + r.id] = null; });
       await db.ref().update(updates);
+
+      const files = all.flatMap(r => r.files || []);
+      await Promise.all(files.map(async f => { if (!(await deleteCloudinaryFile(f))) failed.push(f.name); }));
+      toast('All tokens cleared');
     } catch (err) {
-      alert('Could not clear all requests: ' + (err.message || err));
+      alert('Could not clear the tokens: ' + (err.message || err));
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Clear all';
+      btn.textContent = 'Clear tokens';
       render();
     }
 
     if (failed.length) {
-      alert('Requests cleared. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
+      alert('Tokens cleared. Note: these files could not be auto-removed from Cloudinary (delete link may have expired) — clear them manually if needed:\n' + failed.join('\n'));
     }
   };
 
@@ -787,10 +970,15 @@ function startDashboard() {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
 
-    if (!confirm(`Cancel "${req.name || ('token ' + (req.token || ''))}"?\n\nThis will permanently delete the request and its files.`)) {
+    const wasPaid = paidOf(req);
+    if (!confirm(`Cancel token ${req.token || ''}?\n\nIt is removed from the dashboard together with its files and adds nothing to your earnings.` + (wasPaid > 0 ? `\n\n₹${wasPaid} was paid on this token. It will be taken out of your earnings, so refund the customer yourself.` : ''))) {
       return;
     }
 
+    if (!(await unbankEarnings(req))) {
+      alert('Could not update the earnings, so the token was not cancelled. Check that your database rules allow read/write on the "earnings" path.');
+      return;
+    }
     const files = req.files || [];
     const failed = [];
     for (const f of files) {
@@ -818,23 +1006,33 @@ function updateToolbar() {
   document.getElementById('waLabel').textContent = showWA ? 'WhatsApp shown' : 'WhatsApp hidden';
 
   const pend = pool.filter(r => (r.status || 'pending') === 'pending');
-  const sum = a => a.reduce((t, r) => t + (Number(r.amount) || 0), 0);
+  const sumDue = pend.reduce((t, r) => t + Math.max(0, (Number(r.amount) || 0) - paidOf(r)), 0);
+  const pendingBank = allRequests.reduce((t, r) => t + unbanked(r), 0);   // paid but not yet folded into the ledger
+  const today = (earn.days && earn.days[dayKey(new Date())]) || 0;
+  document.getElementById('st-earn').textContent = '₹' + ((Number(earn.total) || 0) + pendingBank).toLocaleString('en-IN');
+  document.getElementById('st-today').textContent = '₹' + ((Number(today) || 0) + pendingBank).toLocaleString('en-IN');
+  document.getElementById('st-due').textContent = '₹' + sumDue.toLocaleString('en-IN');
   document.getElementById('st-pending').textContent = pend.length;
-  document.getElementById('st-due').textContent = '₹' + sum(pend.filter(r => r.paymentStatus !== 'paid'));
-  document.getElementById('st-paid').textContent = '₹' + sum(pend.filter(r => r.paymentStatus === 'paid'));
-  document.getElementById('st-wa').textContent = allRequests.filter(r => r.source === 'whatsapp' && (r.status || 'pending') === 'pending').length;
   document.title = (pend.length ? '(' + pend.length + ') ' : '') + 'Print desk — NextPrint';
   document.getElementById('soundToggle').classList.toggle('off', !soundOn);
 }
 
+let renderLater = false;
+function priceFocused() { const a = document.activeElement; return !!(a && a.classList && a.classList.contains('pd-price-in')); }
+document.addEventListener('focusout', e => {
+  if (e.target && e.target.classList && e.target.classList.contains('pd-price-in')) {
+    setTimeout(() => { if (renderLater && !priceFocused()) { renderLater = false; render(); } }, 300);
+  }
+});
 function render() {
+  if (priceFocused()) { renderLater = true; updateToolbar(); return; }
   const listEl = document.getElementById('requestList');
   updateToolbar();
   const filtered = visibleRequests();
   const hiddenWA = showWA ? 0 : allRequests.filter(r => r.source === 'whatsapp' && matchesStatus(r)).length;
 
   const clearBtn = document.getElementById('clearAllBtn');
-  if (clearBtn && !clearBtn.disabled) clearBtn.style.display = filtered.length ? '' : 'none';
+  if (clearBtn && !clearBtn.disabled) clearBtn.style.display = allRequests.length ? '' : 'none';
 
   const hiddenNote = hiddenWA
     ? `<div class="pd-hidden-note">${hiddenWA} WhatsApp request${hiddenWA === 1 ? '' : 's'} hidden · <button type="button" onclick="toggleWA()">Show</button></div>`
@@ -845,15 +1043,24 @@ function render() {
     return;
   }
 
+  const byNew = (a, b) => (b.createdAt || 0) - (a.createdAt || 0);
   const sorted = filtered.slice().sort((a, b) => {
-    if (sortMode === 'new') return (b.createdAt || 0) - (a.createdAt || 0);
-    if (sortMode === 'old') return (a.createdAt || 0) - (b.createdAt || 0);
-    if (sortMode === 'amt') return (Number(b.amount) || 0) - (Number(a.amount) || 0);
-    // default: paid first, then newest (Array.sort is stable)
-    return (b.paymentStatus === 'paid' ? 1 : 0) - (a.paymentStatus === 'paid' ? 1 : 0);
+    if (sortMode === 'new') return byNew(a, b);
+    if (sortMode === 'old') return -byNew(a, b);
+    if (sortMode === 'amt') return (Number(b.amount) || 0) - (Number(a.amount) || 0) || byNew(a, b);
+    // default: paid tokens first, newest first inside each group
+    return (isPaid(b) ? 1 : 0) - (isPaid(a) ? 1 : 0) || byNew(a, b);
   });
 
-  listEl.innerHTML = sorted.map(r => renderCard(r)).join('') + hiddenNote;
+  if (sortMode === 'paid') {
+    const paidList = sorted.filter(isPaid), openList = sorted.filter(r => !isPaid(r));
+    listEl.innerHTML =
+      (paidList.length ? `<h3 class="pd-group paid">Paid <span class="n">${paidList.length}</span></h3>` + paidList.map(renderCard).join('') : '') +
+      (openList.length ? `<h3 class="pd-group unpaid">Awaiting payment <span class="n">${openList.length}</span></h3>` + openList.map(renderCard).join('') : '') +
+      hiddenNote;
+  } else {
+    listEl.innerHTML = sorted.map(r => renderCard(r)).join('') + hiddenNote;
+  }
 }
 
 function printTypeLabel(t) {
@@ -873,16 +1080,23 @@ function renderCard(r) {
   const itemCount = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
   const expanded = expandedIds.has(r.id);
   const hasPhotoPaper = files.some(f => f.printType === 'photo');
-  const pdfCount = files.filter(f => (f.format || '').toLowerCase() === 'pdf').length;
+  const pdfCount = files.filter(f => !f.removed && (f.format || '').toLowerCase() === 'pdf').length;
   const paid = r.paymentStatus === 'paid';
+  const amt = Number(r.amount) || 0;
+  const paidSoFar = paidOf(r);
+  const balance = Math.max(0, amt - paidSoFar);
+  const partial = !paid && paidSoFar > 0;
+  const priceSet = !!r.priceSet;
+  const expected = r.estimatedAmount != null ? Number(r.estimatedAmount) || 0 : (priceSet ? null : amt);
 
   const chips = [
     isWA ? `<span class="chip wa">${WA_ICON}WhatsApp</span>` : '',
     isNB ? `<span class="chip nb">${paperOnly ? '📄 A4 paper' : '🛍 Store'}</span>` : '',
     (isNB && (r.stockShort || []).length) ? '<span class="chip topay">⚠ Check stock</span>' : '',
-    (!isWA || (r.amount || 0) > 0) ? (paid ? '<span class="chip paid">Paid</span>' : '<span class="chip topay">To pay</span>') : '',
+    (!isWA || amt > 0) ? (paid ? '<span class="chip paid">Paid</span>' : partial ? `<span class="chip partial">₹${paidSoFar} paid · ₹${balance} left</span>` : '<span class="chip topay">To pay</span>') : '',
+    (!isNB && priceSet) ? '<span class="chip priced">Price set</span>' : '',
     hasPhotoPaper ? '<span class="chip glossy">Glossy</span>' : '',
-    status === 'printed' ? '<span class="chip printed">printed</span>' : '',
+    status === 'printed' ? `<span class="chip printed">✓ Printed${r.printedAt ? ' · ' + timeAgo(r.printedAt) : ''}</span>` : '',
   ].join('');
 
   const shown = files.slice(0, 2).map(f => escapeHtml(f.name)).join(', ');
@@ -903,8 +1117,8 @@ function renderCard(r) {
     : `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${files.length} file${files.length === 1 ? '' : 's'} · ${when}</div>`;
 
   const filesHtml = files.map((f) => {
-    const printable = isPrintable(f);
-    const actionBtn = printable
+    const printable = !f.removed && isPrintable(f);
+    const actionBtn = f.removed ? '<span class="pd-gone">file removed after printing</span>' : printable
       ? `<button type="button" class="pd-btn sm" onclick="printFile('${escapeAttr(f.url)}')">Open &amp; print</button>`
       : `<a class="pd-btn sm" href="${escapeAttr(f.url)}" target="_blank" rel="noopener">Download</a>`;
     const pagesLabel = f.pageMode === 'custom' ? `pages ${escapeHtml(f.pages || '')}` : 'all pages';
@@ -920,31 +1134,52 @@ function renderCard(r) {
         <div class="pd-spec">
           ${isNB ? `<span><b>${itemCount}</b> item${itemCount === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}${(r.stockShort || []).map(x => `<span>⚠ ${escapeHtml(x.name)}: ordered ${x.wanted}, only ${x.had} were in stock</span>`).join('')}`
           : isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
-                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>${paper ? `<span><b>${Number(paper.qty)}</b> × A4 paper (₹${Number(paper.total) || 0})</span>` : ''}<span><b>₹${r.amount || 0}</b> estimated</span>`}
+                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>${paper ? `<span><b>${Number(paper.qty)}</b> × A4 paper (₹${Number(paper.total) || 0})</span>` : ''}<span><b>₹${r.amount || 0}</b> ${priceSet ? 'final price' : 'estimated'}</span>`}
         </div>
         ${r.notes && !isWA ? `<p class="pd-note">Note: ${escapeHtml(r.notes)}</p>` : ''}
         ${isNB ? items.map(i => `<div class="pd-file"><span>${Number(i.qty) || 0} × ${escapeHtml(i.name)} — ₹${i.total != null ? i.total : (Number(i.qty) || 0) * (Number(i.price) || 0)}</span></div>`).join('') : filesHtml}
         <div class="pd-body-actions">
           ${pdfCount > 0 ? `<button type="button" class="pd-btn sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
-          ${status !== 'printed' ? `<button type="button" class="pd-btn sm primary" onclick="markPrinted('${r.id}')">${isNB ? 'Mark as handed over' : 'Mark as printed'}</button>` : ''}
         </div>
       </div>` : '';
 
+  const editing = editingPrice.has(r.id) && status !== 'printed' && !isNB;
+  const priceHtml = isNB
+    ? `<div class="pd-price"><div class="exp"><span>Order total</span><b>₹${amt}</b></div><div class="st fixed">${paid ? '✓ Paid online' : 'Fixed store price'}</div></div>`
+    : `<div class="pd-price">
+         <div class="exp ${expected == null || expected <= 0 ? 'muted' : ''}"><span>Expected</span><b>${expected != null && expected > 0 ? '₹' + expected : '—'}</b></div>
+         ${editing
+           ? `<div class="pd-set"><span class="cur">₹</span><input class="pd-price-in" id="pr-${r.id}" type="number" inputmode="numeric" min="0" step="1" placeholder="Price" value="${amt > 0 ? amt : ''}" onkeydown="if(event.key==='Enter'){savePrice('${r.id}')}else if(event.key==='Escape'){cancelPriceEdit('${r.id}')}"><button type="button" class="pd-btn sm primary" onclick="savePrice('${r.id}')">Save</button><button type="button" class="pd-btn sm" onclick="cancelPriceEdit('${r.id}')" aria-label="Cancel editing">✕</button></div>`
+           : `<div class="exp now"><span>${priceSet ? 'Your price' : 'Customer sees'}</span><b>${amt > 0 ? '₹' + amt : '—'}</b></div>`}
+         <div class="st ${priceSet ? 'set' : 'est'}">${priceSet ? '✓ Customer pays ₹' + amt : amt > 0 ? 'Estimate — not confirmed yet' : 'Customer is waiting for a price'}</div>
+       </div>`;
+
+  // the four actions on every pending token
+  const actionsHtml = status === 'printed' ? '' : `
+      <div class="pd-actions">
+        ${isNB ? '' : `<button type="button" class="pd-btn" onclick="startPriceEdit('${r.id}')">${priceSet ? 'Change price' : 'Set price'}</button>`}
+        ${paid ? '<button type="button" class="pd-btn ok done" disabled>✓ Paid</button>' : `<button type="button" class="pd-btn ok" onclick="markPaid('${r.id}')">Mark as paid</button>`}
+        <button type="button" class="pd-btn primary${paid ? '' : ' locked'}" onclick="completeRequest('${r.id}')" title="${paid ? 'Mark as printed / handed over' : 'Mark as paid first'}">Completed</button>
+        <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
+      </div>`;
+  const subHtml = `
+        <div class="pd-sub">
+          ${status !== 'printed' && !isNB ? `<button type="button" class="pd-link" onclick="mergeAndPrint('${r.id}')">🖨 Print</button>` : ''}
+          ${status !== 'printed' && !isNB && r.tokenHash ? `<button type="button" class="pd-link" onclick="copyTokenLink('${r.id}')" title="Copy the customer's private token link">🔗 Copy link</button>` : ''}
+          <button type="button" class="pd-link" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide details' : 'Details'}</button>
+        </div>`;
+
   return `
-    <article class="pd-card${isWA ? ' wa' : isNB ? ' nb' : ''}" id="card-${r.id}">
+    <article class="pd-card ${paid ? 'is-paid' : 'is-unpaid'}${isWA ? ' wa' : isNB ? ' nb' : ''}" id="card-${r.id}">
       <div class="pd-token"><small>Token</small><b>${escapeHtml(String(r.token || '—'))}</b></div>
       <div class="pd-main">
         <div class="pd-chips">${chips}</div>
         ${filesLine}
         ${metaLine}
+        ${subHtml}
       </div>
-      <div class="pd-actions">
-        ${isNB ? (status !== 'printed' ? `<button type="button" class="pd-btn primary" onclick="markPrinted('${r.id}')">Handed over</button>` : '') : `<button type="button" class="pd-btn ${isWA ? 'wa' : 'primary'}" onclick="mergeAndPrint('${r.id}')">Print</button>`}
-        ${isWA && status !== 'printed' ? `<button type="button" class="pd-btn" onclick="setAmount('${r.id}')">${(r.amount || 0) > 0 ? 'Edit ₹' : 'Set ₹'}</button>` : ''}
-        ${status !== 'printed' && !paid && (r.amount || 0) > 0 ? `<button type="button" class="pd-btn ok" onclick="markPaid('${r.id}')">Paid</button>` : ''}
-        <button type="button" class="pd-btn" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide' : 'Details'}</button>
-        <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
-      </div>
+      ${priceHtml}
+      ${actionsHtml}
       ${bodyHtml}
     </article>`;
 }

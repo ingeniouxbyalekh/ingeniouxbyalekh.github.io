@@ -4,8 +4,8 @@
   "description": "Research platform by Alekh Chandra Sahoo",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#401617",
-  "theme_color": "#401617",
+  "background_color": "#363638",
+  "theme_color": "#363638",
   "icons": [
     {
       "src": "/Storage/Images/Icon/icon-192.png",

@@ -469,7 +469,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="config.js"></script>
 <script>
 const $ = id => document.getElementById(id);
@@ -1591,8 +1590,12 @@ async function shareViaWhatsApp(btn) {
 
   try {
     const token = await nextToken();
-    await db.ref('printRequests').push().set({
+    const waRef = db.ref('printRequests').push();
+    const waHash = makeSecret();
+    await waRef.set({
       token,
+      tokenHash: waHash,
+      priceSet: false,
       status: 'pending',
       paymentStatus: 'unpaid',
       amount: 0,
@@ -1601,11 +1604,12 @@ async function shareViaWhatsApp(btn) {
       createdAt: firebase.database.ServerValue.TIMESTAMP,
     });
 
-    const text = 'Hi Alekh, I\'d like to get some prints.\nMy token number is: ' + token;
+    const tokenLink = new URL('token.html?h=' + encodeURIComponent(waHash + waRef.key), location.href).href;
+    const text = 'Hi Alekh, I\'d like to get some prints.\nMy token number is: ' + token + '\nMy token page: ' + tokenLink;
     const link = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(text);
 
     if (win) win.location.href = link; else window.location.href = link;
-    showMsg('Token <b>' + token + '</b> created. Send your files in the WhatsApp chat.', 'success');
+    showMsg('Token <b>' + token + '</b> created. Send your files in the WhatsApp chat. <a href="token.html?h=' + encodeURIComponent(waHash + waRef.key) + '"><b>Open your token page</b></a> to see your price and pay.', 'success');
   } catch (err) {
     if (win) win.close();
     showMsg('We could not create a token (' + escapeHtml(err.message || String(err)) + '). Please try again.', 'error');
@@ -1628,209 +1632,47 @@ async function nextToken() {
   return String(result.snapshot.val());
 }
 
-// ---- optional post-token survey: 1-5 stars, quick-pick reasons that
-// change with the rating, and free-text feedback. Saved to
-// feedback/<id>, and also added to running totals in ratingStats/
-// (per-day buckets + all-time) so averages survive "Clear feedback". ----
-const SURVEY_OPTIONS = {
-  1: { title: 'Sorry about that. What went wrong?', opts: ['Terrible website', 'Prices are too high', 'WhatsApp is a better option', 'Upload kept failing or was too slow', 'Too confusing to use'] },
-  2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Upload was slow', 'Payment was confusing', 'WhatsApp seems easier'] },
-  3: { title: 'Okay is not great. What could improve?', opts: ['Could be faster', 'Some steps were confusing', 'Pricing is average', 'Needs more print options', 'It was fine overall'] },
-  4: { title: 'Glad it went well! What worked?', opts: ['Easy to use', 'Fast upload', 'Fair prices', 'Smooth payment', 'Just minor issues'] },
-  5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Fast upload', 'Great prices', 'Easy payment', 'Will use again'] },
-};
-
-const RATE_LABELS = { 1: 'Terrible', 2: 'Poor', 3: 'Okay', 4: 'Good', 5: 'Excellent' };
-
-function surveyDayKey(d) {
-  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+/* ---------- token page ----------
+   Every request gets its own private page: token.html?h=<secret><requestKey>.
+   The secret is saved on the request as tokenHash, so the link can't be guessed. */
+function makeSecret() {
+  const a = new Uint8Array(12);
+  crypto.getRandomValues(a);
+  return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
 }
-
-function initSurvey(token, requestKey) {
-  const box = $('survey');
-  if (!box) return;
-  const stars = [...document.querySelectorAll('#surveyStars button')];
-  const more = $('surveyMore');
-  const optsEl = $('surveyOpts');
-  let rating = 0;
-
-  $('surveySkip').addEventListener('click', () => { box.remove(); });
-
-  stars.forEach(btn => btn.addEventListener('click', () => {
-    const n = Number(btn.dataset.n);
-    const changed = n !== rating;
-    rating = n;
-    stars.forEach(s => {
-      const on = Number(s.dataset.n) <= n;
-      s.classList.toggle('on', on);
-      s.setAttribute('aria-checked', String(Number(s.dataset.n) === n));
-    });
-    box.dataset.tone = n <= 2 ? 'low' : n === 3 ? 'mid' : 'high';
-    $('rateLabel').textContent = RATE_LABELS[n];
-    if (changed) {
-      const cfg = SURVEY_OPTIONS[n];
-      $('surveyTitle').textContent = cfg.title;
-      optsEl.innerHTML = cfg.opts.map(o =>
-        `<label class="survey-opt"><input type="checkbox" value="${o}"><span class="tick">✓</span><span>${o}</span></label>`).join('');
-    }
-    more.classList.add('show');
-  }));
-
-  $('surveySubmit').addEventListener('click', async (e) => {
-    if (!rating) return;
-    const btn = e.currentTarget;
-    btn.disabled = true;
-    btn.textContent = 'Sending…';
-    const reasons = [...optsEl.querySelectorAll('input:checked')].map(i => i.value);
-    const comment = $('surveyComment').value.trim().slice(0, 500);
-    const dKey = surveyDayKey(new Date());
-    try {
-      await db.ref('feedback').push({
-        rating, reasons, comment, token, requestKey,
-        day: dKey,
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-      });
-      const bump = cur => {
-        cur = cur || { count: 0, sum: 0 };
-        return { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating };
-      };
-      await db.ref('ratingStats/days/' + dKey).transaction(bump);
-      await db.ref('ratingStats/total').transaction(cur => {
-        cur = cur || { count: 0, sum: 0 };
-        const out = { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating };
-        for (let i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === rating ? 1 : 0);
-        return out;
-      });
-      box.innerHTML = '<div class="survey-thanks">🙏 Thanks for your feedback!</div>';
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = 'Submit feedback';
-      alert('Could not send feedback right now. You can skip it, no problem.');
-    }
-  });
+function tokenUrl(req, extra) {
+  return 'token.html?h=' + encodeURIComponent(req.tokenHash + req.key) + (extra || '');
 }
-
-/* ---------- token screen ---------- */
-function payStatusText(req) {
-  const paid = req.paymentStatus === 'paid' ? req.amount : (req.paidAmount || 0);
-  const due = Math.max(0, req.amount - paid);
-  if (paid > 0 && due <= 0) return '✓ Paid';
-  if (paid > 0) return 'Paid ₹' + paid + ' · balance ₹' + due;
-  return 'Not paid yet';
-}
-
-function showTokenSuccess(req, opts) {
+function goToToken(req, opts) {
   opts = opts || {};
-  const token = req.token, requestKey = req.key, amount = req.amount;
-  const paid = req.paymentStatus === 'paid' ? amount : (req.paidAmount || 0);
-  const due = Math.max(0, amount - paid);
-  const canPay = CONFIG.paymentsEnabled && window.Razorpay && due > 0;
-  const payLabel = paid > 0 ? 'Pay balance' : 'Pay now';
-  const showSurvey = !opts.appended && !opts.noSurvey;
-  const nFiles = (req.files || []).length;
-  const paperQ = req.paper ? Number(req.paper.qty) || 0 : 0;
-  let headTitle, headSub;
-  if (opts.appended) {
-    const bits = [];
-    if (opts.added) bits.push(opts.added + ' file' + (opts.added > 1 ? 's' : ''));
-    if (opts.paperAdded) bits.push(opts.paperAdded + ' A4 sheet' + (opts.paperAdded > 1 ? 's' : ''));
-    headTitle = opts.added ? 'Files added' : 'Added to your token';
-    headSub = bits.join(' + ') + ' added to your token. Price updated.';
-  } else if (nFiles) {
-    headTitle = 'Sent for printing';
-    headSub = 'Files uploaded successfully.';
-  } else {
-    headTitle = 'Order placed';
-    headSub = 'Your A4 paper will be ready at the desk.';
-  }
-  msgArea.innerHTML = '';
-  resultShown = true;
-  mainView.hidden = true;
-  checkoutBar.hidden = true;
-  resultArea.hidden = false;
-  resultArea.innerHTML = `
-    <div class="done-head">
-      <div class="check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>
-      <div><h2>${headTitle}</h2><p>${headSub}</p></div>
-    </div>
-    ${opts.notice ? `<div class="msg success"><span>ℹ️</span><span>${escapeHtml(opts.notice)}</span></div>` : ''}
-    <div class="bento">
-      <div class="b token wide">
-        <div class="k">Your token number</div>
-        <div class="code" id="tokenCode">${token}</div>
-        <button type="button" class="copy" id="copyToken">Copy token</button>
-      </div>
-      <div class="b">
-        <div class="k">Collect from</div>
-        <div class="v">📍 Room 136</div>
-        <div class="s">Show your token</div>
-      </div>
-      <div class="b">
-        <div class="k">Amount</div>
-        <div class="v">₹${amount}</div>
-        <div class="s" id="payStatus">${payStatusText(req)}</div>
-      </div>
-      ${paperQ ? `
-      <div class="b wide">
-        <div class="k">Includes</div>
-        <div class="v">${paperQ} × A4 paper</div>
-        <div class="s">₹${Number(req.paper.total) || paperQ * a4Rate()} · blank sheets, collect with your prints</div>
-      </div>` : ''}
-      ${canPay ? `
-      <div class="b pay wide">
-        <div class="k">Pay online</div>
-        <p>${paid > 0 ? 'Pay the remaining balance now, or at the counter when you collect.' : 'Pay now, or at the counter when you collect.'}</p>
-        <button type="button" class="btn btn-pay" id="payNowBtn">${payLabel} · ₹${due}</button>
-        <div id="payMsg"></div>
-      </div>` : ''}
-      ${showSurvey ? `
-      <div class="b survey wide" id="survey">
-        <button type="button" class="survey-skip" id="surveySkip">Skip</button>
-        <h4>How was your experience?</h4>
-        <div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">
-          ${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" role="radio" aria-checked="false" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}
-        </div>
-        <div class="rate-label" id="rateLabel">Tap a star (optional)</div>
-        <div class="survey-more" id="surveyMore">
-          <div class="survey-title" id="surveyTitle"></div>
-          <div class="survey-opts" id="surveyOpts"></div>
-          <textarea id="surveyComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>
-          <button type="button" class="survey-submit" id="surveySubmit">Submit feedback</button>
-        </div>
-      </div>` : ''}
-      <div style="grid-column:1/-1"><button type="button" class="btn btn-outline" id="sendAnotherBtn">＋ Add more files to this token</button></div>
-    </div>`;
-
-  if (showSurvey) initSurvey(token, requestKey);
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  const copyBtn = $('copyToken');
-  copyBtn.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(token); copyBtn.textContent = 'Copied ✓'; }
-    catch (e) { copyBtn.textContent = 'Press and hold to copy'; }
-    setTimeout(() => { copyBtn.textContent = 'Copy token'; }, 1800);
-  });
-
-  const payBtn = $('payNowBtn');
-  if (payBtn) {
-    payBtn.addEventListener('click', () => startPayment(req, due, payBtn, $('payMsg'), payLabel));
-  }
-  $('sendAnotherBtn').addEventListener('click', enterAppendMode);
+  let extra = '';
+  if (opts.appended) extra += '&ap=1&af=' + (opts.added || 0) + '&pa=' + (opts.paperAdded || 0);
+  else if (!opts.noSurvey) extra += '&new=1';
+  if (opts.notice) extra += '&n=' + encodeURIComponent(opts.notice);
+  window.location.href = tokenUrl(req, extra);
 }
 
-// ---- "Add more files to this token": go back to the upload screen but keep
-// the same token. New files are appended to that request and the total is
-// recalculated (including the bulk offer) when they're uploaded. ----
-function enterAppendMode() {
-  activeReq = lastReq;
-  msgArea.innerHTML = '';
-  resultArea.innerHTML = '';
-  resultArea.hidden = true;
-  resultShown = false;
-  mainView.hidden = false;
-  $('notes').value = '';
-  renderFileList();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+// ---- "Add more files to this token": opened from token.html as
+// upload.html?add=<hash>. The existing request is loaded, new files are
+// appended to it and the total is recalculated (including the bulk offer). ----
+async function initAddMode() {
+  const h = (new URLSearchParams(location.search).get('add') || '').trim();
+  if (!h) return;
+  const key = h.slice(-20), secret = h.slice(0, -20);
+  try {
+    if (!/^[-_0-9A-Za-z]{20}$/.test(key) || !secret) throw new Error('bad link');
+    const cur = (await db.ref('printRequests/' + key).once('value')).val();
+    if (!cur || cur.tokenHash !== secret) throw new Error('not found');
+    if ((cur.status && cur.status !== 'pending') || cur.source === 'store') throw new Error('closed');
+    const files = Array.isArray(cur.files) ? cur.files : Object.values(cur.files || {});
+    activeReq = { key, token: cur.token, tokenHash: secret, files, paper: cur.paper || null, amount: cur.amount || 0,
+      paymentStatus: cur.paymentStatus, paidAmount: cur.paidAmount || 0 };
+    lastReq = activeReq;
+    renderFileList();
+    window.scrollTo({ top: 0 });
+  } catch (err) {
+    showMsg('That token can’t take more files any more (it may already be handled). You can send your files as a new token.', 'error');
+  }
 }
 
 function cancelAppend() {
@@ -1840,8 +1682,7 @@ function cancelAppend() {
   refreshA4Card();
   const req = activeReq;
   activeReq = null;
-  mainView.hidden = true;
-  if (req) showTokenSuccess(req, { noSurvey: true });
+  if (req) goToToken(req, { noSurvey: true }); else renderFileList();
 }
 
 // ---- validation before upload: checks files are attached
@@ -1956,60 +1797,6 @@ async function startUpload() {
 }
 uploadBtn.addEventListener('click', startUpload);
 
-// ---- "Pay now" (shown on the token screen): opens Razorpay for the amount
-// still due on the request and, on success, marks the request as paid ----
-function startPayment(req, amount, payBtn, payMsg, label) {
-  label = label || 'Pay now';
-  if (!CONFIG.paymentsEnabled || !window.Razorpay) {
-    payMsg.innerHTML = '<div class="msg error">Online payment is unavailable right now. You can pay at the counter.</div>';
-    return;
-  }
-  payMsg.innerHTML = '';
-  payBtn.disabled = true;
-  payBtn.textContent = 'Opening payment…';
-
-  const rzp = new Razorpay({
-    key: CONFIG.razorpay.keyId,
-    amount: Math.round(amount * 100), // paise
-    currency: 'INR',
-    name: 'NextPrint',
-    description: 'Print request ' + req.token,
-    handler: function (response) {
-      payBtn.textContent = 'Confirming payment…';
-      db.ref('printRequests/' + req.key).update({
-        paymentStatus: 'paid',
-        paymentId: response.razorpay_payment_id,
-        paymentMethod: 'razorpay',
-        paidAmount: req.amount,
-      }).then(() => {
-        req.paymentStatus = 'paid';
-        req.paidAmount = req.amount;
-        payBtn.style.display = 'none';
-        const ps = $('payStatus'); if (ps) ps.textContent = '✓ Paid online';
-        payMsg.innerHTML = '<div class="msg success">✅ Payment received. Thank you!</div>';
-      }).catch(() => {
-        payBtn.style.display = 'none';
-        payMsg.innerHTML = '<div class="msg error">Payment went through (ID: ' + escapeHtml(response.razorpay_payment_id) + ') but we could not update your request. Please show this ID at the counter.</div>';
-      });
-    },
-    modal: {
-      ondismiss: function () {
-        payBtn.disabled = false;
-        payBtn.textContent = label + ' · ₹' + amount;
-      },
-    },
-  });
-
-  rzp.on('payment.failed', function (response) {
-    payBtn.disabled = false;
-    payBtn.textContent = label + ' · ₹' + amount;
-    const desc = response && response.error && response.error.description;
-    payMsg.innerHTML = '<div class="msg error">Payment failed' + (desc ? ': ' + escapeHtml(desc) : '.') + ' You can try again or pay at the counter.</div>';
-  });
-
-  rzp.open();
-}
-
 function buildFilesData() {
   return selectedFiles.map(f => ({
     name: f.file.name,
@@ -2039,10 +1826,7 @@ function finishSave(req, opts) {
   activeReq = null;
   uploadBtn.classList.remove('busy');
   uploadBtn.textContent = uploadLabel();
-  setTimeout(() => {
-    hideUploadOverlay();
-    showTokenSuccess(req, opts || {});
-  }, 1200);
+  setTimeout(() => { goToToken(req, opts || {}); }, 900);
 }
 
 // ---- add the newly uploaded files to an existing request (same token) and
@@ -2083,11 +1867,17 @@ async function appendToRequest(formValues, amount) {
     ? (cur.paidAmount != null ? cur.paidAmount : (cur.amount || 0))
     : (cur.paidAmount || 0);
   const notes = [cur.notes, formValues.notes].filter(Boolean).join('\n');
-  const paymentStatus = prevPaid > 0 && prevPaid >= amount ? 'paid' : 'unpaid';
+  // `amount` is the new estimated total for everything in the token. If the desk
+  // already set its own price, keep that price and only add the extra estimate.
+  const prevEstimate = cur.estimatedAmount != null ? Number(cur.estimatedAmount) || 0 : (Number(cur.amount) || 0);
+  const finalAmount = cur.priceSet ? Math.max(0, (Number(cur.amount) || 0) + (amount - prevEstimate)) : amount;
+  const tokenHash = cur.tokenHash || req.tokenHash || makeSecret();
+  const paymentStatus = prevPaid > 0 && prevPaid >= finalAmount ? 'paid' : 'unpaid';
 
   try {
     await ref.update({
-      ...(files.length ? { files } : {}), ...(paper ? { paper } : {}), amount, notes, paymentStatus,
+      ...(files.length ? { files } : {}), ...(paper ? { paper } : {}), amount: finalAmount, estimatedAmount: amount, notes, paymentStatus,
+      tokenHash,
       paidAmount: prevPaid,
       updatedAt: firebase.database.ServerValue.TIMESTAMP,
     });
@@ -2096,7 +1886,7 @@ async function appendToRequest(formValues, amount) {
     return;
   }
 
-  finishSave({ key: req.key, token: req.token, files, paper, amount, notes, paymentStatus, paidAmount: prevPaid },
+  finishSave({ key: req.key, token: req.token, tokenHash, files, paper, amount: finalAmount, notes, paymentStatus, paidAmount: prevPaid },
     { appended: true, added: newFiles.length, paperAdded: newPaper ? newPaper.qty : 0 });
 }
 
@@ -2114,9 +1904,13 @@ async function saveRequest(formValues, amount, paymentInfo, notice) {
   const filesData = buildFilesData();
   const paper = buildPaper();
 
+  const tokenHash = makeSecret();
   const record = {
     ...formValues,
     amount,
+    estimatedAmount: amount,   // price worked out from the customer's print settings
+    priceSet: false,           // becomes true when the desk confirms/edits the price
+    tokenHash,                 // secret part of the private token.html link
     ...(paper ? { paper } : {}),
     token,
     status: 'pending',
@@ -2135,13 +1929,14 @@ async function saveRequest(formValues, amount, paymentInfo, notice) {
   }
 
   finishSave({
-    key: newRef.key, token, files: filesData, paper, amount,
+    key: newRef.key, token, tokenHash, files: filesData, paper, amount,
     notes: formValues.notes || '', paymentStatus: paymentInfo.paymentStatus, paidAmount: 0,
   }, notice ? { notice } : {});
 }
 
 renderA4Card();
 renderFileList();
+initAddMode();
 </script>
 <script src="analytics.js"></script>
 </body>
