@@ -212,7 +212,23 @@
 
   .pd-actions { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
   .pd-actions.n3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
-  .pd-sub { display:flex; flex-wrap:wrap; gap:2px 16px; margin-top:-2px; }
+  .pd-sub { display:flex; flex-wrap:wrap; align-items:center; gap:2px 16px; margin-top:-2px; }
+  .pd-printbtn { position:relative; flex:none; width:56px; height:56px; display:grid; place-items:center; border:0; border-radius:18px; background:linear-gradient(145deg,#14b8a6 0%,#0d9488 45%,#0f766e 100%); color:#fff; cursor:pointer; box-shadow:0 10px 20px -8px rgba(13,148,136,.75), inset 0 1px 0 rgba(255,255,255,.35); transition:transform .12s, box-shadow .2s, filter .2s; }
+  .pd-printbtn::before { content:""; position:absolute; inset:-3px; border-radius:21px; border:2px solid rgba(20,184,166,.55); animation:pdRing 2.4s ease-out infinite; pointer-events:none; }
+  .pd-printbtn svg { width:30px; height:30px; overflow:visible; }
+  .pd-printbtn .pr-sheet { fill:#fff; stroke:none; animation:pdSheet 2.4s ease-in-out infinite; }
+  .pd-printbtn .pr-line { stroke:#0f766e; stroke-width:1.4; animation:pdSheet 2.4s ease-in-out infinite; }
+  .pd-printbtn .pr-led { fill:#fde047; animation:pdBlink 1.2s steps(2,end) infinite; }
+  .pd-printbtn:hover { filter:brightness(1.08); transform:translateY(-2px); box-shadow:0 14px 24px -8px rgba(13,148,136,.85), inset 0 1px 0 rgba(255,255,255,.4); }
+  .pd-printbtn:active { transform:scale(.93); }
+  @keyframes pdSheet { 0%,12% { transform:translateY(-5px); opacity:0; } 35% { opacity:1; } 70%,100% { transform:translateY(2.5px); opacity:1; } }
+  @keyframes pdRing { 0% { transform:scale(.94); opacity:.9; } 70%,100% { transform:scale(1.22); opacity:0; } }
+  @keyframes pdBlink { 50% { opacity:.25; } }
+  @media (prefers-reduced-motion:reduce) { .pd-printbtn::before, .pd-printbtn .pr-sheet, .pd-printbtn .pr-line, .pd-printbtn .pr-led { animation:none; } }
+  .pd-amount.inline { display:flex; align-items:center; gap:8px; margin-left:auto; text-align:left; }
+  .pd-amount.inline b { display:inline; font-size:1.25rem; }
+  .pd-amount.inline .pd-pay { margin-top:0; }
+  .pd-amount.inline small { display:inline; margin-top:0; }
   .pd-tl { border:0; background:none; padding:6px 0; font:inherit; font-size:.8rem; font-weight:600; color:var(--soft); cursor:pointer; }
   .pd-tl:hover { color:var(--ink); text-decoration:underline; }
 
@@ -1197,7 +1213,8 @@ function renderCard(r) {
   const amtNote = isNB ? 'Store price'
     : priceSet ? (expected > 0 && expected !== amt ? 'Expected ₹' + expected : 'Price confirmed')
     : amt > 0 ? 'Estimate' : 'Needs a price';
-  const amountHtml = `<div class="pd-amount"><b>${amt > 0 ? '₹' + amt : '—'}</b>${payPill}<small>${amtNote}</small></div>`;
+  const showPrintBtn = !printed && !isNB;
+  const amountHtml = `<div class="pd-amount${showPrintBtn ? ' inline' : ''}"><b>${amt > 0 ? '₹' + amt : '—'}</b>${payPill}<small>${amtNote}</small></div>`;
 
   const editorHtml = editing ? `
       <div class="pd-editor">
@@ -1221,9 +1238,9 @@ function renderCard(r) {
       </div>`;
   const subHtml = `
       <div class="pd-sub">
-        ${!printed && !isNB ? `<button type="button" class="pd-tl" onclick="mergeAndPrint('${r.id}')">🖨 Print</button>` : ''}
         ${!printed && !isNB && r.tokenHash ? `<button type="button" class="pd-tl" onclick="copyTokenLink('${r.id}')" title="Copy the customer's private token link">🔗 Copy link</button>` : ''}
         <button type="button" class="pd-tl" onclick="toggleDetails('${r.id}')" aria-expanded="${expanded}">${expanded ? 'Hide details ▴' : 'Details ▾'}</button>
+        ${showPrintBtn ? amountHtml : ''}
       </div>`;
 
   const filesHtml = files.map((f) => {
@@ -1260,7 +1277,7 @@ function renderCard(r) {
           ${filesLine}
           ${metaLine}
         </div>
-        ${amountHtml}
+        ${showPrintBtn ? PRINT_BTN(r) : amountHtml}
       </div>
       ${printed ? '' : `<ol class="pd-steps" aria-label="Progress">${steps}</ol>`}
       ${editorHtml}
@@ -1268,6 +1285,12 @@ function renderCard(r) {
       ${subHtml}
       ${bodyHtml}
     </article>`;
+}
+
+// ---- animated printer button (top right of a card) ----
+const PRINT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3.5h10V8"/><g class="pr-out"><rect class="pr-sheet" x="7.5" y="13" width="9" height="8" rx="1"/><path class="pr-line" d="M9.5 16h5M9.5 18.2h3.5"/></g><path d="M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2"/><circle class="pr-led" cx="18" cy="11.5" r=".9" fill="currentColor" stroke="none"/></svg>`;
+function PRINT_BTN(r) {
+  return `<button type="button" class="pd-printbtn" onclick="mergeAndPrint('${r.id}')" title="Print" aria-label="Print token ${escapeAttr(String(r.token || ''))}">${PRINT_ICON}</button>`;
 }
 
 // ---- toggle the details panel for one request, open below its tile ----

@@ -9,84 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
-  /* ===== Print desk — redesign ===== */
-  .pd-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:18px; }
-  .pd-head h1 { font-family:"Fraunces", Georgia, serif; font-size:1.8rem; margin:0; line-height:1.1; }
-  .pd-head .pd-sub { margin:4px 0 0; font-size:.84rem; color:var(--ink-soft, #62625c); }
-  .pd-tools { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
-
-  .pd-tabs { display:inline-flex; gap:2px; padding:3px; border-radius:13px; background:#ebe8dd; }
-  .pd-tab { display:inline-flex; align-items:center; gap:6px; border:0; background:transparent; font:inherit; font-size:.86rem; font-weight:500; color:var(--ink-soft, #62625c); padding:7px 13px; border-radius:10px; cursor:pointer; }
-  .pd-tab .n { font-size:.7rem; font-weight:600; padding:1px 7px; border-radius:999px; background:rgba(0,0,0,.07); }
-  .pd-tab.active { background:#fff; color:var(--ink, #17181c); font-weight:600; box-shadow:0 1px 3px rgba(23,24,28,.16); }
-
-  .pd-switch { display:inline-flex; align-items:center; gap:8px; border:1.5px solid #cfd8d2; background:#fff; border-radius:999px; padding:5px 12px 5px 6px; font:inherit; font-size:.84rem; font-weight:600; color:#3c4a41; cursor:pointer; transition:background .15s, border-color .15s; }
-  .pd-switch .track { position:relative; width:34px; height:20px; border-radius:999px; background:#c9cfcb; transition:background .15s; flex:none; }
-  .pd-switch .track::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
-  .pd-switch svg { width:15px; height:15px; color:#25d366; flex:none; }
-  .pd-switch .n { font-size:.7rem; padding:1px 7px; border-radius:999px; background:rgba(0,0,0,.07); font-weight:600; }
-  .pd-switch[aria-checked="true"] { background:#f1faf4; border-color:#9fd6b2; color:#14532d; }
-  .pd-switch[aria-checked="true"] .track { background:#25d366; }
-  .pd-switch[aria-checked="true"] .track::after { transform:translateX(14px); }
-
-  .pd-list { display:flex; flex-direction:column; gap:12px; }
-  .pd-card { display:grid; grid-template-columns:auto 1fr auto; gap:6px 16px; align-items:center; background:#fff; border:1px solid var(--line, #e3e0d4); border-radius:18px; padding:14px 16px; box-shadow:0 1px 2px rgba(23,24,28,.05), 0 6px 18px rgba(23,24,28,.05); }
-  .pd-card.wa { border-color:#b5e0c3; background:linear-gradient(100deg, #eefaf2, #fff 60%); }
-  .pd-token { min-width:88px; text-align:center; padding:9px 12px 8px; border-radius:14px; background:#17181c; color:#fff; }
-  .pd-token small { display:block; font-size:.58rem; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
-  .pd-token b { display:block; font-family:"Fraunces", Georgia, serif; font-size:1.75rem; line-height:1.05; font-weight:600; }
-  .pd-card.wa .pd-token { background:#128c4a; }
-
-  .pd-main { min-width:0; }
-  .pd-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
-  .chip { display:inline-flex; align-items:center; gap:5px; font-size:.7rem; font-weight:600; letter-spacing:.02em; padding:3px 9px; border-radius:999px; background:#eee; color:#444; }
-  .chip svg { width:12px; height:12px; }
-  .chip.wa { background:#25d366; color:#fff; }
-  .chip.paid { background:#dff1e5; color:#1f5a37; }
-  .chip.topay { background:#fdf0d9; color:#8a5200; }
-  .chip.nb { background:#e3f0fb; color:#16507f; }
-  .pd-card.nb { border-color:#b9d6ee; background:linear-gradient(100deg, #eef6fd, #fff 60%); }
-  .pd-card.nb .pd-token { background:#1f6fb0; }
-  .chip.glossy { background:#efe6fb; color:#5b34a0; }
-  .chip.printed { background:#e6e6e6; color:#555; text-transform:capitalize; }
-  .pd-files { font-size:.92rem; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .pd-files.wa { display:flex; align-items:center; gap:6px; color:#14532d; white-space:normal; }
-  .pd-files.wa svg { width:16px; height:16px; color:#25d366; flex:none; }
-  .pd-files .more { color:var(--ink-soft, #62625c); font-weight:400; }
-  .pd-meta { margin-top:3px; font-size:.78rem; color:var(--ink-soft, #62625c); }
-  .pd-meta b { color:var(--ink, #17181c); font-weight:600; }
-
-  .pd-actions { display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end; }
-  .pd-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1px solid var(--line, #d9d6c8); background:#fff; color:var(--ink, #17181c); border-radius:11px; padding:8px 14px; font:inherit; font-size:.84rem; font-weight:600; text-decoration:none; cursor:pointer; }
-  .pd-btn:active { transform:scale(.97); }
-  .pd-btn.primary { background:var(--ink, #17181c); border-color:var(--ink, #17181c); color:#fff; }
-  .pd-btn.wa { background:#25d366; border-color:#25d366; color:#fff; }
-  .pd-btn.danger { color:#a02722; border-color:#efc9c6; }
-  .pd-btn.sm { padding:6px 11px; font-size:.78rem; border-radius:9px; }
-  .pd-btn:disabled { opacity:.6; cursor:wait; }
-
-  .pd-body { grid-column:1 / -1; margin-top:8px; padding-top:12px; border-top:1px dashed var(--line, #ddd9ca); display:flex; flex-direction:column; gap:10px; }
-  .pd-spec { display:flex; flex-wrap:wrap; gap:14px; font-size:.86rem; color:var(--ink-soft, #62625c); }
-  .pd-spec b { color:var(--ink, #17181c); }
-  .pd-note { margin:0; font-size:.86rem; }
-  .pd-file { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border-radius:10px; background:#faf9f4; font-size:.84rem; }
-  .pd-file span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
-  .pd-body-actions { display:flex; flex-wrap:wrap; gap:8px; }
-
-  .pd-empty { text-align:center; color:var(--ink-soft, #62625c); padding:56px 10px; background:#fff; border:1px dashed var(--line, #d9d6c8); border-radius:18px; }
-  .pd-hidden-note { text-align:center; font-size:.82rem; color:#3c4a41; padding:10px; border-radius:12px; background:#f1faf4; border:1px dashed #9fd6b2; }
-  .pd-hidden-note button { border:0; background:none; font:inherit; font-weight:700; color:#128c4a; text-decoration:underline; cursor:pointer; padding:0 2px; }
-  #clearAllBtn:disabled { opacity:.6; cursor:wait; }
-
-  @media (max-width:640px) {
-    .pd-tools { width:100%; justify-content:space-between; }
-    .pd-card { grid-template-columns:auto 1fr; }
-    .pd-actions { grid-column:1 / -1; justify-content:stretch; }
-    .pd-actions .pd-btn { flex:1; }
-    .pd-token { min-width:72px; }
-    .pd-token b { font-size:1.45rem; }
-  }
-
+  /* =====================================================================
+     NextPrint print desk — dashboard design
+     ===================================================================== */
+  :root { --ink:#17181c; --soft:#62625c; --mute:#8a887d; --line:#e3e0d4; --green:#2f7a4d; --amber:#a56200; --red:#c6332e; --blue:#1f6fb0; --r:18px; --shadow:0 1px 2px rgba(23,24,28,.05), 0 10px 26px -14px rgba(23,24,28,.22); }
+  [hidden] { display:none !important; }
+  :focus-visible { outline:2px solid #1f5fa8; outline-offset:2px; }
   /* ===== v3: gate, app bar, stats, toolbar, modal ===== */
   body { background:#f4f2ea; font-family:"IBM Plex Sans", -apple-system, "Segoe UI", sans-serif; color:#17181c; }
   button, input, select { font:inherit; }
@@ -107,53 +35,7 @@
   .pd-field input { padding-right:62px; }
   .pd-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:none; color:#62625c; font-size:.78rem; font-weight:600; padding:8px; cursor:pointer; }
   .pd-btn.block { width:100%; padding:12px 14px; font-size:.95rem; border-radius:13px; }
-
-  .pd-bar { position:sticky; top:0; z-index:30; background:rgba(244,242,234,.92); backdrop-filter:blur(10px); border-bottom:1px solid #e3e0d4; }
-  .pd-bar-in { display:flex; align-items:center; gap:12px; height:56px; }
-  .pd-logo { font-family:"Fraunces", Georgia, serif; font-size:1.3rem; font-weight:600; color:#17181c; text-decoration:none; }
-  .pd-live { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:#2f7a4d; background:#e6f3ea; padding:3px 9px; border-radius:999px; }
-  .pd-live i { width:7px; height:7px; border-radius:50%; background:#2f7a4d; animation:pdpulse 1.6s infinite; }
-  @keyframes pdpulse { 50% { opacity:.3; } }
-  .pd-nav { margin-left:auto; display:flex; align-items:center; gap:4px; }
-  .pd-link { font-size:.86rem; font-weight:500; color:#17181c; text-decoration:none; padding:7px 10px; border-radius:9px; }
-  .pd-link:hover, .pd-icon:hover { background:#ebe8dd; }
-  .pd-icon { width:36px; height:36px; border:0; background:transparent; border-radius:10px; display:grid; place-items:center; color:#17181c; cursor:pointer; }
-  .pd-icon svg { width:19px; height:19px; }
-  .pd-icon.off { color:#a9a79c; }
-
-  .pd-stats { display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin:16px 0 12px; }
-  .pd-stat { background:#fff; border:1px solid #e3e0d4; border-radius:16px; padding:11px 14px; }
-  .pd-stat small { display:block; font-size:.66rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#62625c; }
-  .pd-stat b { display:block; margin-top:2px; font-family:"Fraunces", Georgia, serif; font-size:1.55rem; line-height:1.1; font-weight:600; }
-  .pd-stat.wa b { color:#128c4a; } .pd-stat.due b { color:#a56200; } .pd-stat.ok b { color:#2f7a4d; }
-
-  .pd-toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
-  .pd-search { position:relative; flex:1 1 220px; }
-  .pd-search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:16px; height:16px; color:#8a887d; pointer-events:none; }
-  .pd-search input { width:100%; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fff; border-radius:12px; padding:10px 12px 10px 34px; font-size:16px; outline:none; }
-  .pd-search input:focus { border-color:#17181c; }
-  .pd-select { border:1.5px solid #ddd9ca; background:#fff; border-radius:12px; padding:9px 12px; font-size:.86rem; font-weight:500; color:#17181c; }
-  .pd-seg { display:inline-flex; gap:2px; padding:3px; border-radius:12px; background:#ebe8dd; }
-  .pd-seg button { border:0; background:transparent; padding:6px 11px; border-radius:9px; font-size:.8rem; font-weight:500; color:#62625c; cursor:pointer; }
-  .pd-seg button.active { background:#fff; color:#17181c; font-weight:600; box-shadow:0 1px 3px rgba(23,24,28,.16); }
-  .pd-row2 { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .pd-row2 .grp { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-
-  .pd-modal { position:fixed; inset:0; z-index:60; background:rgba(23,24,28,.45); overflow-y:auto; padding:14px; }
-  .pd-modal-card { max-width:380px; margin:12vh auto 0; background:#fff; border-radius:20px; padding:22px; display:flex; flex-direction:column; gap:10px; box-shadow:0 20px 50px rgba(23,24,28,.25); }
-  .pd-modal-card h3 { margin:0 0 2px; font-family:"Fraunces", Georgia, serif; font-size:1.2rem; }
-  .pd-modal-card .hint { margin:0; font-size:.84rem; min-height:1.1em; }
-  .pd-modal-card .row { display:flex; gap:8px; }
-  .pd-modal-card .row .pd-btn { flex:1; }
-  .pd-toast { position:fixed; left:50%; bottom:22px; transform:translate(-50%, 30px); opacity:0; pointer-events:none; background:#17181c; color:#fff; padding:10px 16px; border-radius:12px; font-size:.86rem; font-weight:500; transition:all .25s; z-index:90; max-width:90vw; }
-  .pd-toast.show { opacity:1; transform:translate(-50%, 0); }
   #print-frame { position:absolute; width:0; height:0; border:0; }
-  .pd-card .pd-actions .pd-btn.ok { color:#1f5a37; border-color:#b5e0c3; background:#f1faf4; }
-  @media (max-width:640px) {
-    .pd-stats { grid-template-columns:repeat(2, 1fr); }
-    .pd-link { display:none; }
-  }
-
   /* ===== login redesign ===== */
   .pd-login { width:100%; max-width:800px; display:grid; grid-template-columns:1fr 1fr; background:#fff; border:1px solid #e3e0d4; border-radius:28px; overflow:hidden; box-shadow:0 24px 60px rgba(23,24,28,.14); }
   .pd-login .pd-gate-card { max-width:none; border:0; box-shadow:none; border-radius:0; justify-content:center; padding:44px 36px; text-align:left; background:#fff; }
@@ -179,67 +61,194 @@
     .pd-login .pd-gate-card { padding:26px 22px; }
   }
 
-  /* ===== v4 redesign: earnings strip, price panel, grouped queue ===== */
-  .pd-earn { display:grid; grid-template-columns:minmax(220px,1.1fr) 2fr; gap:10px; margin:16px 0 14px; }
-  .pd-earn-main { position:relative; overflow:hidden; border-radius:20px; padding:16px 20px; color:#fff; background:radial-gradient(220px 140px at 90% 0%, rgba(198,51,46,.6), transparent 70%), radial-gradient(200px 140px at 0% 110%, rgba(31,95,168,.45), transparent 70%), #17181c; }
-  .pd-earn-main small { display:block; font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; opacity:.7; }
-  .pd-earn-main b { display:block; font-family:"Fraunces", Georgia, serif; font-size:2.5rem; line-height:1.05; font-weight:600; margin:4px 0 2px; }
-  .pd-earn-main span { font-size:.76rem; opacity:.7; }
-  .pd-earn-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
-  .pd-earn-grid > div { background:#fff; border:1px solid #e3e0d4; border-radius:18px; padding:14px 16px; display:flex; flex-direction:column; justify-content:center; }
-  .pd-earn-grid small { font-size:.66rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:#62625c; }
-  .pd-earn-grid b { margin-top:3px; font-family:"Fraunces", Georgia, serif; font-size:1.6rem; line-height:1.1; font-weight:600; }
-  .pd-earn-grid .due b { color:#a56200; } .pd-earn-grid .today b { color:#2f7a4d; }
 
-  .pd-group { display:flex; align-items:center; gap:8px; margin:10px 2px 0; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#62625c; }
+  /* ----- buttons ----- */
+  .pd-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:42px; padding:9px 14px; border:1.5px solid #d9d6c8; background:#fff; color:var(--ink); border-radius:12px; font-size:.88rem; font-weight:600; line-height:1.1; cursor:pointer; white-space:nowrap; text-decoration:none; transition:transform .08s, background .15s, border-color .15s, opacity .15s; }
+  .pd-btn:hover { border-color:#b4b09f; }
+  .pd-btn:active { transform:scale(.97); }
+  .pd-btn.primary { background:var(--ink); border-color:var(--ink); color:#fff; }
+  .pd-btn.ok { color:#1f5a37; border-color:#b5e0c3; background:#f3fbf6; }
+  .pd-btn.danger { color:#a02722; border-color:#efc9c6; }
+  .pd-btn.next { background:var(--ink); border-color:var(--ink); color:#fff; box-shadow:0 6px 14px -8px rgba(23,24,28,.7); }
+  .pd-btn.ok.next { background:var(--green); border-color:var(--green); color:#fff; }
+  .pd-btn.locked { opacity:.45; }
+  .pd-btn.done { opacity:1; cursor:default; background:#e6f3ea; color:#1f5a37; border-color:#c9e4d1; }
+  .pd-btn.sm { min-height:34px; padding:6px 12px; font-size:.8rem; border-radius:10px; }
+  .pd-btn:disabled { cursor:not-allowed; }
+  .pd-btn.wa { background:#25d366; border-color:#25d366; color:#fff; }
+
+  /* ----- app bar ----- */
+  .pd-wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+  .pd-bar { position:sticky; top:0; z-index:40; background:rgba(244,242,234,.92); backdrop-filter:blur(10px); border-bottom:1px solid var(--line); }
+  .pd-bar-in { display:flex; align-items:center; gap:12px; height:56px; }
+  .pd-logo { font-family:"Fraunces", Georgia, serif; font-size:1.35rem; font-weight:600; color:var(--ink); text-decoration:none; }
+  .pd-logo span { color:var(--red); }
+  .pd-live { display:inline-flex; align-items:center; gap:6px; font-size:.72rem; font-weight:600; color:var(--green); background:#e6f3ea; padding:4px 10px; border-radius:999px; }
+  .pd-live i { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pdpulse 1.6s infinite; }
+  @keyframes pdpulse { 50% { opacity:.3; } }
+  .pd-nav { margin-left:auto; display:flex; align-items:center; gap:2px; }
+  .pd-link { font-size:.86rem; font-weight:500; color:var(--ink); text-decoration:none; padding:8px 11px; border-radius:10px; }
+  .pd-link:hover, .pd-icon:hover { background:#ebe8dd; }
+  .pd-icon { width:40px; height:40px; border:0; background:transparent; border-radius:11px; display:grid; place-items:center; color:var(--ink); cursor:pointer; }
+  .pd-icon svg { width:20px; height:20px; }
+  .pd-icon.off { color:#a9a79c; }
+
+  /* ----- layout: sidebar (desktop) / stacked (mobile) ----- */
+  .pd-layout { display:grid; grid-template-columns:minmax(0,1fr); gap:14px; padding:14px 0 80px; }
+  .pd-side { display:flex; flex-direction:column; gap:12px; }
+  @media (min-width:980px) {
+    .pd-layout { grid-template-columns:292px minmax(0,1fr); gap:24px; align-items:start; padding-top:20px; }
+    .pd-side { position:sticky; top:76px; }
+    .pd-filter-toggle { display:none !important; }
+    .pd-filter-body { display:flex !important; }
+  }
+
+  /* ----- earnings ----- */
+  .pd-earn { position:relative; overflow:hidden; border-radius:22px; padding:18px 18px 14px; color:#fff; background:radial-gradient(240px 160px at 100% 0%, rgba(198,51,46,.62), transparent 70%), radial-gradient(220px 160px at 0% 120%, rgba(31,95,168,.5), transparent 70%), #17181c; box-shadow:var(--shadow); }
+  .pd-earn > small { display:block; font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; opacity:.72; }
+  .pd-earn > b { display:block; font-family:"Fraunces", Georgia, serif; font-size:2.7rem; font-weight:600; line-height:1.05; margin:4px 0 2px; }
+  .pd-earn > span { font-size:.74rem; opacity:.7; }
+  .pd-earn-row { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:14px; padding-top:12px; border-top:1px solid rgba(255,255,255,.16); }
+  .pd-earn-row small { display:block; font-size:.62rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; opacity:.68; }
+  .pd-earn-row b { display:block; margin-top:2px; font-family:"Fraunces", Georgia, serif; font-size:1.2rem; font-weight:600; }
+
+  /* ----- search & filters ----- */
+  .pd-panel { display:flex; flex-direction:column; gap:10px; background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:12px; box-shadow:var(--shadow); }
+  .pd-search { position:relative; display:block; }
+  .pd-search svg { position:absolute; left:12px; top:50%; transform:translateY(-50%); width:17px; height:17px; color:var(--mute); pointer-events:none; }
+  .pd-search input { width:100%; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fcfbf7; border-radius:12px; padding:11px 12px 11px 37px; font-size:16px; outline:none; }
+  .pd-search input:focus { border-color:var(--ink); background:#fff; }
+  .pd-filter-toggle { align-self:flex-start; border:0; background:none; padding:2px 2px; font:inherit; font-size:.82rem; font-weight:600; color:var(--soft); cursor:pointer; }
+  .pd-filter-toggle::after { content:" ▾"; }
+  .pd-filter-toggle[aria-expanded="true"]::after { content:" ▴"; }
+  .pd-filter-body { display:none; flex-direction:column; gap:12px; }
+  .pd-filter-body.open { display:flex; }
+  .pd-frow { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .pd-frow .lbl { font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--mute); }
+  .pd-seg { display:inline-flex; gap:2px; padding:3px; border-radius:12px; background:#ebe8dd; }
+  .pd-seg button { border:0; background:transparent; padding:7px 12px; border-radius:9px; font-size:.8rem; font-weight:500; color:var(--soft); cursor:pointer; }
+  .pd-seg button.active { background:#fff; color:var(--ink); font-weight:600; box-shadow:0 1px 3px rgba(23,24,28,.16); }
+  .pd-select { max-width:190px; border:1.5px solid #ddd9ca; background:#fff; border-radius:11px; padding:8px 10px; font-size:.82rem; font-weight:500; color:var(--ink); }
+  .pd-switch { display:flex; align-items:center; gap:8px; width:100%; border:1.5px solid #cfd8d2; background:#fff; border-radius:12px; padding:8px 12px 8px 8px; font-size:.84rem; font-weight:600; color:var(--ink); cursor:pointer; }
+  .pd-switch .track { position:relative; width:34px; height:20px; border-radius:999px; background:#c9cfcb; transition:background .15s; flex:none; }
+  .pd-switch .track::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.25); transition:transform .15s; }
+  .pd-switch svg { width:15px; height:15px; color:#25d366; flex:none; }
+  .pd-switch .n { margin-left:auto; font-size:.7rem; padding:1px 8px; border-radius:999px; background:rgba(0,0,0,.07); font-weight:600; }
+  .pd-switch[aria-checked="true"] { background:#f1faf4; border-color:#9fd6b2; color:#14532d; }
+  .pd-switch[aria-checked="true"] .track { background:#25d366; }
+  .pd-switch[aria-checked="true"] .track::after { transform:translateX(14px); }
+  #clearAllBtn { align-self:flex-start; min-height:34px; font-size:.8rem; }
+
+  /* ----- tabs ----- */
+  .pd-tabbar { position:sticky; top:56px; z-index:20; padding:6px 0 10px; background:linear-gradient(#f4f2ea 78%, rgba(244,242,234,0)); }
+  .pd-tabs { display:flex; gap:2px; padding:4px; border-radius:15px; background:#ebe8dd; }
+  .pd-tab { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:7px; border:0; background:transparent; font:inherit; font-size:.9rem; font-weight:500; color:var(--soft); padding:10px 8px; border-radius:11px; cursor:pointer; }
+  .pd-tab .n { font-size:.72rem; font-weight:700; padding:1px 8px; border-radius:999px; background:rgba(0,0,0,.08); }
+  .pd-tab.active { background:#fff; color:var(--ink); font-weight:700; box-shadow:0 1px 4px rgba(23,24,28,.18); }
+  .pd-tab.active .n { background:var(--ink); color:#fff; }
+
+  /* ----- list ----- */
+  .pd-list { display:flex; flex-direction:column; gap:12px; }
+  .pd-group { display:flex; align-items:center; gap:8px; margin:8px 2px 0; font-size:.72rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--soft); }
   .pd-group:first-child { margin-top:0; }
-  .pd-group::after { content:""; flex:1; height:1px; background:#e3e0d4; }
+  .pd-group::after { content:""; flex:1; height:1px; background:var(--line); }
   .pd-group .n { font-size:.7rem; padding:1px 8px; border-radius:999px; background:#ebe8dd; letter-spacing:0; }
   .pd-group.paid { color:#1f5a37; } .pd-group.paid .n { background:#dff1e5; }
   .pd-group.unpaid { color:#8a5200; } .pd-group.unpaid .n { background:#fdf0d9; }
 
-  .pd-card { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"tk main price" "tk act act"; align-items:start; gap:8px 16px; border-radius:20px; }
-  .pd-card > .pd-token { grid-area:tk; align-self:center; }
-  .pd-card > .pd-main { grid-area:main; }
-  .pd-card > .pd-price { grid-area:price; }
-  .pd-card > .pd-actions { grid-area:act; justify-content:flex-start; }
-  .pd-card > .pd-body { grid-column:1 / -1; }
-  .pd-card.is-paid { border-left:4px solid #3f9a63; }
-  .pd-card.is-unpaid { border-left:4px solid #e0a210; }
+  .pd-empty { text-align:center; color:var(--soft); padding:46px 16px; background:#fff; border:1.5px dashed #d9d6c8; border-radius:var(--r); }
+  .pd-empty .ic { font-size:2rem; margin-bottom:6px; }
+  .pd-empty b { display:block; font-weight:600; color:var(--ink); }
+  .pd-empty span { display:block; margin-top:3px; font-size:.84rem; }
+  .pd-hidden-note { text-align:center; font-size:.82rem; color:#3c4a41; padding:10px; border-radius:12px; background:#f1faf4; border:1px dashed #9fd6b2; }
+  .pd-hidden-note button { border:0; background:none; font:inherit; font-weight:700; color:#128c4a; text-decoration:underline; cursor:pointer; padding:0 2px; }
 
-  .pd-price { min-width:210px; display:flex; flex-direction:column; gap:6px; align-items:stretch; padding:10px 12px; border-radius:14px; background:#faf9f4; border:1px solid #ebe8dd; }
-  .pd-price .exp { display:flex; justify-content:space-between; align-items:baseline; gap:10px; font-size:.74rem; color:#62625c; }
-  .pd-price .exp b { font-size:.95rem; color:#17181c; }
-  .pd-price .exp.muted b { color:#8a887d; font-weight:500; }
-  .pd-set { display:flex; align-items:center; gap:6px; }
-  .pd-set .cur { font-weight:600; color:#62625c; }
-  .pd-price-in { width:100%; min-width:0; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fff; border-radius:10px; padding:7px 9px; font-size:16px; font-weight:600; outline:none; }
-  .pd-price-in:focus { border-color:#17181c; }
-  .pd-price .st { font-size:.72rem; font-weight:600; }
-  .pd-price .st.set { color:#1f5a37; } .pd-price .st.est { color:#8a5200; } .pd-price .st.fixed { color:#16507f; }
-  .chip.priced { background:#e6f3ea; color:#1f5a37; }
-  .chip.partial { background:#fdf0d9; color:#8a5200; }
+  /* ----- token card ----- */
+  .pd-card { position:relative; display:flex; flex-direction:column; gap:12px; background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:14px 14px 12px 18px; box-shadow:var(--shadow); overflow:hidden; }
+  .pd-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--stripe, #d9d6c8); }
+  .pd-card.is-paid { --stripe:#3f9a63; } .pd-card.is-unpaid { --stripe:#e0a210; } .pd-card.nb { --stripe:#1f6fb0; } .pd-card.is-printed { --stripe:#a7a496; background:#fbfaf6; }
+  .pd-card.is-new { animation:pdnew 2.6s ease; }
+  @keyframes pdnew { 0% { box-shadow:0 0 0 0 rgba(198,51,46,.55); background:#fff4f3; } 60% { box-shadow:0 0 0 12px rgba(198,51,46,0); } 100% { background:#fff; } }
+  .pd-top { display:flex; align-items:flex-start; gap:12px; }
+  .pd-token { flex:none; min-width:76px; text-align:center; padding:9px 10px 8px; border-radius:14px; background:var(--ink); color:#fff; }
+  .pd-token small { display:block; font-size:.56rem; letter-spacing:.16em; text-transform:uppercase; opacity:.7; }
+  .pd-token b { display:block; font-family:"Fraunces", Georgia, serif; font-size:1.8rem; line-height:1.05; font-weight:600; letter-spacing:.02em; }
+  .pd-card.wa .pd-token { background:#128c4a; } .pd-card.nb .pd-token { background:var(--blue); } .pd-card.is-printed .pd-token { background:#77756c; }
+  .pd-info { min-width:0; flex:1; }
+  .pd-chips { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px; }
+  .pd-chips:empty { display:none; }
+  .chip { display:inline-flex; align-items:center; gap:5px; font-size:.68rem; font-weight:700; letter-spacing:.02em; padding:3px 9px; border-radius:999px; background:#eee; color:#444; }
+  .chip svg { width:12px; height:12px; }
+  .chip.wa { background:#25d366; color:#fff; } .chip.nb { background:#e3f0fb; color:#16507f; } .chip.glossy { background:#efe6fb; color:#5b34a0; }
+  .chip.topay { background:#fdf0d9; color:#8a5200; } .chip.printed { background:#e6f3ea; color:#1f5a37; }
+  .pd-files { font-size:.95rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pd-files.wa { display:flex; align-items:center; gap:6px; color:#14532d; white-space:normal; }
+  .pd-files.wa svg { width:16px; height:16px; color:#25d366; flex:none; }
+  .pd-files .more { color:var(--soft); font-weight:400; font-size:.84rem; }
+  .pd-meta { margin-top:3px; font-size:.78rem; color:var(--soft); }
+  .pd-amount { flex:none; text-align:right; }
+  .pd-amount b { display:block; font-family:"Fraunces", Georgia, serif; font-size:1.7rem; line-height:1; font-weight:600; }
+  .pd-pay { display:inline-block; margin-top:5px; font-size:.68rem; font-weight:700; padding:3px 9px; border-radius:999px; }
+  .pd-pay.paid { background:#dff1e5; color:#1f5a37; } .pd-pay.unpaid { background:#fdf0d9; color:#8a5200; } .pd-pay.partial { background:#fdf0d9; color:#8a5200; } .pd-pay.none { background:#eee; color:#666; }
+  .pd-amount small { display:block; margin-top:3px; font-size:.7rem; color:var(--mute); }
 
-  @media (max-width:760px) {
-    .pd-earn { grid-template-columns:1fr; }
-    .pd-card { grid-template-columns:auto minmax(0,1fr); grid-template-areas:"tk main" "price price" "act act"; }
-    .pd-price { min-width:0; }
-    .pd-card > .pd-actions .pd-btn { flex:1; }
+  .pd-steps { display:flex; align-items:center; list-style:none; margin:0; padding:0; font-size:.7rem; font-weight:700; color:var(--mute); }
+  .pd-steps li { display:flex; align-items:center; gap:6px; flex:1; white-space:nowrap; }
+  .pd-steps li:last-child { flex:none; }
+  .pd-steps li::before { content:""; flex:none; width:15px; height:15px; border-radius:50%; border:2px solid #cfcbbb; background:#fff; display:grid; place-items:center; font-size:.58rem; color:#fff; line-height:1; }
+  .pd-steps li:not(:last-child)::after { content:""; flex:1; height:2px; margin:0 8px; border-radius:2px; background:#e3e0d4; }
+  .pd-steps li.done { color:#1f5a37; }
+  .pd-steps li.done::before { content:"✓"; background:var(--green); border-color:var(--green); }
+  .pd-steps li.done:not(:last-child)::after { background:var(--green); }
+  .pd-steps li.cur { color:var(--ink); }
+  .pd-steps li.cur::before { border-color:var(--ink); box-shadow:0 0 0 3px rgba(23,24,28,.1); }
+
+  .pd-editor { padding:10px 12px; border-radius:14px; background:#faf9f4; border:1.5px solid #ebe8dd; }
+  .pd-editor label { display:block; margin-bottom:6px; font-size:.7rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--soft); }
+  .pd-editor-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+  .pd-editor .cur { font-weight:700; color:var(--soft); }
+  .pd-price-in { width:110px; box-sizing:border-box; border:1.5px solid #cfcbbb; background:#fff; border-radius:11px; padding:9px 11px; font-size:16px; font-weight:700; outline:none; }
+  .pd-price-in:focus { border-color:var(--ink); }
+
+  .pd-actions { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
+  .pd-actions.n3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
+  .pd-sub { display:flex; flex-wrap:wrap; gap:2px 16px; margin-top:-2px; }
+  .pd-tl { border:0; background:none; padding:6px 0; font:inherit; font-size:.8rem; font-weight:600; color:var(--soft); cursor:pointer; }
+  .pd-tl:hover { color:var(--ink); text-decoration:underline; }
+
+  .pd-body { display:flex; flex-direction:column; gap:10px; padding:12px; border-radius:14px; background:#faf9f4; }
+  .pd-spec { display:flex; flex-wrap:wrap; gap:6px 16px; font-size:.84rem; color:var(--soft); }
+  .pd-spec b { color:var(--ink); }
+  .pd-note { margin:0; font-size:.86rem; }
+  .pd-file { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border-radius:11px; background:#fff; border:1px solid #ebe8dd; font-size:.84rem; }
+  .pd-file span { min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  .pd-gone { font-size:.72rem; color:var(--mute); white-space:nowrap; }
+  .pd-body-actions { display:flex; flex-wrap:wrap; gap:8px; }
+
+  @media (max-width:560px) {
+    .pd-top { flex-wrap:wrap; }
+    .pd-info { flex-basis:calc(100% - 90px); }
+    .pd-amount { display:flex; align-items:baseline; gap:8px; flex-basis:100%; text-align:left; padding:8px 0 0 0; margin-top:-2px; border-top:1px dashed var(--line); }
+    .pd-amount b { font-size:1.45rem; } .pd-amount .pd-pay { margin-top:0; }
+    .pd-amount small { margin:0 0 0 auto; }
+    .pd-actions, .pd-actions.n3 { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .pd-link { display:none; }
+    .pd-earn > b { font-size:2.3rem; }
   }
-  @media (max-width:520px) { .pd-earn-grid { grid-template-columns:1fr 1fr; } .pd-earn-grid > div:last-child { grid-column:1 / -1; } .pd-earn-main b { font-size:2.1rem; } }
 
-  /* ===== v5: four actions per token ===== */
-  .pd-card > .pd-actions { display:flex; gap:8px; width:100%; }
-  .pd-card > .pd-actions .pd-btn { flex:1 1 0; min-width:0; justify-content:center; text-align:center; padding-left:6px; padding-right:6px; white-space:nowrap; }
-  .pd-btn.locked { opacity:.42; }
-  .pd-btn.done { opacity:1; cursor:default; background:#e6f3ea !important; color:#1f5a37 !important; border-color:#c9e4d1 !important; }
-  .pd-sub { display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:6px; }
-  .pd-link { border:0; background:none; padding:2px 0; font:inherit; font-size:.78rem; font-weight:600; color:#62625c; cursor:pointer; }
-  .pd-link:hover { color:#17181c; text-decoration:underline; }
-  .pd-price .exp.now b { font-size:1.05rem; }
-  .pd-gone { font-size:.72rem; color:#8a887d; }
-  .chip.printed { background:#e6f3ea; color:#1f5a37; }
-  @media (max-width:520px) { .pd-card > .pd-actions { flex-wrap:wrap; } .pd-card > .pd-actions .pd-btn { flex:1 1 calc(50% - 8px); } }
+  /* ----- modal (confirm + change password) & toast ----- */
+  .pd-modal { position:fixed; inset:0; z-index:80; background:rgba(23,24,28,.5); overflow-y:auto; padding:14px; }
+  .pd-modal-card { max-width:400px; margin:14vh auto 0; background:#fff; border-radius:22px; padding:22px; display:flex; flex-direction:column; gap:10px; box-shadow:0 24px 60px rgba(23,24,28,.3); animation:pdpop .18s ease; }
+  @keyframes pdpop { from { transform:translateY(8px) scale(.97); opacity:0; } to { transform:none; opacity:1; } }
+  .pd-modal-card h3 { margin:0 0 2px; font-family:"Fraunces", Georgia, serif; font-size:1.25rem; }
+  .pd-modal-card p { margin:0; font-size:.9rem; color:var(--soft); white-space:pre-line; }
+  .pd-modal-card .hint { margin:0; font-size:.84rem; min-height:1.1em; }
+  .pd-modal-card .row { display:flex; gap:8px; margin-top:6px; }
+  .pd-modal-card .row .pd-btn { flex:1; }
+  .pd-btn.danger-fill { background:#c6332e; border-color:#c6332e; color:#fff; }
+  .pd-toast { position:fixed; left:50%; bottom:22px; transform:translate(-50%, 30px); opacity:0; pointer-events:none; background:var(--ink); color:#fff; padding:11px 18px; border-radius:13px; font-size:.88rem; font-weight:500; transition:all .25s; z-index:90; max-width:90vw; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  .pd-toast.show { opacity:1; transform:translate(-50%, 0); }
+  @media (prefers-reduced-motion:reduce) { * { animation-duration:.01ms !important; transition:none !important; } }
 </style>
 </head>
 <body>
@@ -307,42 +316,64 @@
       </div>
     </div>
 
-    <section class="pd-earn" aria-label="Earnings">
-      <div class="pd-earn-main"><small>Total earned</small><b id="st-earn">₹0</b><span>Kept safe when you clear tokens</span></div>
-      <div class="pd-earn-grid">
-        <div class="today"><small>Earned today</small><b id="st-today">₹0</b></div>
-        <div class="due"><small>To collect</small><b id="st-due">₹0</b></div>
-        <div><small>Pending tokens</small><b id="st-pending">0</b></div>
-      </div>
-    </section>
+    <div class="pd-layout">
+      <aside class="pd-side">
+        <section class="pd-earn" aria-label="Earnings">
+          <small>Total earned</small>
+          <b id="st-earn">₹0</b>
+          <span>Kept safe when you clear tokens</span>
+          <div class="pd-earn-row">
+            <div><small>Today</small><b id="st-today">₹0</b></div>
+            <div><small>To collect</small><b id="st-due">₹0</b></div>
+            <div><small>Pending</small><b id="st-pending">0</b></div>
+          </div>
+        </section>
 
-    <div class="pd-toolbar">
-      <label class="pd-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" id="searchBox" placeholder="Search token, file or note  ( / )" autocomplete="off"></label>
-      <div class="pd-seg" id="payFilter"><button class="active" data-pay="any">Any</button><button data-pay="paid">Paid</button><button data-pay="unpaid">Unpaid</button></div>
-      <select class="pd-select" id="sortSel" aria-label="Sort"><option value="paid">Paid first, then newest</option><option value="new">Newest</option><option value="old">Oldest</option><option value="amt">Highest ₹</option></select>
-    </div>
+        <section class="pd-panel" aria-label="Search and filters">
+          <label class="pd-search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="search" id="searchBox" placeholder="Search token, file or note  ( / )" autocomplete="off"></label>
+          <button type="button" class="pd-filter-toggle" id="filtersBtn" aria-expanded="false" aria-controls="filtersBody">Filters &amp; sort</button>
+          <div class="pd-filter-body" id="filtersBody">
+            <div class="pd-frow"><span class="lbl">Payment</span>
+              <div class="pd-seg" id="payFilter"><button class="active" data-pay="any">Any</button><button data-pay="paid">Paid</button><button data-pay="unpaid">Unpaid</button></div>
+            </div>
+            <div class="pd-frow"><span class="lbl">Sort</span>
+              <select class="pd-select" id="sortSel" aria-label="Sort"><option value="paid">Paid first, then newest</option><option value="new">Newest</option><option value="old">Oldest</option><option value="amt">Highest ₹</option></select>
+            </div>
+            <button type="button" class="pd-switch" id="waToggle" role="switch" aria-checked="true" title="Show or hide WhatsApp requests">
+              <span class="track"></span><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+              <span id="waLabel">WhatsApp</span><span class="n" id="waCount">0</span>
+            </button>
+            <button type="button" class="pd-btn danger sm" id="clearAllBtn" onclick="clearAll()" style="display:none;" title="Removes the tokens only. Earnings are kept.">Clear tokens</button>
+          </div>
+        </section>
+      </aside>
 
-    <div class="pd-row2">
-      <div class="pd-tabs" role="tablist">
-        <button class="pd-tab active" data-filter="pending">Pending <span class="n" id="cnt-pending">0</span></button>
-        <button class="pd-tab" data-filter="printed">Printed <span class="n" id="cnt-printed">0</span></button>
-        <button class="pd-tab" data-filter="all">All <span class="n" id="cnt-all">0</span></button>
-      </div>
-      <div class="grp">
-        <button type="button" class="pd-switch" id="waToggle" role="switch" aria-checked="true" title="Show or hide WhatsApp requests">
-          <span class="track"></span>
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-          <span id="waLabel">WhatsApp</span><span class="n" id="waCount">0</span>
-        </button>
-        <button type="button" class="pd-btn danger sm" id="clearAllBtn" onclick="clearAll()" style="display:none;" title="Removes the tokens only. Earnings are kept.">Clear tokens</button>
-      </div>
-    </div>
-
-    <div class="pd-list" id="requestList">
-      <div class="pd-empty">Loading requests…</div>
+      <main class="pd-col">
+        <div class="pd-tabbar">
+          <div class="pd-tabs" role="tablist">
+            <button class="pd-tab active" data-filter="pending">Pending <span class="n" id="cnt-pending">0</span></button>
+            <button class="pd-tab" data-filter="printed">Printed <span class="n" id="cnt-printed">0</span></button>
+            <button class="pd-tab" data-filter="all">All <span class="n" id="cnt-all">0</span></button>
+          </div>
+        </div>
+        <div class="pd-list" id="requestList">
+          <div class="pd-empty"><div class="ic">⏳</div><b>Loading tokens…</b></div>
+        </div>
+      </main>
     </div>
   </div>
-  <div class="pd-toast" id="pdToast"></div>
+  <div class="pd-toast" id="pdToast" role="status" aria-live="polite"></div>
+</div>
+
+<div class="pd-modal" id="askModal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="askTitle">
+  <div class="pd-modal-card">
+    <h3 id="askTitle"></h3>
+    <p id="askBody"></p>
+    <div class="row">
+      <button type="button" class="pd-btn" id="askNo">Cancel</button>
+      <button type="button" class="pd-btn primary" id="askYes">Confirm</button>
+    </div>
+  </div>
 </div>
 
 <iframe id="print-frame"></iframe>
@@ -527,6 +558,10 @@ document.querySelectorAll('#payFilter button').forEach(b => b.addEventListener('
   document.querySelectorAll('#payFilter button').forEach(x => x.classList.toggle('active', x === b));
   payFilter = b.dataset.pay; render();
 }));
+document.getElementById('filtersBtn').addEventListener('click', e => {
+  const open = document.getElementById('filtersBody').classList.toggle('open');
+  e.currentTarget.setAttribute('aria-expanded', String(open));
+});
 document.getElementById('sortSel').addEventListener('change', e => { sortMode = e.target.value; render(); });
 document.getElementById('soundToggle').addEventListener('click', () => {
   soundOn = !soundOn;
@@ -672,6 +707,32 @@ async function bankOrWarn() {
   return ok;
 }
 
+// ---- in-page confirm dialog (replaces the browser's confirm box) ----
+function ask(o) {
+  return new Promise(resolve => {
+    const m = document.getElementById('askModal');
+    const yes = document.getElementById('askYes'), no = document.getElementById('askNo');
+    document.getElementById('askTitle').textContent = o.title || 'Are you sure?';
+    document.getElementById('askBody').textContent = o.body || '';
+    yes.textContent = o.ok || 'Confirm';
+    yes.className = 'pd-btn ' + (o.danger ? 'danger-fill' : 'primary');
+    m.style.display = 'block';
+    const done = v => {
+      m.style.display = 'none';
+      yes.onclick = no.onclick = m.onclick = null;
+      document.removeEventListener('keydown', onKey);
+      resolve(v);
+    };
+    const onKey = e => { if (e.key === 'Escape') done(false); };
+    document.addEventListener('keydown', onKey);
+    yes.onclick = () => done(true);
+    no.onclick = () => done(false);
+    m.onclick = e => { if (e.target === m) done(false); };
+    yes.focus();
+  });
+}
+const freshIds = new Set();   // tokens that just arrived (glow once)
+
 // ---- dashboard state ----
 let allRequests = [];
 let currentFilter = 'pending';
@@ -740,6 +801,7 @@ function notifyNew(list) {
     const fresh = list.filter(r => !knownIds.has(r.id) && (r.status || 'pending') === 'pending');
     if (fresh.length) {
       if (soundOn) beep();
+      fresh.forEach(r => freshIds.add(r.id));
       toast('New request · token ' + fresh.map(r => r.token || '—').join(', '));
     }
   }
@@ -751,7 +813,7 @@ window.markPaid = async function (id) {
   if (!req) return;
   if (!(Number(req.amount) > 0)) { toast('Set the price first, then mark it as paid'); return; }
   const bal = Math.max(0, (Number(req.amount) || 0) - paidOf(req));
-  if (!confirm('Token ' + (req.token || '') + ': received ₹' + bal + ' at the counter?')) return;
+  if (!(await ask({ title: 'Payment received?', body: 'Token ' + (req.token || '') + ': ₹' + bal + ' received at the counter.\nIt will be added to your earnings.', ok: 'Yes, mark as paid' }))) return;
   try {
     await db.ref('printRequests/' + id).update({
       paymentStatus: 'paid', paidAmount: Number(req.amount) || 0, paymentMethod: 'counter',
@@ -769,6 +831,7 @@ window.startPriceEdit = function (id) {
   const inp = document.getElementById('pr-' + id);
   if (inp) { inp.focus(); inp.select(); }
 };
+window.useExpected = function (id, v) { const i = document.getElementById('pr-' + id); if (i) { i.value = v; savePrice(id); } };
 window.cancelPriceEdit = function (id) { editingPrice.delete(id); renderLater = false; render(); };
 
 // ---- the desk sets the price for a token. It is written to the request, so
@@ -781,7 +844,7 @@ window.savePrice = async function (id) {
   const n = Math.round(Number(inp.value));
   if (inp.value === '' || !isFinite(n) || n < 0) { toast('Enter a valid price'); inp.focus(); return; }
   const paid = paidOf(req);
-  if (paid > n && !confirm('Token ' + (req.token || '') + ' has already paid ₹' + paid + ', which is more than ₹' + n + '. Set it anyway?')) return;
+  if (paid > n && !(await ask({ title: 'Price is lower than what was paid', body: 'Token ' + (req.token || '') + ' has already paid ₹' + paid + ', which is more than ₹' + n + '.', ok: 'Set it anyway', danger: true }))) return;
   try {
     await db.ref('printRequests/' + id).update({
       amount: n, priceSet: true, priceSetAt: firebase.database.ServerValue.TIMESTAMP,
@@ -889,9 +952,9 @@ function startDashboard() {
       toast('Mark token ' + (req.token || '') + ' as paid first. It can only be completed once paid.');
       return;
     }
-    if (!confirm(isStoreOrder
-      ? `Complete store order (token ${req.token || ''}) — handed over?\n\nIt moves to the Printed tab.`
-      : `Complete token ${req.token || ''} — printed?\n\nIt moves to the Printed tab and its uploaded files are deleted.`)) {
+    if (!(await ask(isStoreOrder
+      ? { title: 'Complete this order?', body: 'Store order, token ' + (req.token || '') + ' — handed over.\nIt moves to the Printed tab.', ok: 'Complete' }
+      : { title: 'Complete this token?', body: 'Token ' + (req.token || '') + ' — printed.\nIt moves to the Printed tab and its uploaded files are deleted.', ok: 'Complete' }))) {
       return;
     }
 
@@ -923,7 +986,7 @@ function startDashboard() {
     const all = allRequests.slice();
     if (!all.length) return;
 
-    if (!confirm(`Clear all ${all.length} token${all.length === 1 ? '' : 's'}?\n\nThis deletes every token (pending, printed and WhatsApp) and their files. Your earnings are kept. This cannot be undone.`)) {
+    if (!(await ask({ title: 'Clear all ' + all.length + ' token' + (all.length === 1 ? '' : 's') + '?', body: 'This deletes every token (pending, printed and WhatsApp) and their files.\nYour earnings are kept. This cannot be undone.', ok: 'Clear tokens', danger: true }))) {
       return;
     }
     if (!(await bankOrWarn())) return;
@@ -971,7 +1034,7 @@ function startDashboard() {
     if (!req) return;
 
     const wasPaid = paidOf(req);
-    if (!confirm(`Cancel token ${req.token || ''}?\n\nIt is removed from the dashboard together with its files and adds nothing to your earnings.` + (wasPaid > 0 ? `\n\n₹${wasPaid} was paid on this token. It will be taken out of your earnings, so refund the customer yourself.` : ''))) {
+    if (!(await ask({ title: 'Cancel token ' + (req.token || '') + '?', body: 'It is removed from the dashboard with its files and adds nothing to your earnings.' + (wasPaid > 0 ? '\n\n₹' + wasPaid + ' was paid on this token. It will be taken out of your earnings, so refund the customer yourself.' : ''), ok: 'Cancel token', danger: true }))) {
       return;
     }
 
@@ -1039,7 +1102,12 @@ function render() {
     : '';
 
   if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="pd-empty">No ${currentFilter === 'all' ? '' : currentFilter + ' '}requests right now.</div>${hiddenNote}`;
+    const q = searchQ ? escapeHtml(searchQ) : '';
+    const [ic, t, sub] = q ? ['🔍', 'Nothing matches “' + q + '”', 'Try a token number or part of a file name.']
+      : currentFilter === 'printed' ? ['🧾', 'No completed tokens yet', 'Tokens you mark as Completed show up here.']
+      : currentFilter === 'pending' ? ['✨', 'All caught up', 'New uploads appear here instantly, with a chime.']
+      : ['📭', 'No tokens right now', 'They will show up here as customers upload.'];
+    listEl.innerHTML = `<div class="pd-empty"><div class="ic">${ic}</div><b>${t}</b><span>${sub}</span></div>${hiddenNote}`;
     return;
   }
 
@@ -1052,7 +1120,9 @@ function render() {
     return (isPaid(b) ? 1 : 0) - (isPaid(a) ? 1 : 0) || byNew(a, b);
   });
 
-  if (sortMode === 'paid') {
+  if (currentFilter === 'printed') {
+    listEl.innerHTML = filtered.slice().sort((a, b) => (b.printedAt || b.createdAt || 0) - (a.printedAt || a.createdAt || 0)).map(renderCard).join('') + hiddenNote;
+  } else if (sortMode === 'paid') {
     const paidList = sorted.filter(isPaid), openList = sorted.filter(r => !isPaid(r));
     listEl.innerHTML =
       (paidList.length ? `<h3 class="pd-group paid">Paid <span class="n">${paidList.length}</span></h3>` + paidList.map(renderCard).join('') : '') +
@@ -1071,6 +1141,7 @@ function printTypeLabel(t) {
 
 function renderCard(r) {
   const status = r.status || 'pending';
+  const printed = status === 'printed';
   const files = r.files || [];
   const isWA = r.source === 'whatsapp';
   const paper = r.paper && Number(r.paper.qty) > 0 ? r.paper : null;
@@ -1088,15 +1159,21 @@ function renderCard(r) {
   const partial = !paid && paidSoFar > 0;
   const priceSet = !!r.priceSet;
   const expected = r.estimatedAmount != null ? Number(r.estimatedAmount) || 0 : (priceSet ? null : amt);
+  const editing = editingPrice.has(r.id) && !printed && !isNB;
+  const isNew = freshIds.delete(r.id);
+
+  // what the desk should do next: highlighted button + stepper
+  const next = printed ? '' : (amt <= 0 && !isNB) ? 'price' : !paid ? 'paid' : 'done';
+  const stepDone = [isNB || priceSet || printed, paid, printed];
+  const curStep = stepDone.indexOf(false);
+  const steps = ['Price', 'Paid', 'Done'].map((t, i) => `<li class="${stepDone[i] ? 'done' : i === curStep ? 'cur' : ''}">${t}</li>`).join('');
 
   const chips = [
     isWA ? `<span class="chip wa">${WA_ICON}WhatsApp</span>` : '',
     isNB ? `<span class="chip nb">${paperOnly ? '📄 A4 paper' : '🛍 Store'}</span>` : '',
     (isNB && (r.stockShort || []).length) ? '<span class="chip topay">⚠ Check stock</span>' : '',
-    (!isWA || amt > 0) ? (paid ? '<span class="chip paid">Paid</span>' : partial ? `<span class="chip partial">₹${paidSoFar} paid · ₹${balance} left</span>` : '<span class="chip topay">To pay</span>') : '',
-    (!isNB && priceSet) ? '<span class="chip priced">Price set</span>' : '',
     hasPhotoPaper ? '<span class="chip glossy">Glossy</span>' : '',
-    status === 'printed' ? `<span class="chip printed">✓ Printed${r.printedAt ? ' · ' + timeAgo(r.printedAt) : ''}</span>` : '',
+    printed ? `<span class="chip printed">✓ Printed${r.printedAt ? ' · ' + timeAgo(r.printedAt) : ''}</span>` : '',
   ].join('');
 
   const shown = files.slice(0, 2).map(f => escapeHtml(f.name)).join(', ');
@@ -1110,11 +1187,44 @@ function renderCard(r) {
     : `<div class="pd-files" title="${escapeAttr(files.map(f => f.name).join(', '))}">${shown}${more}${paperTag}</div>`;
 
   const when = `<span title="${escapeAttr(formatDateTime(r.createdAt).replace('<br>', ' · '))}">${timeAgo(r.createdAt)}</span>`;
-  const metaLine = isNB
-    ? `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${itemCount} item${itemCount === 1 ? '' : 's'} · ${when}</div>`
-    : isWA
-    ? `<div class="pd-meta">${(r.amount || 0) > 0 ? '<b>₹' + r.amount + '</b> ' + (paid ? 'paid' : 'to pay') + ' · ' : 'Amount not set · '}${when}</div>`
-    : `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${files.length} file${files.length === 1 ? '' : 's'} · ${when}</div>`;
+  const metaLine = `<div class="pd-meta">${isNB ? itemCount + ' item' + (itemCount === 1 ? '' : 's') : isWA ? 'WhatsApp' : files.length + ' file' + (files.length === 1 ? '' : 's')} · ${when}</div>`;
+
+  // amount + payment state, top right
+  const payPill = (isWA && amt <= 0) ? '<span class="pd-pay none">No price</span>'
+    : paid ? '<span class="pd-pay paid">✓ Paid</span>'
+    : partial ? `<span class="pd-pay partial">₹${paidSoFar} paid · ₹${balance} left</span>`
+    : '<span class="pd-pay unpaid">To pay</span>';
+  const amtNote = isNB ? 'Store price'
+    : priceSet ? (expected > 0 && expected !== amt ? 'Expected ₹' + expected : 'Price confirmed')
+    : amt > 0 ? 'Estimate' : 'Needs a price';
+  const amountHtml = `<div class="pd-amount"><b>${amt > 0 ? '₹' + amt : '—'}</b>${payPill}<small>${amtNote}</small></div>`;
+
+  const editorHtml = editing ? `
+      <div class="pd-editor">
+        <label for="pr-${r.id}">Customer pays</label>
+        <div class="pd-editor-row">
+          <span class="cur">₹</span>
+          <input class="pd-price-in" id="pr-${r.id}" type="number" inputmode="numeric" min="0" step="1" placeholder="Price" value="${amt > 0 ? amt : ''}" onkeydown="if(event.key==='Enter'){savePrice('${r.id}')}else if(event.key==='Escape'){cancelPriceEdit('${r.id}')}">
+          <button type="button" class="pd-btn sm primary" onclick="savePrice('${r.id}')">Save price</button>
+          ${expected > 0 && expected !== amt ? `<button type="button" class="pd-btn sm" onclick="useExpected('${r.id}', ${expected})">Use ₹${expected}</button>` : ''}
+          <button type="button" class="pd-btn sm" onclick="cancelPriceEdit('${r.id}')" aria-label="Close price editor">✕</button>
+        </div>
+      </div>` : '';
+
+  // the four actions
+  const actionsHtml = printed ? '' : `
+      <div class="pd-actions${isNB ? ' n3' : ''}">
+        ${isNB ? '' : `<button type="button" class="pd-btn${next === 'price' ? ' next' : ''}" onclick="startPriceEdit('${r.id}')">${priceSet ? 'Change price' : 'Set price'}</button>`}
+        ${paid ? '<button type="button" class="pd-btn ok done" disabled>✓ Paid</button>' : `<button type="button" class="pd-btn ok${next === 'paid' ? ' next' : ''}" onclick="markPaid('${r.id}')">Mark as paid</button>`}
+        <button type="button" class="pd-btn${next === 'done' ? ' next' : ''}${paid ? '' : ' locked'}" onclick="completeRequest('${r.id}')" title="${paid ? 'Mark as printed / handed over' : 'Mark as paid first'}">Completed</button>
+        <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
+      </div>`;
+  const subHtml = `
+      <div class="pd-sub">
+        ${!printed && !isNB ? `<button type="button" class="pd-tl" onclick="mergeAndPrint('${r.id}')">🖨 Print</button>` : ''}
+        ${!printed && !isNB && r.tokenHash ? `<button type="button" class="pd-tl" onclick="copyTokenLink('${r.id}')" title="Copy the customer's private token link">🔗 Copy link</button>` : ''}
+        <button type="button" class="pd-tl" onclick="toggleDetails('${r.id}')" aria-expanded="${expanded}">${expanded ? 'Hide details ▴' : 'Details ▾'}</button>
+      </div>`;
 
   const filesHtml = files.map((f) => {
     const printable = !f.removed && isPrintable(f);
@@ -1132,54 +1242,30 @@ function renderCard(r) {
   const bodyHtml = expanded ? `
       <div class="pd-body">
         <div class="pd-spec">
-          ${isNB ? `<span><b>${itemCount}</b> item${itemCount === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}${(r.stockShort || []).map(x => `<span>⚠ ${escapeHtml(x.name)}: ordered ${x.wanted}, only ${x.had} were in stock</span>`).join('')}`
+          ${isNB ? `<span><b>${itemCount}</b> item${itemCount === 1 ? '' : 's'}</span><span><b>₹${amt}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}${(r.stockShort || []).map(x => `<span>⚠ ${escapeHtml(x.name)}: ordered ${x.wanted}, only ${x.had} were in stock</span>`).join('')}`
           : isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
-                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>${paper ? `<span><b>${Number(paper.qty)}</b> × A4 paper (₹${Number(paper.total) || 0})</span>` : ''}<span><b>₹${r.amount || 0}</b> ${priceSet ? 'final price' : 'estimated'}</span>`}
+                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>${paper ? `<span><b>${Number(paper.qty)}</b> × A4 paper (₹${Number(paper.total) || 0})</span>` : ''}<span><b>₹${amt}</b> ${priceSet ? 'final price' : 'estimated'}</span>`}
         </div>
         ${r.notes && !isWA ? `<p class="pd-note">Note: ${escapeHtml(r.notes)}</p>` : ''}
         ${isNB ? items.map(i => `<div class="pd-file"><span>${Number(i.qty) || 0} × ${escapeHtml(i.name)} — ₹${i.total != null ? i.total : (Number(i.qty) || 0) * (Number(i.price) || 0)}</span></div>`).join('') : filesHtml}
-        <div class="pd-body-actions">
-          ${pdfCount > 0 ? `<button type="button" class="pd-btn sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button>` : ''}
-        </div>
+        ${pdfCount > 0 ? `<div class="pd-body-actions"><button type="button" class="pd-btn sm" onclick="mergeAndPrint('${r.id}')">Merge &amp; print all (${pdfCount} PDF${pdfCount === 1 ? '' : 's'})</button></div>` : ''}
       </div>` : '';
 
-  const editing = editingPrice.has(r.id) && status !== 'printed' && !isNB;
-  const priceHtml = isNB
-    ? `<div class="pd-price"><div class="exp"><span>Order total</span><b>₹${amt}</b></div><div class="st fixed">${paid ? '✓ Paid online' : 'Fixed store price'}</div></div>`
-    : `<div class="pd-price">
-         <div class="exp ${expected == null || expected <= 0 ? 'muted' : ''}"><span>Expected</span><b>${expected != null && expected > 0 ? '₹' + expected : '—'}</b></div>
-         ${editing
-           ? `<div class="pd-set"><span class="cur">₹</span><input class="pd-price-in" id="pr-${r.id}" type="number" inputmode="numeric" min="0" step="1" placeholder="Price" value="${amt > 0 ? amt : ''}" onkeydown="if(event.key==='Enter'){savePrice('${r.id}')}else if(event.key==='Escape'){cancelPriceEdit('${r.id}')}"><button type="button" class="pd-btn sm primary" onclick="savePrice('${r.id}')">Save</button><button type="button" class="pd-btn sm" onclick="cancelPriceEdit('${r.id}')" aria-label="Cancel editing">✕</button></div>`
-           : `<div class="exp now"><span>${priceSet ? 'Your price' : 'Customer sees'}</span><b>${amt > 0 ? '₹' + amt : '—'}</b></div>`}
-         <div class="st ${priceSet ? 'set' : 'est'}">${priceSet ? '✓ Customer pays ₹' + amt : amt > 0 ? 'Estimate — not confirmed yet' : 'Customer is waiting for a price'}</div>
-       </div>`;
-
-  // the four actions on every pending token
-  const actionsHtml = status === 'printed' ? '' : `
-      <div class="pd-actions">
-        ${isNB ? '' : `<button type="button" class="pd-btn" onclick="startPriceEdit('${r.id}')">${priceSet ? 'Change price' : 'Set price'}</button>`}
-        ${paid ? '<button type="button" class="pd-btn ok done" disabled>✓ Paid</button>' : `<button type="button" class="pd-btn ok" onclick="markPaid('${r.id}')">Mark as paid</button>`}
-        <button type="button" class="pd-btn primary${paid ? '' : ' locked'}" onclick="completeRequest('${r.id}')" title="${paid ? 'Mark as printed / handed over' : 'Mark as paid first'}">Completed</button>
-        <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
-      </div>`;
-  const subHtml = `
-        <div class="pd-sub">
-          ${status !== 'printed' && !isNB ? `<button type="button" class="pd-link" onclick="mergeAndPrint('${r.id}')">🖨 Print</button>` : ''}
-          ${status !== 'printed' && !isNB && r.tokenHash ? `<button type="button" class="pd-link" onclick="copyTokenLink('${r.id}')" title="Copy the customer's private token link">🔗 Copy link</button>` : ''}
-          <button type="button" class="pd-link" onclick="toggleDetails('${r.id}')">${expanded ? 'Hide details' : 'Details'}</button>
-        </div>`;
-
   return `
-    <article class="pd-card ${paid ? 'is-paid' : 'is-unpaid'}${isWA ? ' wa' : isNB ? ' nb' : ''}" id="card-${r.id}">
-      <div class="pd-token"><small>Token</small><b>${escapeHtml(String(r.token || '—'))}</b></div>
-      <div class="pd-main">
-        <div class="pd-chips">${chips}</div>
-        ${filesLine}
-        ${metaLine}
-        ${subHtml}
+    <article class="pd-card ${printed ? 'is-printed' : paid ? 'is-paid' : 'is-unpaid'}${isWA ? ' wa' : isNB ? ' nb' : ''}${isNew ? ' is-new' : ''}" id="card-${r.id}">
+      <div class="pd-top">
+        <div class="pd-token"><small>Token</small><b>${escapeHtml(String(r.token || '—'))}</b></div>
+        <div class="pd-info">
+          <div class="pd-chips">${chips}</div>
+          ${filesLine}
+          ${metaLine}
+        </div>
+        ${amountHtml}
       </div>
-      ${priceHtml}
+      ${printed ? '' : `<ol class="pd-steps" aria-label="Progress">${steps}</ol>`}
+      ${editorHtml}
       ${actionsHtml}
+      ${subHtml}
       ${bodyHtml}
     </article>`;
 }
