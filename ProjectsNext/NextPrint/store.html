@@ -26,7 +26,11 @@
   .lead { margin:0 0 20px; color:var(--mute); }
 
   .list { list-style:none; margin:0; padding:0; background:var(--paper); border:1px solid var(--rule); border-radius:18px; }
-  .item { display:flex; align-items:center; gap:14px; padding:14px 16px; }
+  .cat { margin:22px 2px 10px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; letter-spacing:-.01em; }
+  .cat:first-child { margin-top:0; }
+  .cat + .list { margin-bottom:0; }
+  .newtag { display:inline-block; vertical-align:middle; margin-left:6px; font-family:"Instrument Sans",sans-serif; font-weight:600; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:var(--m); padding:2px 7px; border-radius:999px; }
+  .item { align-items:center; gap:14px; padding:14px 16px; }
   .item + .item { border-top:1px solid var(--rule); }
   .cover { flex:none; width:52px; height:66px; border-radius:4px 8px 8px 4px; position:relative; box-shadow:inset 5px 0 0 rgba(0,0,0,.18), 0 6px 12px -6px rgba(22,22,26,.5); }
   .cover::after { content:""; position:absolute; left:14px; right:8px; top:14px; height:14px; border-radius:3px; background:rgba(255,255,255,.85); }
@@ -163,7 +167,8 @@
   <h1>Store</h1>
   <p class="lead">Pick what you need.</p>
 
-  <ul class="list" id="list"><li class="item"><div class="info"><span>Loading…</span></div></li></ul>
+  <div id="list"><ul class="list"><li class="item"><div class="info"><span>Loading…</span></div></li></ul></div>
+
 
   <section class="slip" id="slip" aria-live="polite"></section>
 </div>
@@ -212,6 +217,8 @@ function normalize(id, v) {
     id: id,
     name: String(v.name || 'Untitled'),
     note: String(v.note || ''),
+    category: String(v.category || '').trim() || 'Other',
+    isNew: v.isNew === true,
     mrp: Number(v.mrp) || 0,
     price: Number(v.price) || 0,
     stock: Math.max(0, Math.floor(Number(v.stock) || 0)),
@@ -228,7 +235,7 @@ function itemHtml(p) {
   var save = p.mrp > p.price ? ' <s>₹' + p.mrp + '</s> <em>Save ₹' + (p.mrp - p.price) + '</em>' : '';
   return '<li class="item' + (out ? ' out' : '') + '" data-id="' + esc(p.id) + '">' +
     '<span class="cover" style="background:' + coverColor(p.name) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="' + esc(p.name) + '" onerror="this.remove()">' : '') + '</span>' +
-    '<div class="info"><b>' + esc(p.name) + '</b>' + (p.note ? '<span>' + esc(p.note) + '</span>' : '') +
+    '<div class="info"><b>' + esc(p.name) + (p.isNew ? '<span class="newtag">New</span>' : '') + '</b>' + (p.note ? '<span>' + esc(p.note) + '</span>' : '') +
     '<div class="price">₹' + p.price + '' + save + '</div>' + stk +
     '<span class="sub" id="s-' + esc(p.id) + '">' + subText(p, q) + '</span></div>' +
     '<div class="qty"><button type="button" data-d="-1" aria-label="Remove one"' + (q <= 0 ? ' disabled' : '') + '>−</button>' +
@@ -237,12 +244,32 @@ function itemHtml(p) {
 }
 function subText(p, q) { return q ? q + ' × ₹' + p.price + ' = ₹' + q * p.price : ''; }
 
+function catCmp(x, y) {
+  if (x === y) return 0;
+  if (x === 'Other') return 1;
+  if (y === 'Other') return -1;
+  return x.toLowerCase().localeCompare(y.toLowerCase());
+}
+// inside a category: in-stock first (new arrivals, then price low to high),
+// out-of-stock products at the bottom
+function prodCmp(a, b) {
+  return ((a.stock <= 0 ? 1 : 0) - (b.stock <= 0 ? 1 : 0)) ||
+    ((a.isNew ? 0 : 1) - (b.isNew ? 0 : 1)) ||
+    (a.price - b.price) ||
+    a.name.localeCompare(b.name);
+}
+function groupedHtml() {
+  var groups = {};
+  products.forEach(function (p) { (groups[p.category] = groups[p.category] || []).push(p); });
+  return Object.keys(groups).sort(catCmp).map(function (c) {
+    return '<h2 class="cat">' + esc(c) + '</h2><ul class="list">' + groups[c].sort(prodCmp).map(itemHtml).join('') + '</ul>';
+  }).join('');
+}
+function listMsg(text) { list.innerHTML = '<ul class="list"><li class="empty">' + text + '</li></ul>'; }
+
 function render() {
-  if (!products.length) {
-    list.innerHTML = '<li class="empty">No items available right now. Please check back soon.</li>';
-  } else {
-    list.innerHTML = products.map(itemHtml).join('');
-  }
+  if (!products.length) listMsg('No items available right now. Please check back soon.');
+  else list.innerHTML = groupedHtml();
   update();
 }
 
@@ -304,10 +331,10 @@ if (db) {
     sanitizeCart();
     render();
   }, function (err) {
-    list.innerHTML = '<li class="empty">Could not load the store (' + esc(err && err.message || err) + ').</li>';
+    listMsg('Could not load the store (' + esc(err && err.message || err) + ').');
   });
 } else {
-  list.innerHTML = '<li class="empty">Could not connect to the store right now.</li>';
+  listMsg('Could not connect to the store right now.');
 }
 
 function resetCart() { qty = {}; render(); }

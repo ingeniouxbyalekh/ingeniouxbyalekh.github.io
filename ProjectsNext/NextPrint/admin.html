@@ -255,6 +255,22 @@
   .p-actions .chip-btn:disabled { opacity:.45; cursor:default; }
   .p-msg { font-size:.78rem; min-height:1em; color:var(--ink-soft); }
   .p-msg.ok { color:var(--ok); } .p-msg.err { color:var(--red); }
+  .pcard select { display:block; width:100%; font:inherit; font-size:.9rem; text-transform:none; letter-spacing:0; color:var(--ink); padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-top:3px; }
+  .cat-add { display:flex; gap:8px; }
+  .cat-add input { flex:1; min-width:0; font:inherit; font-size:.9rem; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; }
+  .cat-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .cat-chip { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 6px 5px 14px; font-size:.88rem; }
+  .cat-chip small { color:var(--ink-soft); }
+  .cat-chip button { width:24px; height:24px; border:none; border-radius:50%; background:var(--paper-dim); color:var(--red); cursor:pointer; font-size:.8rem; line-height:1; }
+  .cat-chip button:hover { background:#fbe3e1; }
+  #catMsg { font-size:.8rem; color:var(--red); min-height:1em; margin-top:8px; }
+  .p-row2 { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:8px; }
+  .p-row2 .vis { padding-bottom:10px; white-space:nowrap; }
+  .cat-head { display:flex; align-items:baseline; gap:8px; margin:20px 0 10px; font-family:"Fraunces",Georgia,serif; font-size:1.05rem; font-weight:600; }
+  .cat-head small { font-family:inherit; font-size:.8rem; font-weight:400; color:var(--ink-soft); }
+  .oos-zone { margin-top:26px; padding:4px 14px 2px; border:1.5px dashed var(--red); border-radius:14px; background:#fdf3f2; }
+  .oos-zone > .cat-head { color:var(--red); }
+  .oos-zone .cat-head.sub { font-size:.9rem; margin-top:14px; color:var(--ink-soft); }
   @media (max-width:820px){ .pcard { grid-template-columns:1fr; } .p-img { display:flex; gap:12px; align-items:flex-start; } .p-img .chip-btn { width:auto; } }
 </style>
 </head>
@@ -398,17 +414,22 @@
     <section class="panel" id="panel-stock">
       <div class="info-banner" id="stError"></div>
       <div class="grid g-stats">
-        <div class="card stat accent"><div class="lbl">Products</div><div class="val" id="stProducts">–</div><div class="note" id="stProductsN">in the store</div></div>
-        <div class="card stat"><div class="lbl">Units in stock</div><div class="val" id="stUnits">–</div><div class="note">across visible products</div></div>
-        <div class="card stat"><div class="lbl">Low / out of stock</div><div class="val" id="stLow">–</div><div class="note" id="stLowN">needs restocking</div></div>
-        <div class="card stat"><div class="lbl">Stock value</div><div class="val" id="stValue">–</div><div class="note">at selling price</div></div>
+        <div class="card stat accent"><div class="lbl">Products</div><div class="val" id="stProducts">–</div><div class="note" id="stProductsN"></div></div>
+        <div class="card stat"><div class="lbl">Units in stock</div><div class="val" id="stUnits">–</div></div>
+        <div class="card stat"><div class="lbl">Low / out of stock</div><div class="val" id="stLow">–</div></div>
+        <div class="card stat"><div class="lbl">Stock value</div><div class="val" id="stValue">–</div></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="slots-head"><h3>Categories <small id="catCount"></small></h3></div>
+        <div class="cat-add"><input type="text" id="catName" maxlength="40" aria-label="New category name"><button type="button" class="chip-btn" id="catAdd">＋ Add category</button></div>
+        <div id="catMsg"></div>
+        <div class="cat-chips" id="catList"></div>
       </div>
       <div class="card">
         <div class="slots-head">
           <h3>Products <small id="stCount"></small></h3>
           <div class="slots-tools"><button type="button" class="chip-btn" id="stAdd">＋ Add product</button></div>
         </div>
-        <p class="slots-help" style="color:var(--ink-soft)">Shown live on the store page. Stock − / + and the stock box apply instantly; other fields apply when you press Save. Stock drops automatically when a customer pays.</p>
         <div id="stDrafts"></div>
         <div id="stList"><div class="empty">Loading…</div></div>
       </div>
@@ -496,9 +517,9 @@ const stCards = {};                 // product key -> card element
 let stData = {};                    // product key -> data (live)
 let stSeeded = false;
 const ST_DEFAULTS = [
-  { name: 'Quick Work Ruled Notebook', note: '21 × 29.7 cm (A4) · Ruled · 140 pages', mrp: 80, price: 60, stock: 20, img: 'notebook1.jpg' },
-  { name: 'Cube Works Spiral Notebook', note: '14.7 × 20.5 cm · Spiral, ruled · 160 pages', mrp: 160, price: 60, stock: 20, img: 'notebook3.jpg' },
-  { name: 'Cube Works 5 Subject Notebook Spiral', note: '14.7 × 20.5 cm · Single ruled · 300 pages', mrp: 300, price: 100, stock: 20, img: 'notebook2.jpg' }
+  { category: 'Notebooks', isNew: false, name: 'Quick Work Ruled Notebook', note: '21 × 29.7 cm (A4) · Ruled · 140 pages', mrp: 80, price: 60, stock: 20, img: 'notebook1.jpg' },
+  { category: 'Notebooks', isNew: false, name: 'Cube Works Spiral Notebook', note: '14.7 × 20.5 cm · Spiral, ruled · 160 pages', mrp: 160, price: 60, stock: 20, img: 'notebook3.jpg' },
+  { category: 'Notebooks', isNew: false, name: 'Cube Works 5 Subject Notebook Spiral', note: '14.7 × 20.5 cm · Single ruled · 300 pages', mrp: 300, price: 100, stock: 20, img: 'notebook2.jpg' }
 ];
 
 function stShowError(err) {
@@ -521,14 +542,18 @@ function stCardHtml() {
       <input type="file" class="p-file" accept="image/*" hidden>
     </div>
     <div class="p-fields">
-      <label>Name<input type="text" class="f-name" maxlength="80" placeholder="e.g. A4 Ruled Notebook"></label>
-      <label>Description<input type="text" class="f-note" maxlength="140" placeholder="Size, pages, type…"></label>
+      <label>Name<input type="text" class="f-name" maxlength="80"></label>
+      <label>Description<input type="text" class="f-note" maxlength="140"></label>
+      <div class="p-row2">
+        <label>Category<select class="f-cat"></select></label>
+        <label class="vis"><input type="checkbox" class="f-new"> New arrival</label>
+      </div>
       <div class="p-row">
         <label>MRP (₹)<input type="number" class="f-mrp" min="0" step="1"></label>
         <label>Selling price (₹)<input type="number" class="f-price" min="0" step="1"></label>
         <label>Low-stock alert at<input type="number" class="f-low" min="0" step="1"></label>
       </div>
-      <label>Image URL<input type="text" class="f-img" placeholder="https://… or notebook1.jpg"></label>
+      <label>Image URL<input type="text" class="f-img"></label>
     </div>
     <div class="p-side">
       <div><label style="margin-bottom:0">Stock</label>
@@ -569,6 +594,9 @@ function stFill(card, p, fillAll) {
   if (fillAll) {
     set('.f-name', p.name || ''); set('.f-note', p.note || ''); set('.f-mrp', p.mrp || 0);
     set('.f-price', p.price || 0); set('.f-low', p.lowAt == null ? 5 : p.lowAt); set('.f-img', p.img || '');
+    const cs = card.querySelector('.f-cat'), cv = String(p.category || '').trim();
+    if (document.activeElement !== cs) { cs.innerHTML = stCatOptionsHtml(cv); cs.value = cv; }
+    card.querySelector('.f-new').checked = p.isNew === true;
     card.querySelector('.f-active').checked = p.active !== false;
     stSetPreview(card);
   }
@@ -580,10 +608,11 @@ function stBuildCard(key) {
   const card = document.createElement('div');
   card.className = 'pcard' + (key ? '' : ' draft');
   card.innerHTML = stCardHtml();
+  card.querySelector('.f-cat').innerHTML = stCatOptionsHtml('');
   const q = s => card.querySelector(s);
   const saveBtn = q('.p-save');
   const dirty = () => { saveBtn.disabled = false; card._dirty = true; stCardState(card); };
-  ['.f-name', '.f-note', '.f-mrp', '.f-price', '.f-low', '.f-img', '.f-active'].forEach(sel => {
+  ['.f-name', '.f-note', '.f-cat', '.f-new', '.f-mrp', '.f-price', '.f-low', '.f-img', '.f-active'].forEach(sel => {
     q(sel).addEventListener('input', () => { if (sel === '.f-img') stSetPreview(card); dirty(); });
     q(sel).addEventListener('change', dirty);
   });
@@ -627,7 +656,7 @@ function stBuildCard(key) {
     if (!name) { stMsg(card, 'Enter a name.', 'err'); return; }
     const price = stNum(q('.f-price').value);
     const rec = {
-      name, note: q('.f-note').value.trim(), mrp: stNum(q('.f-mrp').value), price,
+      name, note: q('.f-note').value.trim(), category: q('.f-cat').value.trim(), isNew: q('.f-new').checked, mrp: stNum(q('.f-mrp').value), price,
       lowAt: stNum(q('.f-low').value), img: q('.f-img').value.trim(),
       active: q('.f-active').checked, updatedAt: firebase.database.ServerValue.TIMESTAMP
     };
@@ -650,7 +679,75 @@ function stBuildCard(key) {
   return card;
 }
 
+let stSig = '';
+let stCatData = {};                 // category id -> { name, createdAt } (live)
+const stEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function stCatNames() { return Object.keys(stCatData).map(k => String(stCatData[k].name || '').trim()).filter(Boolean).sort(stCatCmp); }
+function stCatOptionsHtml(current) {
+  const names = stCatNames();
+  if (current && names.indexOf(current) < 0) names.push(current);   // keep a category that is no longer in the list
+  return '<option value="">Other</option>' + names.map(n => '<option value="' + stEsc(n) + '">' + stEsc(n) + '</option>').join('');
+}
+function stRefreshCatOptions() {
+  document.querySelectorAll('#panel-stock .f-cat').forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = stCatOptionsHtml(cur);
+    sel.value = cur;
+  });
+}
+function renderCats() {
+  const names = stCatNames();
+  const count = {};
+  Object.keys(stData).forEach(k => { const c = String(stData[k].category || '').trim(); if (c) count[c] = (count[c] || 0) + 1; });
+  $('catCount').textContent = names.length ? names.length : '';
+  $('catList').innerHTML = names.map(n =>
+    '<span class="cat-chip"><b>' + stEsc(n) + '</b><small>' + (count[n] || 0) + '</small><button type="button" data-cat="' + stEsc(n) + '" aria-label="Delete category ' + stEsc(n) + '">✕</button></span>').join('');
+  stRefreshCatOptions();
+}
+function catMsg(t) { $('catMsg').textContent = t || ''; }
+async function addCategory() {
+  const inp = $('catName'), name = inp.value.trim().replace(/\s+/g, ' ');
+  if (!name) return;
+  if (stCatNames().some(n => n.toLowerCase() === name.toLowerCase())) { catMsg('That category already exists.'); return; }
+  catMsg('');
+  try {
+    await db.ref('store/categories').push().set({ name, createdAt: firebase.database.ServerValue.TIMESTAMP });
+    inp.value = '';
+  } catch (err) { stShowError(err); }
+}
+async function deleteCategory(name) {
+  const ids = Object.keys(stCatData).filter(k => String(stCatData[k].name || '').trim() === name);
+  const prods = Object.keys(stData).filter(k => String(stData[k].category || '').trim() === name);
+  const msg = 'Delete the category "' + name + '"?' + (prods.length ? '\n\n' + prods.length + ' product' + (prods.length === 1 ? '' : 's') + ' in it will move to Other.' : '');
+  if (!confirm(msg)) return;
+  const updates = {};
+  ids.forEach(k => { updates['store/categories/' + k] = null; });
+  prods.forEach(k => { updates['store/products/' + k + '/category'] = ''; });
+  try { await db.ref().update(updates); } catch (err) { stShowError(err); }
+}
+const ST_OTHER = 'Other';
+const stCatOf = p => String(p.category || '').trim() || ST_OTHER;
+function stCatCmp(x, y) {
+  if (x === y) return 0;
+  if (x === ST_OTHER) return 1;
+  if (y === ST_OTHER) return -1;
+  return x.toLowerCase().localeCompare(y.toLowerCase());
+}
+// new arrivals first, then selling price ascending
+function stCmp(a, b) {
+  const A = stData[a], B = stData[b];
+  return ((A.isNew === true ? 0 : 1) - (B.isNew === true ? 0 : 1)) ||
+    ((Number(A.price) || 0) - (Number(B.price) || 0)) ||
+    String(A.name || '').localeCompare(String(B.name || ''));
+}
+function stGroup(arr) {
+  const m = {};
+  arr.forEach(k => { (m[stCatOf(stData[k])] = m[stCatOf(stData[k])] || []).push(k); });
+  return Object.keys(m).sort(stCatCmp).map(c => ({ cat: c, keys: m[c].sort(stCmp) }));
+}
+
 function renderStock() {
+  renderCats();
   const keys = Object.keys(stData).sort((a, b) => (stData[a].createdAt || 0) - (stData[b].createdAt || 0));
   const list = $('stList');
 
@@ -664,7 +761,6 @@ function renderStock() {
   $('stProductsN').textContent = vis + ' visible in store';
   $('stUnits').textContent = units;
   $('stLow').textContent = low;
-  $('stLowN').textContent = low ? 'needs restocking' : 'all good';
   $('stValue').textContent = '₹' + value.toLocaleString('en-IN');
   $('stCount').textContent = keys.length ? keys.length + ' product' + (keys.length === 1 ? '' : 's') : '';
 
@@ -672,7 +768,8 @@ function renderStock() {
   Object.keys(stCards).forEach(k => { if (!stData[k]) { stCards[k].remove(); delete stCards[k]; } });
 
   if (!keys.length) {
-    list.innerHTML = '<div class="empty">No products yet. Press “＋ Add product”, or <button type="button" class="chip-btn" id="stSeed">add the 3 starter notebooks</button></div>';
+    stSig = '';
+    list.innerHTML = '<div class="empty">No products <button type="button" class="chip-btn" id="stSeed">Add starter notebooks</button></div>';
     const sb = $('stSeed');
     if (sb) sb.onclick = async () => {
       sb.disabled = true;
@@ -681,25 +778,58 @@ function renderStock() {
         const k = db.ref('store/products').push().key;
         updates['store/products/' + k] = Object.assign({ lowAt: 5, active: true, createdAt: Date.now() + i }, d);
       });
+      if (!stCatNames().some(n => n.toLowerCase() === 'notebooks')) updates['store/categories/' + db.ref('store/categories').push().key] = { name: 'Notebooks', createdAt: Date.now() };
       try { await db.ref().update(updates); } catch (err) { sb.disabled = false; stShowError(err); }
     };
     return;
   }
   if (list.querySelector('.empty')) list.innerHTML = '';
 
+  // make sure every product has a card
   keys.forEach(k => {
     let card = stCards[k];
     if (!card) { card = stCards[k] = stBuildCard(k); stFill(card, stData[k], true); }
     else stFill(card, stData[k], !card._dirty);
-    list.appendChild(card);   // keeps them in order
   });
+
+  // layout: category by category (new arrivals first, then price low to high);
+  // out-of-stock products are pulled into their own zone at the bottom
+  const inStock = keys.filter(k => stNum(stData[k].stock) > 0);
+  const outStock = keys.filter(k => stNum(stData[k].stock) <= 0);
+  const layout = { main: stGroup(inStock), out: stGroup(outStock) };
+  const sig = JSON.stringify(layout);
+  if (list.querySelector('.empty')) list.innerHTML = '';
+  if (sig === stSig) return;            // same order: leave the DOM (and any typing) alone
+  stSig = sig;
+
+  const head = (txt, n, cls) => { const h = document.createElement('div'); h.className = 'cat-head' + (cls ? ' ' + cls : ''); h.innerHTML = '';
+    h.appendChild(document.createTextNode(txt + ' ')); const sm = document.createElement('small'); sm.textContent = n; h.appendChild(sm); return h; };
+  list.innerHTML = '';
+  layout.main.forEach(g => {
+    list.appendChild(head(g.cat, g.keys.length));
+    g.keys.forEach(k => list.appendChild(stCards[k]));
+  });
+  if (layout.out.length) {
+    const zone = document.createElement('div'); zone.className = 'oos-zone';
+    zone.appendChild(head('Out of stock', outStock.length));
+    layout.out.forEach(g => {
+      zone.appendChild(head(g.cat, g.keys.length, 'sub'));
+      g.keys.forEach(k => zone.appendChild(stCards[k]));
+    });
+    list.appendChild(zone);
+  }
 }
 
 function startStock() {
+  db.ref('store/categories').on('value', snap => { stCatData = snap.val() || {}; renderCats(); }, stShowError);
   db.ref('store/products').on('value', snap => { stData = snap.val() || {}; renderStock(); }, stShowError);
+  $('catAdd').addEventListener('click', addCategory);
+  $('catName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } });
+  $('catName').addEventListener('input', () => catMsg(''));
+  $('catList').addEventListener('click', e => { const b = e.target.closest('button[data-cat]'); if (b) deleteCategory(b.dataset.cat); });
   $('stAdd').addEventListener('click', () => {
     const card = stBuildCard(null);
-    stFill(card, { name: '', note: '', mrp: 0, price: 0, stock: 10, lowAt: 5, img: '', active: true }, true);
+    stFill(card, { name: '', note: '', category: '', isNew: false, mrp: 0, price: 0, stock: 10, lowAt: 5, img: '', active: true }, true);
     card.querySelector('.p-save').disabled = false;
     $('stDrafts').prepend(card);
     card.querySelector('.f-name').focus();
