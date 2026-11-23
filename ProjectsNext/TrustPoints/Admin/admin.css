@@ -1,0 +1,27 @@
+/* Admin-only additions on top of ../dashboard/style.css */
+main.center{min-height:100vh;display:grid;place-items:center;align-content:center;max-width:none;padding:20px}
+.gate{position:relative;width:min(440px,100%);border-radius:28px;padding:36px 30px 30px;background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.035));border:1px solid var(--edge2);box-shadow:var(--shadow);display:grid;gap:16px;text-align:center;justify-items:center}
+.shield{width:68px;height:68px;border-radius:22px;display:grid;place-items:center;background:linear-gradient(145deg,rgba(90,240,154,.22),rgba(90,240,154,.05));border:1px solid rgba(90,240,154,.4);color:var(--green);box-shadow:0 0 40px rgba(90,240,154,.25)}
+.shield .i{width:32px;height:32px}
+.gate h1{font:700 30px var(--d);margin:0;letter-spacing:-.01em}.gate p{margin:0;color:var(--muted);max-width:34ch}
+.gate .field{width:100%;display:grid;gap:6px;text-align:left}.gate label{font-size:14px;color:var(--muted)}
+.gate .info-box,.gate .warn-box{width:100%;text-align:left}
+.gbtn,.pbtn{width:100%;padding:13px 18px;border-radius:14px;font-size:16px}
+.gbtn{background:#fff;color:#1f1f1f;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.gbtn svg{width:20px;height:20px}.gbtn:disabled{opacity:.6;cursor:default}
+.warn-box{border:1px solid rgba(255,123,138,.45);background:rgba(255,123,138,.12);color:#ffd9de;border-radius:14px;padding:10px 14px}
+.info-box{border:1px solid var(--edge2);background:var(--s2);border-radius:14px;padding:10px 14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.chips>.muted{margin-right:2px}
+.chip2{border:1px solid var(--edge);background:var(--s2);border-radius:99px;padding:3px 12px;font-size:14px}
+.chip2 b{font:700 13px var(--d);margin-left:4px}
+
+.act{border-radius:18px;background:var(--s1);border:1px solid var(--edge);padding:4px 18px}
+.act summary{cursor:pointer;padding:12px 0;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
+.act summary::-webkit-details-marker{display:none}
+.act summary .i{color:var(--violet)}.act summary .chev{margin-left:auto;transition:transform .2s;color:var(--dim)}
+.act[open] summary .chev{transform:rotate(90deg)}
+.act h4{margin:16px 0 6px;font:600 13px var(--d);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:8px}
+.log{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 0;border-bottom:1px solid var(--edge);font-size:14px}
+.log:last-child{border-bottom:0}
+.act #actbody{padding-bottom:14px}
+a.row{text-decoration:none;color:inherit}

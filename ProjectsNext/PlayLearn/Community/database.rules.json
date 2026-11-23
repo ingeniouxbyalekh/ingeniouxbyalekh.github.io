@@ -1,0 +1,544 @@
+{
+  "rules": {
+    "users": {
+      ".read": true,
+      "$uid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['username', 'photoUrl'])",
+        "username": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "photoUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 500 && newData.val().matches(/^https:\\/\\/.+/)"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 150"
+        },
+        "regNo": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "semester": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "joinedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "updatedAt": {
+          ".validate": true
+        },
+        "bio": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "coverUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 500 && newData.val().matches(/^https:\\/\\/.+/)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "special_user": {
+      ".read": true,
+      ".write": false
+    },
+    "presence": {
+      ".read": true,
+      ".write": true
+    },
+    "lastSeen": {
+      ".read": true,
+      ".write": true
+    },
+    "typing": {
+      ".read": true,
+      ".write": true
+    },
+    "incoming": {
+      ".read": true,
+      ".write": true
+    },
+    "calls": {
+      ".read": true,
+      ".write": true
+    },
+    "chats": {
+      "$chatId": {
+        ".read": true,
+        ".write": true,
+        "messages": {
+          "$msgId": {
+            ".validate": "newData.hasChildren(['from', 'ts']) && (!newData.hasChild('text') || (newData.child('text').isString() && newData.child('text').val().length <= 2000)) && (!newData.hasChild('imageUrl') || (newData.child('imageUrl').isString() && newData.child('imageUrl').val().matches(/^https:\\/\\/.+/)))"
+          }
+        }
+      }
+    },
+    "friends": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "requests": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "sent": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "posts": {
+      ".read": true,
+      "$postId": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['uid', 'username', 'ts'])",
+        "uid": {
+          ".validate": "newData.isString()"
+        },
+        "username": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "photoUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "caption": {
+          ".validate": "newData.isString() && newData.val().length <= 2000"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.+/)"
+        },
+        "mediaType": {
+          ".validate": "newData.val() == 'image' || newData.val() == 'video'"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "editedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "gid": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "saved": {
+      "$uid": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "likes": {
+      ".read": true,
+      "$postId": {
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
+    "comments": {
+      ".read": true,
+      "$postId": {
+        "$cid": {
+          ".write": true,
+          ".validate": "newData.hasChildren(['uid', 'username', 'text', 'ts'])",
+          "uid": {
+            ".validate": "newData.isString()"
+          },
+          "username": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "photoUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "editedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "blocks": {
+      "$uid": {
+        ".read": true,
+        ".write": true,
+        "$other": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "blockedBy": {
+      "$uid": {
+        ".read": true,
+        ".write": true,
+        "$other": {
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
+    "reports": {
+      ".read": false,
+      "$reportId": {
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['by', 'type', 'target', 'reason', 'ts'])",
+        "by": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "byName": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "type": {
+          ".validate": "newData.val() == 'user' || newData.val() == 'post' || newData.val() == 'comment'"
+        },
+        "target": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "postId": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "commentId": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "reason": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "details": {
+          ".validate": "newData.isString() && newData.val().length <= 300"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "reactions": {
+      ".read": true,
+      "$postId": {
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.isString() && newData.val().matches(/^(like|love|haha|wow|sad)$/)"
+        }
+      }
+    },
+    "notifications": {
+      "$uid": {
+        ".read": true,
+        ".indexOn": [
+          "ts"
+        ],
+        "$nid": {
+          ".write": true,
+          ".validate": "newData.hasChildren(['type', 'from', 'ts'])",
+          "type": {
+            ".validate": "newData.val() == 'react' || newData.val() == 'comment' || newData.val() == 'request' || newData.val() == 'accept' || newData.val() == 'group' || newData.val() == 'story'"
+          },
+          "from": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "fromName": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "photoUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "postId": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "emoji": {
+            ".validate": "newData.isString() && newData.val().length <= 8"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "read": {
+            ".validate": "newData.isBoolean()"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "gid": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "gname": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "sid": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          }
+        }
+      }
+    },
+    "groups": {
+      ".read": true,
+      "$gid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'createdBy', 'ts'])",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "desc": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "type": {
+          ".validate": "newData.val() == 'semester' || newData.val() == 'subject' || newData.val() == 'club'"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "groupMembers": {
+      ".read": true,
+      "$gid": {
+        ".write": true,
+        "$uid": {
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
+    "stories": {
+      ".read": true,
+      ".indexOn": [
+        "ts"
+      ],
+      "$sid": {
+        ".write": true,
+        ".validate": "newData.hasChildren(['uid', 'mediaType', 'ts']) && (newData.child('mediaType').val() == 'text' ? newData.hasChild('text') : newData.hasChild('mediaUrl'))",
+        "uid": {
+          ".validate": "newData.isString() && newData.val().length <= 200"
+        },
+        "username": {
+          ".validate": "newData.isString() && newData.val().length <= 100"
+        },
+        "photoUrl": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
+        },
+        "mediaUrl": {
+          ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.+/)"
+        },
+        "mediaType": {
+          ".validate": "newData.val() == 'image' || newData.val() == 'video' || newData.val() == 'text'"
+        },
+        "caption": {
+          ".validate": "newData.isString() && newData.val().length <= 150"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "text": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "bg": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
+        },
+        "font": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
+        },
+        "color": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+        },
+        "stickers": {
+          ".validate": "newData.hasChildren()",
+          "$i": {
+            ".validate": "$i.matches(/^[0-5]$/) && newData.hasChildren(['e', 'x', 'y'])",
+            "e": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 8"
+            },
+            "x": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "y": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "s": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "shared": {
+          ".validate": "newData.hasChildren(['pid'])",
+          "pid": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "storyArchive": {
+      ".read": true,
+      "$uid": {
+        ".indexOn": [
+          "ts"
+        ],
+        "$sid": {
+          ".write": true,
+          ".validate": "newData.hasChildren(['uid', 'mediaType', 'ts']) && (newData.child('mediaType').val() == 'text' ? newData.hasChild('text') : newData.hasChild('mediaUrl'))",
+          "uid": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "username": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "photoUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "mediaUrl": {
+            ".validate": "newData.isString() && newData.val().matches(/^https:\\/\\/.+/)"
+          },
+          "mediaType": {
+            ".validate": "newData.val() == 'image' || newData.val() == 'video' || newData.val() == 'text'"
+          },
+          "caption": {
+            ".validate": "newData.isString() && newData.val().length <= 150"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+          },
+          "bg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7"
+          },
+          "font": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 4"
+          },
+          "color": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5"
+          },
+          "stickers": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "$i.matches(/^[0-5]$/) && newData.hasChildren(['e', 'x', 'y'])",
+              "e": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 8"
+              },
+              "x": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+              },
+              "y": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+              },
+              "s": {
+                ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          "shared": {
+            ".validate": "newData.hasChildren(['pid'])",
+            "pid": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "name": {
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
+    "groupInvites": {
+      "$uid": {
+        ".read": true,
+        "$gid": {
+          ".write": true,
+          ".validate": "newData.hasChildren(['by', 'ts'])",
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "byName": {
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "groupInvited": {
+      ".read": true,
+      "$gid": {
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.val() === true"
+        }
+      }
+    },
+    "permanentChat": {
+      "$chatId": {
+        ".read": true,
+        "messages": {
+          "$msgId": {
+            ".write": "!data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['from', 'ts']) && (!newData.hasChild('text') || (newData.child('text').isString() && newData.child('text').val().length <= 2000)) && (!newData.hasChild('imageUrl') || (newData.child('imageUrl').isString() && newData.child('imageUrl').val().matches(/^https:\\/\\/.+/)))"
+          }
+        }
+      }
+    },
+    "storyViews": {
+      ".read": true,
+      "$sid": {
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "storyReacts": {
+      ".read": true,
+      "$sid": {
+        "$uid": {
+          ".write": true,
+          ".validate": "newData.isString() && newData.val().length <= 8"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>:root{color-scheme:light}html{-webkit-text-size-adjust:100%}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>TraceMark · DCT + QOM + Latent Diffusion Watermark</title>
+<style>
+/* Layout: masthead and tab switch on top; below it an image stage on the left and note, strength and receipt on the right. */
+:root {
+  --bg: #E7EAEE;
+  --surface: #F5F6F8;
+  --stage: #D6DAE1;
+  --ink: #10141B;
+  --ink-2: #465061;
+  --line: #BFC7D2;
+  --accent: #2B3BE8;
+  --on-accent: #FFFFFF;
+  --ok: #0B7A4B;
+  --ok-bg: #DCF0E6;
+  --warn: #8F5400;
+  --warn-bg: #F5E7CC;
+  --bad: #B3261E;
+  --bad-bg: #F7DEDC;
+  --font-display: "Archivo", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0C1016; --surface: #141A22; --stage: #090C11; --ink: #E8ECF2; --ink-2: #9AA5B5; --line: #283140;
+    --accent: #8C99FF; --on-accent: #0C1016; --ok: #47D693; --ok-bg: #12261E; --warn: #F2B552; --warn-bg: #2B2212;
+    --bad: #FF8A80; --bad-bg: #2C1816; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0C1016; --surface: #141A22; --stage: #090C11; --ink: #E8ECF2; --ink-2: #9AA5B5; --line: #283140;
+  --accent: #8C99FF; --on-accent: #0C1016; --ok: #47D693; --ok-bg: #12261E; --warn: #F2B552; --warn-bg: #2B2212;
+  --bad: #FF8A80; --bad-bg: #2C1816; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font-body); padding-inline: 16px; padding-block: 28px 56px; }
+.wrap { max-width: 1080px; margin: 0 auto; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.label { font: 500 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+
+/* masthead */
+.mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 32px; padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.brand svg { width: 26px; height: 26px; flex: none; }
+.brand .on { fill: var(--ink); }
+.brand .off { fill: none; stroke: var(--ink); stroke-width: 1.5; }
+.brand .hot { fill: var(--accent); }
+h1 { margin: 0; font: 700 20px/1 var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.lead { margin: 0; max-width: 46ch; color: var(--ink-2); text-wrap: pretty; }
+
+.tabs { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); background: var(--surface); border-radius: 6px; margin-bottom: 22px; max-width: 100%; }
+.tabs button { border: 0; background: transparent; padding: 9px 16px; border-radius: 4px; font-weight: 600; color: var(--ink-2); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.tabs button:not([aria-selected="true"]):hover { color: var(--ink); }
+
+.cols { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+/* stage */
+.stage { position: relative; background: var(--stage); border: 1px solid var(--line); border-radius: 6px; padding: 12px; min-height: 220px; display: grid; place-items: center; }
+.stage.drag { outline: 2px dashed var(--accent); outline-offset: -6px; }
+.stage img, .stage canvas { display: block; max-width: 100%; height: auto; border-radius: 2px; }
+#viewPat { width: 100%; image-rendering: pixelated; }
+.tag { position: absolute; top: 20px; left: 20px; z-index: 1; background: var(--ink); color: var(--bg); padding: 4px 8px; border-radius: 3px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; }
+.meta .mono { font-size: 12.5px; color: var(--ink-2); min-width: 0; overflow-wrap: anywhere; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+
+.btn { border: 1px solid var(--ink); background: transparent; color: var(--ink); padding: 10px 16px; border-radius: 4px; font-weight: 600; }
+.btn:hover { background: var(--surface); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.btn.small { padding: 6px 12px; font-size: 13px; }
+
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+
+/* form */
+.field { display: flex; flex-direction: column; gap: 7px; }
+.field-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+input[type="text"] { width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 11px 12px; font-size: 16px; }
+input[type="text"]:focus-visible { outline-offset: 0; border-color: var(--accent); }
+.hint { margin: 0; font-size: 13px; color: var(--ink-2); }
+.count.over { color: var(--bad); }
+.clock { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px; font-size: 13.5px; }
+
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.opts { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.opt { position: relative; display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 2px 12px; align-items: start; padding: 11px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.opt input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.opt .dot { grid-row: 1 / span 2; width: 16px; height: 16px; margin-top: 3px; border: 1.5px solid var(--ink-2); border-radius: 50%; }
+.opt b { font-weight: 700; }
+.opt span.d { grid-column: 2; font-size: 13px; color: var(--ink-2); }
+.opt:has(input:checked) { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opt:has(input:checked) .dot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 42%, transparent 46%); }
+.opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.msg { margin: 0; padding: 10px 12px; border-radius: 4px; font-size: 14px; }
+.msg.bad { background: var(--bad-bg); color: var(--bad); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); }
+
+/* receipt and results */
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.stamp { display: flex; align-items: center; gap: 10px; font: 800 26px/1 var(--font-display); font-stretch: 62%; letter-spacing: .04em; text-transform: uppercase; }
+.stamp svg { width: 26px; height: 26px; flex: none; }
+.stamp.ok { color: var(--ok); }
+.stamp.bad { color: var(--bad); }
+.note { margin: 0; font: 500 17px/1.4 var(--font-mono); overflow-wrap: anywhere; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; }
+.kv { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 6px 14px; margin: 0; }
+.kv dt { color: var(--ink-2); }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.kv dd .sub { display: block; font: 12.5px/1.4 var(--font-mono); color: var(--ink-2); }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.check { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; font-size: 14px; }
+.check .ico { width: 18px; height: 18px; margin-top: 1px; }
+.check[data-s="ok"] { color: var(--ok); }
+.check[data-s="bad"] { color: var(--bad); }
+.check[data-s="run"] .ico { border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+.check .why { display: block; color: var(--ink-2); font-size: 13px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12px/1 var(--font-mono); padding: 6px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); }
+.meter { display: flex; gap: 3px; margin-top: 4px; }
+.meter i { width: 14px; height: 14px; border: 1.5px solid var(--ink-2); border-radius: 1px; }
+.meter i.on { background: var(--accent); border-color: var(--accent); }
+
+/* read tab */
+.drop { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; min-height: 260px; padding: 24px 16px; border: 1.5px dashed var(--ink-2); border-radius: 6px; background: var(--surface); }
+.drop.drag { border-color: var(--accent); background: var(--stage); }
+.drop h2 { margin: 0; font: 800 28px/1 var(--font-display); font-stretch: 62%; text-transform: uppercase; letter-spacing: .02em; }
+.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bar > div { height: 100%; width: 0; background: var(--accent); transition: width .15s; }
+.thumb { display: grid; place-items: center; background: var(--stage); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+.thumb img { max-width: 100%; max-height: 360px; border-radius: 2px; }
+
+details { border-top: 1px solid var(--line); margin-top: 36px; padding-top: 16px; }
+summary { cursor: pointer; font-weight: 700; }
+details .twocol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; margin-top: 14px; }
+details h3 { margin: 0 0 6px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); }
+details p { margin: 0; color: var(--ink-2); max-width: 62ch; }
+.foot { margin-top: 24px; font-size: 13px; color: var(--ink-2); }
+
+@media (max-width: 820px) {
+  .cols { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  details .twocol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .check[data-s="run"] .ico { animation: none; border-top-color: var(--ink-2); }
+  .bar > div { transition: none; }
+}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:8px;font-size:13.5px}.steps b{font-weight:700}.steps span{color:var(--ink-2)}
+.tgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.tgrid figure{margin:0;min-width:0}.tgrid canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:2px;background:var(--stage)}
+.tgrid figcaption{font:500 10.5px/1.3 var(--font-mono);color:var(--ink-2);margin-top:4px}
+.bits{display:grid;grid-template-columns:repeat(32,minmax(0,1fr));gap:2px;margin-top:6px}.bits i{aspect-ratio:1;border:1px solid var(--ink-2);border-radius:1px}.bits i.on{background:var(--accent);border-color:var(--accent)}.bits i.x{border-color:var(--bad);box-shadow:inset 0 0 0 2px var(--bad)}
+@media (max-width:520px){.tgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* ===== v4: guided form + hero result + stage timeline ===== */
+.steplab { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; flex-wrap: wrap; }
+.steplab .hint { font-weight: 400; }
+.steplab .count { margin-left: auto; }
+.step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--ink); color: var(--bg); font: 700 12px/1 var(--font-mono); flex: none; }
+.formcard { padding: 22px; gap: 18px; }
+.formcard input[type="text"] { font: 500 18px/1.2 var(--font-mono); padding: 14px 14px; }
+.opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+.opt { grid-template-columns: 16px minmax(0, 1fr); padding: 12px 11px; align-content: start; }
+.opt .dot { grid-row: auto; margin-top: 2px; }
+.opt span.d { grid-column: 1 / -1; font-size: 12px; line-height: 1.4; margin-top: 4px; }
+.opt .rec { grid-column: 1 / -1; justify-self: start; margin-top: 6px; font: 600 10px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.clockline { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; font-size: 13px; color: var(--ink-2); }
+.clockline .mono { color: var(--ink); }
+.embedbtn { width: 100%; padding: 15px 18px; font-size: 16px; }
+
+/* result screen */
+#receipt .kv, #receipt .checks, #readThis { display: none !important; }
+#panelSeal.result > #formCol, #panelSeal.result .steplab, #panelSeal.result #dropHint { display: none; }
+#panelSeal.result > #receipt { grid-column: 1 / -1; grid-row: 1; }
+#panelSeal.result > .col:first-child { grid-column: 1 / -1; grid-row: 2; }
+#panelSeal.result > #trace { grid-column: 1 / -1; grid-row: 3; }
+@media (min-width: 821px) {
+  #panelSeal.result { grid-template-columns: minmax(0, .8fr) minmax(0, 2.2fr); }
+  #panelSeal.result > .col:first-child { grid-column: 1; grid-row: 2; position: sticky; top: 16px; }
+  #panelSeal.result > #trace { grid-column: 2; grid-row: 2; }
+}
+.hero { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 28px; border-color: var(--ok); }
+.hero-main { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 28px; min-width: 0; }
+.hero-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.hero .note { font-size: 22px; padding: 10px 14px; }
+.hero-act { display: flex; flex-wrap: wrap; gap: 10px; }
+.hero-act .btn.big { padding: 14px 22px; font-size: 16px; }
+.hero .hint { flex-basis: 100%; }
+.th h2 { margin: 6px 0 4px; font: 800 24px/1.1 var(--font-display); font-stretch: 62%; text-transform: uppercase; letter-spacing: .02em; }
+.th p { margin: 0; color: var(--ink-2); max-width: 70ch; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.tile { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile b { font: 800 24px/1 var(--font-display); }
+.tile i { font-style: normal; font-size: 12px; color: var(--ink-2); line-height: 1.35; }
+.stages { display: flex; flex-direction: column; }
+.stg { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 270px); gap: 14px 26px; padding: 20px 0; border-top: 1px solid var(--line); }
+.stg.wide { grid-template-columns: minmax(0, 1fr); }
+.stg-t { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.stg-h { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.stg-h h3 { margin: 0; font: 700 17px/1.2 var(--font-body); }
+.stg-tag { font: 500 11px/1 var(--font-mono); padding: 5px 8px; border-radius: 3px; background: var(--ok-bg); color: var(--ok); }
+.stg .sum { margin: 0; font-weight: 600; font-size: 15px; }
+.stg .det { margin: 0; font-size: 13.5px; color: var(--ink-2); line-height: 1.6; }
+.stg-f { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; align-content: start; }
+.stg-f.n4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stg-f.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.stg-f figure { margin: 0; min-width: 0; }
+.stg-f canvas { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--stage); image-rendering: pixelated; }
+.stg-f figcaption { font: 500 11.5px/1.35 var(--font-body); color: var(--ink-2); margin-top: 4px; }
+.bitsbox .bits { margin-top: 6px; }
+.bitsbox .hint { margin-top: 6px; font-size: 12px; }
+@media (max-width: 820px) {
+  .stg { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .opts { grid-template-columns: minmax(0, 1fr); }
+  .stg-f.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="brand">
+      <svg viewBox="0 0 33 33" aria-hidden="true">
+        <rect class="on" x="0" y="0" width="9" height="9"/><rect class="off" x="12.75" y="0.75" width="7.5" height="7.5"/><rect class="on" x="24" y="0" width="9" height="9"/>
+        <rect class="off" x="0.75" y="12.75" width="7.5" height="7.5"/><rect class="hot" x="12" y="12" width="9" height="9"/><rect class="off" x="24.75" y="12.75" width="7.5" height="7.5"/>
+        <rect class="on" x="0" y="24" width="9" height="9"/><rect class="on" x="12" y="24" width="9" height="9"/><rect class="off" x="24.75" y="24.75" width="7.5" height="7.5"/>
+      </svg>
+      <h1>TraceMark</h1>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" role="tab" id="tabSeal" aria-selected="true" aria-controls="panelSeal">Embed watermark</button>
+    <button type="button" role="tab" id="tabRead" aria-selected="false" aria-controls="panelRead" tabindex="-1">Extract watermark</button>
+  </div>
+
+  <!-- SEAL -->
+  <section id="panelSeal" role="tabpanel" aria-labelledby="tabSeal" class="cols">
+    <div class="col">
+      <div class="steplab"><span class="step-n">1</span>Your image <span class="hint">drop, paste (Ctrl+V) or choose a file</span></div>
+      <div class="stage" id="stage">
+        <span class="tag" id="viewTag">Sample image</span>
+        <img id="viewImg" alt="Source image">
+        <canvas id="viewPat" hidden aria-label="Amplified view of the hidden pattern"></canvas>
+      </div>
+      <div class="meta">
+        <span class="mono" id="stageMeta">Loading sample…</span>
+        <div class="row">
+          <div class="seg" id="viewSeg" hidden role="group" aria-label="Preview">
+            <button type="button" data-view="orig" aria-pressed="false">Original</button>
+            <button type="button" data-view="sealed" aria-pressed="true">Watermarked</button>
+            <button type="button" data-view="pattern" aria-pressed="false">Pattern</button>
+          </div>
+          <button type="button" class="btn small" id="pickSeal">Choose image</button>
+        </div>
+      </div>
+      <p class="hint" id="patNote" hidden>Pattern shows the difference between the original and the watermarked image, a 280 × 210 px crop from the middle, amplified 8 times. This is where the data lives.</p>
+      <p class="hint" id="dropHint">Nothing leaves your browser. Everything runs on this page.</p>
+    </div>
+
+    <div class="col" id="formCol">
+      <div class="card formcard">
+        <div>
+          <div class="steplab"><span class="step-n">2</span><label for="tag">Text to hide</label><span class="label mono count" id="tagCount">0 / 6 bytes</span></div>
+          <input type="text" id="tag" value="Ref042" autocomplete="off" spellcheck="false" placeholder="Owner or ref code" style="margin-top:10px">
+          <p class="hint" style="margin-top:8px">Up to 6 bytes, so about 6 letters or digits, such as an owner name or a reference code. The time is added automatically.</p>
+        </div>
+
+        <fieldset>
+          <legend class="steplab"><span class="step-n">3</span>Strength</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="str" value="10"><span class="dot"></span><b>Light</b><span class="d">Closest to your original. Survives screenshots and mild JPEG on photos.</span></label>
+            <label class="opt"><input type="radio" name="str" value="16" checked><span class="dot"></span><b>Standard</b><span class="d">Balanced. Survives JPEG, crops and resizing, with no visible noise.</span><span class="rec">Recommended</span></label>
+            <label class="opt"><input type="radio" name="str" value="26"><span class="dot"></span><b>Strong</b><span class="d">Survives the most, even on flat or white images. Faint texture can show.</span></label>
+          </div>
+        </fieldset>
+
+        <p class="clockline"><span class="label">Time stamp</span><span class="mono" id="clock" aria-live="off"></span><span>from this device's clock when you press Embed</span></p>
+
+        <p class="msg bad" id="sealMsg" role="alert" hidden></p>
+        <button type="button" class="btn primary embedbtn" id="sealBtn" disabled>Embed watermark</button>
+      </div>
+    </div>
+
+    <div class="card hero" id="receipt" hidden aria-live="polite">
+      <div class="hero-main">
+        <div class="stamp ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Embedded</div>
+        <div class="hero-text"><span class="label">Hidden text</span><p class="note" id="rNote"></p></div>
+      </div>
+      <div class="hero-act">
+        <button type="button" class="btn primary big" id="saveBtn">Save watermarked PNG</button>
+        <button type="button" class="btn" id="readThis">Read this image</button>
+        <button type="button" class="btn" id="againBtn">Change settings and embed again</button>
+      </div>
+      <dl class="kv"><dt>Time</dt><dd id="rTime"></dd><dt>Redundancy</dt><dd id="rRep"></dd></dl>
+      <ul class="checks" id="checks">
+        <li class="check" data-s="run" id="chk1"><span class="ico"></span><span>Reads back from the saved PNG</span></li>
+        <li class="check" data-s="run" id="chk2"><span class="ico"></span><span>Survives JPEG at quality 70</span></li>
+      </ul>
+      <p class="hint" id="saveHint">Keep it as a PNG. JPEG, or apps that shrink pictures, can weaken the mark; screenshots of the PNG should still read.</p>
+    </div>
+
+    <div class="card" id="trace" hidden aria-live="polite">
+      <div class="th">
+        <span class="label">What happened to your image · in simple words</span>
+        <h2>Four hidden layers, one image</h2>
+        <p id="trLegend"></p>
+      </div>
+      <div class="tiles" id="trTiles"></div>
+      <div class="stages" id="trStages"></div>
+    </div>
+  </section>
+
+  <!-- READ -->
+  <section id="panelRead" role="tabpanel" aria-labelledby="tabRead" class="cols" hidden>
+    <div class="col">
+      <div class="drop" id="drop">
+        <h2>Drop an image to analyse</h2>
+        <p class="hint">Or paste one with Ctrl+V. Resized, cropped and compressed copies are fine.</p>
+        <button type="button" class="btn primary" id="pickRead">Choose image</button>
+      </div>
+      <div class="thumb" id="thumb" hidden><img id="thumbImg" alt="Image being checked"></div>
+      <p class="mono hint" id="thumbMeta" hidden></p>
+    </div>
+
+    <div class="col" id="readOut" aria-live="polite">
+      <div class="card" id="scanCard" hidden>
+        <span class="label">Scanning</span>
+        <div id="scanText">Checking original size…</div>
+        <div class="bar" aria-hidden="true"><div id="scanBar"></div></div>
+        <div class="row"><button type="button" class="btn small" id="scanCancel">Stop</button></div>
+      </div>
+
+      <div class="card" id="foundCard" hidden>
+        <div class="stamp ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>Watermark detected</div>
+        <div class="field"><span class="label" id="fLabel">Payload</span><p class="note" id="fNote"></p></div>
+        <dl class="kv">
+          <dt>Embedded</dt><dd id="fTime"></dd>
+          <dt>Signal</dt><dd><div class="meter" id="fMeter" aria-hidden="true"></div><span class="sub mono" id="fSignal" style="display:block;font-size:12.5px;color:var(--ink-2);margin-top:6px"></span></dd>
+          <dt>Image</dt><dd><div class="chips" id="fChips"></div></dd>
+        </dl>
+        <p class="hint">The CRC-32 inside the watermark matches, so this note and time were read exactly as written.</p>
+      </div>
+
+      <div class="card" id="missCard" hidden>
+        <div class="stamp bad"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>No watermark detected</div>
+        <p id="missText" style="margin:0"></p>
+        <div class="row" id="deepRow">
+          <button type="button" class="btn" id="deepBtn">Search more sizes</button>
+          <span class="hint">Checks about 400 sizes. Can take up to a minute.</span>
+        </div>
+      </div>
+
+      <p class="hint" id="readIdle">Results appear here. The scan tries the image as it is first, then common screenshot sizes.</p>
+    </div>
+  </section>
+
+  <details>
+    <summary>How it works, and what it cannot do</summary>
+    <div class="twocol">
+      <div>
+        <h3>Method</h3>
+        <p>One short text is hidden four ways: a Fourier sync template (32 faint sinusoids) is added first so screenshots and resized copies can be rescaled exactly before reading, then Quaternion Zernike moments: the colour image becomes a quaternion field, and 64 moment magnitudes are quantised to carry the text. Latent diffusion: the 8 × 8 DCT coefficients are the latent; noise is added, then guided DDIM steps denoise it towards the watermark target. The denoiser is analytic, not a trained network. DCT micro-marks tile the text and time over every block, so crops keep it.</p>
+      </div>
+      <div>
+        <h3>Limits</h3>
+        <p>Rotation, perspective and photographing a screen will usually destroy the watermark. The payload is not encrypted or signed: anyone can extract it with this page, and anyone can overwrite it by re-embedding.  Treat it as a marker, not as proof.</p>
+      </div>
+    </div>
+  </details>
+  <p class="foot">All processing happens in this page. Images are never uploaded.</p>
+</div>
+
+<input type="file" id="fileSeal" accept="image/*" hidden>
+<input type="file" id="fileRead" accept="image/*" hidden>
+
+<script>
+/* Watermark engine
+ * Frame: 66 bytes = [len][time u32 BE][57 text bytes][crc32 u32 BE], XOR-whitened.
+ * Frame bits are scattered over a 24x22 tile of 8x8 blocks; the tile repeats across the image.
+ * Each block stores one bit as the sign of (coef(2,1) - coef(1,2)) of the DCT of its luminance.
+ * Decoder: tries all 64 pixel offsets, accumulates soft votes per tile cell,
+ * then tries all 528 tile phases and accepts the one whose CRC32 matches.
+ */
+(function (root) {
+  'use strict';
+  /* Two layers share every 8x8 block but use different DCT coefficient pairs, so they do not disturb each other.
+   * S = small seals: tiny 16x8-block tile (128x64 px) holding time + short tag, repeated over the WHOLE image.
+   * F = strong seal: full note + time, higher strength, in the centre region (central 60% x 60%). */
+  var SOFT = 20;
+  var CFG = { amin: 0.6, sig: 12, c4: 0.7, c2: 0.7, tpl: 1 / 60, head: 0, soft: 20, qd: 2, qds: [4, 3, 2, 1.5], skip: 1.2, emb: 0 };   // gentle by default: weaker in smooth areas, lighter sync and QOM
+
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  var CRC_T = (function () {
+    var t = new Uint32Array(256);
+    for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); t[n] = c >>> 0; }
+    return t;
+  })();
+  function crc32(b, len) {
+    var c = 0xFFFFFFFF;
+    for (var i = 0; i < len; i++) c = CRC_T[(c ^ b[i]) & 255] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+  var B1 = [];
+  for (var u = 0; u < 8; u++) {
+    var row = new Float64Array(8), a0 = u === 0 ? Math.sqrt(1 / 8) : 0.5;
+    for (var x = 0; x < 8; x++) row[x] = a0 * Math.cos(((2 * x + 1) * u * Math.PI) / 16);
+    B1.push(row);
+  }
+
+  // pa / pb = [horizontal u, vertical v] of the two coefficients whose difference carries the bit
+  function mk(tw, th, frame, maxtext, crcn, pa, pb, s1, s2) {
+    var L = { TW: tw, TH: th, NB: tw * th, FRAME: frame, MAXTEXT: maxtext, CRCN: crcn, pa: pa, pb: pb };
+    var r = mulberry32(s1), p = new Uint16Array(L.NB), i, j, t;
+    for (i = 0; i < L.NB; i++) p[i] = i;
+    for (i = L.NB - 1; i > 0; i--) { j = Math.floor(r() * (i + 1)); t = p[i]; p[i] = p[j]; p[j] = t; }
+    L.PERM = p;
+    r = mulberry32(s2); L.KEY = new Uint8Array(frame);
+    for (i = 0; i < frame; i++) L.KEY[i] = Math.floor(r() * 256);
+    L.A = new Float64Array(64); L.B = new Float64Array(64); L.D = new Float64Array(64);
+    for (var y = 0; y < 8; y++) for (var xx = 0; xx < 8; xx++) {
+      var k = y * 8 + xx;
+      L.A[k] = B1[pa[0]][xx] * B1[pa[1]][y]; L.B[k] = B1[pb[0]][xx] * B1[pb[1]][y]; L.D[k] = L.A[k] - L.B[k];
+    }
+    return L;
+  }
+  var S = mk(16, 8, 16, 8, 3, [2, 1], [1, 2], 0x1CEB00DA, 0xBEEF123);
+
+  function encodeFrame(L, text, timeSec) {
+    var enc = new TextEncoder().encode(String(text));
+    var cut = Math.min(enc.length, L.MAXTEXT);
+    while (cut > 0 && cut < enc.length && (enc[cut] & 0xC0) === 0x80) cut--;
+    var f = new Uint8Array(L.FRAME), t = Math.floor(timeSec) >>> 0, i;
+    f[0] = cut;
+    f[1] = (t >>> 24) & 255; f[2] = (t >>> 16) & 255; f[3] = (t >>> 8) & 255; f[4] = t & 255;
+    f.set(enc.subarray(0, cut), 5);
+    var c = crc32(f, L.FRAME - L.CRCN);
+    for (i = 0; i < L.CRCN; i++) f[L.FRAME - L.CRCN + i] = (c >>> (8 * (3 - i))) & 255;
+    for (i = 0; i < L.FRAME; i++) f[i] ^= L.KEY[i];
+    return { bytes: f };
+  }
+  function byteLength(text) { return new TextEncoder().encode(String(text)).length; }
+
+  /** Embed one layer in place. reg = block rectangle {x0,y0,x1,y1} or null for the whole image. */
+  function embedLayer(rgba, w, h, L, text, timeSec, M, reg, m) {
+    m = m || 1; var BS = 8 * m;
+    var fr = encodeFrame(L, text, timeSec).bytes, tb = new Uint8Array(L.NB), i;
+    for (i = 0; i < L.NB; i++) { var pos = L.PERM[i]; tb[i] = (fr[pos >> 3] >> (7 - (pos & 7))) & 1; }
+    var nbx = Math.floor(w / BS), nby = Math.floor(h / BS);
+    var bx0 = reg ? reg.x0 : 0, by0 = reg ? reg.y0 : 0, bx1 = reg ? reg.x1 : nbx, by1 = reg ? reg.y1 : nby;
+    var embedded = 0;
+    for (var by = by0; by < by1; by++) {
+      for (var bx = bx0; bx < bx1; bx++) {
+        var ca = 0, cb = 0, k = 0;
+        for (var y = 0; y < BS; y++) {
+          var p = ((by * BS + y) * w + bx * BS) * 4, ky = ((y / m) | 0) * 8;
+          for (var x = 0; x < BS; x++, p += 4) {
+            k = ky + ((x / m) | 0);
+            var l = 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2];
+            ca += l * L.A[k]; cb += l * L.B[k];
+          }
+        }
+        ca /= m * m; cb /= m * m;
+        var s = tb[(by % L.TH) * L.TW + (bx % L.TW)] ? 1 : -1;
+        var act = Math.sqrt(ca * ca + cb * cb), fa = CFG.amin + (1 - CFG.amin) * act / CFG.sig; if (fa > 1) fa = 1;
+        if (act < CFG.skip) continue;   // truly flat block (white page, solid fill): leave it untouched
+        var Mb = M * fa, DM = 4 * Mb;
+        var d = ca - cb, need = s * d;
+        if (need >= Mb) { embedded++; continue; }
+        if (need < -DM) continue;
+        var half = (s * Mb - d) / 2;
+        for (var y2 = 0; y2 < BS; y2++) {
+          var q = ((by * BS + y2) * w + bx * BS) * 4, ky2 = ((y2 / m) | 0) * 8;
+          for (var x2 = 0; x2 < BS; x2++, q += 4) {
+            var v = half * L.D[ky2 + ((x2 / m) | 0)];
+            rgba[q] += v; rgba[q + 1] += v; rgba[q + 2] += v;
+          }
+        }
+        embedded++;
+      }
+    }
+    CFG.emb = embedded;
+    return (bx1 - bx0) * (by1 - by0);
+  }
+
+
+  /* ---- QOM: Quaternion Zernike moments of the colour image (r,g,b = i,j,k) on a 128x128 unit disc.
+   * 64 moments (n<=15, m>0, n-m even); each |Q_nm| carries one bit by quantisation index modulation, step QD.
+   * Frame: [len][6 text bytes][crc8] = 64 bits. Magnitudes are rotation invariant and the image is always
+   * resampled to 128x128 before reading, so this layer survives resizing and rotation. */
+  var QN = 128, K3 = 1 / Math.sqrt(3), QL = null;
+  function qSetup() {
+    if (QL) return QL;
+    var mom = [], n, m, i, j, k, p, fa = [1], idx = [], rr = [], th = [];
+    for (n = 1; n <= 15; n++) fa[n] = fa[n - 1] * n;
+    for (n = 1; n <= 15; n++) for (m = (n & 1) ? 1 : 2; m <= n; m += 2) mom.push([n, m]);
+    for (j = 0; j < QN; j++) for (i = 0; i < QN; i++) {
+      var x = (2 * i + 1) / QN - 1, y = (2 * j + 1) / QN - 1, r = Math.sqrt(x * x + y * y);
+      if (r <= 1) { idx.push(j * QN + i); rr.push(r); th.push(Math.atan2(y, x)); }
+    }
+    var P = idx.length, K = mom.length, R = [], C = [], Sn = [], cs = new Float64Array(K);
+    for (k = 0; k < K; k++) {
+      n = mom[k][0]; m = mom[k][1];
+      var Rk = new Float32Array(P), Ck = new Float32Array(P), Sk = new Float32Array(P);
+      for (p = 0; p < P; p++) {
+        var sum = 0;
+        for (var q = 0; q <= (n - m) / 2; q++) sum += (q & 1 ? -1 : 1) * fa[n - q] / (fa[q] * fa[(n + m) / 2 - q] * fa[(n - m) / 2 - q]) * Math.pow(rr[p], n - 2 * q);
+        Rk[p] = sum; Ck[p] = Math.cos(m * th[p]); Sk[p] = Math.sin(m * th[p]);
+      }
+      R.push(Rk); C.push(Ck); Sn.push(Sk); cs[k] = (n + 1) / Math.PI * 4 / (QN * QN);
+    }
+    return (QL = { K: K, P: P, idx: Int32Array.from(idx), R: R, C: C, S: Sn, cs: cs, mom: mom });
+  }
+  function qDown(rgba, w, h) {
+    var o = new Float32Array(QN * QN * 3);
+    for (var j = 0; j < QN; j++) {
+      var y0 = Math.floor(j * h / QN), y1 = Math.max(y0 + 1, Math.floor((j + 1) * h / QN));
+      for (var i = 0; i < QN; i++) {
+        var x0 = Math.floor(i * w / QN), x1 = Math.max(x0 + 1, Math.floor((i + 1) * w / QN)), a = 0, b = 0, c = 0, n = 0;
+        for (var y = y0; y < y1; y++) for (var x = x0; x < x1; x++) { var p = (y * w + x) * 4; a += rgba[p]; b += rgba[p + 1]; c += rgba[p + 2]; n++; }
+        var q = (j * QN + i) * 3; o[q] = a / n; o[q + 1] = b / n; o[q + 2] = c / n;
+      }
+    }
+    return o;
+  }
+  // analysis: Q = c * sum exp(-mu m theta) * f * R(rho)
+  function qMom(rgb, L) {
+    var Q = new Float64Array(4 * L.K), k, p;
+    for (k = 0; k < L.K; k++) {
+      var R = L.R[k], C = L.C[k], Sn = L.S[k], a = 0, b = 0, c = 0, d = 0;
+      for (p = 0; p < L.P; p++) {
+        var o = L.idx[p] * 3, r = rgb[o], g = rgb[o + 1], bl = rgb[o + 2], w = R[p], co = C[p], sn = Sn[p];
+        a += w * sn * (r + g + bl) * K3;
+        b += w * (co * r - sn * (bl - g) * K3); c += w * (co * g - sn * (r - bl) * K3); d += w * (co * bl - sn * (g - r) * K3);
+      }
+      Q[4 * k] = a * L.cs[k]; Q[4 * k + 1] = b * L.cs[k]; Q[4 * k + 2] = c * L.cs[k]; Q[4 * k + 3] = d * L.cs[k];
+    }
+    return Q;
+  }
+  // synthesis of a moment change dQ: v += sum exp(mu m theta) * dQ * R(rho), vector part only
+  function qSyn(dQ, L, v) {
+    for (var k = 0; k < L.K; k++) {
+      var R = L.R[k], C = L.C[k], Sn = L.S[k], q0 = dQ[4 * k], qx = dQ[4 * k + 1], qy = dQ[4 * k + 2], qz = dQ[4 * k + 3];
+      for (var p = 0; p < L.P; p++) {
+        var o = L.idx[p] * 3, w = R[p], co = C[p], sk = Sn[p] * K3;
+        v[o] += w * (co * qx + sk * (q0 + qz - qy)); v[o + 1] += w * (co * qy + sk * (q0 + qx - qz)); v[o + 2] += w * (co * qz + sk * (q0 + qy - qx));
+      }
+    }
+  }
+  function qFrame(text) {
+    var e = new TextEncoder().encode(String(text)), c = Math.min(e.length, 6), f = new Uint8Array(8), i, b = [];
+    while (c > 0 && c < e.length && (e[c] & 0xC0) === 0x80) c--;
+    f[0] = c; f.set(e.subarray(0, c), 1); f[7] = crc32(f, 7) & 255;
+    for (i = 0; i < 64; i++) b.push((f[i >> 3] >> (7 - (i & 7))) & 1);
+    return b;
+  }
+  function qEmbedImg(rgba, w, h, text) {
+    var QD = CFG.qd, L = qSetup(), bits = qFrame(text), rgb = qDown(rgba, w, h), K = L.K, Q = qMom(rgb, L), tgt = new Float64Array(K), k, c, i, dsum = 0;
+    for (k = 0; k < K; k++) {
+      var mag = Math.hypot(Q[4 * k], Q[4 * k + 1], Q[4 * k + 2], Q[4 * k + 3]), off = bits[k] ? 0.75 : 0.25, j = Math.max(0, Math.round(mag / QD - off));
+      tgt[k] = (j + off) * QD; dsum += Math.abs(tgt[k] - mag);
+    }
+    var v = new Float32Array(rgb.length), cur = new Float32Array(rgb.length), dQ = new Float64Array(4 * K);
+    for (var it = 0; it < 8; it++) {   // iterate: discrete moments are only approximately orthogonal
+      for (i = 0; i < cur.length; i++) cur[i] = rgb[i] + v[i];
+      Q = qMom(cur, L);
+      for (k = 0; k < K; k++) { var mg = Math.hypot(Q[4 * k], Q[4 * k + 1], Q[4 * k + 2], Q[4 * k + 3]) || 1e-9, f = tgt[k] / mg - 1; for (c = 0; c < 4; c++) dQ[4 * k + c] = Q[4 * k + c] * f; }
+      qSyn(dQ, L, v);
+    }
+    var xi0 = new Int32Array(w), xi1 = new Int32Array(w), xw = new Float32Array(w), X, Y;
+    for (X = 0; X < w; X++) { var fx = (X + 0.5) * QN / w - 0.5, x0 = Math.floor(fx); xw[X] = fx - x0; xi0[X] = Math.max(0, Math.min(QN - 1, x0)); xi1[X] = Math.max(0, Math.min(QN - 1, x0 + 1)); }
+    for (Y = 0; Y < h; Y++) {
+      var fy = (Y + 0.5) * QN / h - 0.5, y0 = Math.floor(fy), wy = fy - y0, ya = Math.max(0, Math.min(QN - 1, y0)) * QN, yb = Math.max(0, Math.min(QN - 1, y0 + 1)) * QN;
+      for (X = 0; X < w; X++) {
+        var a = xi0[X], b = xi1[X], wx = xw[X], p = (Y * w + X) * 4;
+        for (c = 0; c < 3; c++) rgba[p + c] += (v[(ya + a) * 3 + c] * (1 - wx) + v[(ya + b) * 3 + c] * wx) * (1 - wy) + (v[(yb + a) * 3 + c] * (1 - wx) + v[(yb + b) * 3 + c] * wx) * wy;
+      }
+    }
+    return { bits: bits, dmean: dsum / K, moments: K };
+  }
+  function qRead(rgba, w, h, QD) {
+    QD = QD || CFG.qd; var L = qSetup(), Q = qMom(qDown(rgba, w, h), L), f = new Uint8Array(8), bits = [];
+    for (var k = 0; k < 64; k++) {
+      var mg = Math.hypot(Q[4 * k], Q[4 * k + 1], Q[4 * k + 2], Q[4 * k + 3]) / QD, b = (mg - Math.floor(mg)) >= 0.5 ? 1 : 0;
+      bits.push(b); if (b) f[k >> 3] |= 128 >> (k & 7);
+    }
+    var ok = f[0] <= 6 && (crc32(f, 7) & 255) === f[7];
+    return { bits: bits, found: ok, text: ok ? new TextDecoder().decode(f.subarray(1, 1 + f[0])) : '' };
+  }
+
+
+  /* ---- Fourier sync template: 32 faint sinusoids at fixed absolute frequencies (wavelength 6-160 px).
+   * After any resize or screenshot at scale s their DFT peaks sit at f/s, so matching the peak constellation
+   * recovers s with no knowledge of crop or offset. The recovered scale lets the DCT layer be read again. */
+  var TPL = (function () {
+    var r = mulberry32(0x7E4D1A), t = [];
+    for (var i = 0; i < 32; i++) { var u = r(), lam = i < 12 ? 6 * Math.pow(2, u) : i < 22 ? 12 * Math.pow(3.4, u) : 40 * Math.pow(4, u), th = Math.PI * r(); t.push({ fx: Math.cos(th) / lam, fy: Math.sin(th) / lam, ph: 2 * Math.PI * r() }); }
+    return t;
+  })();
+  function addTemplate(rgba, w, h, A) {
+    var n = TPL.length, cx = [], sx = [], cy = [], sy = [], i, x, y;
+    for (i = 0; i < n; i++) {
+      var a = new Float32Array(w), b = new Float32Array(w), c = new Float32Array(h), d = new Float32Array(h), T = TPL[i];
+      for (x = 0; x < w; x++) { a[x] = Math.cos(2 * Math.PI * T.fx * x + T.ph); b[x] = Math.sin(2 * Math.PI * T.fx * x + T.ph); }
+      for (y = 0; y < h; y++) { c[y] = Math.cos(2 * Math.PI * T.fy * y); d[y] = Math.sin(2 * Math.PI * T.fy * y); }
+      cx.push(a); sx.push(b); cy.push(c); sy.push(d);
+    }
+    for (y = 0; y < h; y++) for (x = 0; x < w; x++) {
+      var v = 0, p = (y * w + x) * 4;
+      for (i = 0; i < n; i++) v += cx[i][x] * cy[i][y] - sx[i][x] * sy[i][y];
+      v *= A; rgba[p] += v; rgba[p + 1] += v; rgba[p + 2] += v;
+    }
+  }
+  function fftN(re, im, n) {
+    var i, j = 0, k, t, len;
+    for (i = 1; i < n; i++) { var bit = n >> 1; for (; j & bit; bit >>= 1) j ^= bit; j ^= bit; if (i < j) { t = re[i]; re[i] = re[j]; re[j] = t; t = im[i]; im[i] = im[j]; im[j] = t; } }
+    for (len = 2; len <= n; len <<= 1) {
+      var ang = -2 * Math.PI / len, wr = Math.cos(ang), wi = Math.sin(ang), hl = len >> 1;
+      for (i = 0; i < n; i += len) {
+        var cr = 1, ci = 0;
+        for (k = 0; k < hl; k++) {
+          var a = i + k, b = a + hl, xr = re[b] * cr - im[b] * ci, xi = re[b] * ci + im[b] * cr;
+          re[b] = re[a] - xr; im[b] = im[a] - xi; re[a] += xr; im[a] += xi;
+          var nc = cr * wr - ci * wi; ci = cr * wi + ci * wr; cr = nc;
+        }
+      }
+    }
+  }
+  /** rgba = a crop (cw x ch). Returns up to 3 scale candidates [{s, score}] where screenshot px = s * original px. */
+  function syncScale(rgba, cw, ch) {
+    var C = Math.min(1024, cw, ch), P = 1024, x, y, i, k;
+    if (C < 96) return [];
+    var x0 = (cw - C) >> 1, y0 = (ch - C) >> 1, re = new Float64Array(P * P), im = new Float64Array(P * P), mean = 0;
+    for (y = 0; y < C; y++) for (x = 0; x < C; x++) { var p = ((y0 + y) * cw + x0 + x) * 4; mean += 0.299 * rgba[p] + 0.587 * rgba[p + 1] + 0.114 * rgba[p + 2]; }
+    mean /= C * C;
+    for (y = 0; y < C; y++) {
+      var wy = 0.5 - 0.5 * Math.cos(2 * Math.PI * (y + 0.5) / C);
+      for (x = 0; x < C; x++) { var q = ((y0 + y) * cw + x0 + x) * 4; re[y * P + x] = (0.299 * rgba[q] + 0.587 * rgba[q + 1] + 0.114 * rgba[q + 2] - mean) * wy * (0.5 - 0.5 * Math.cos(2 * Math.PI * (x + 0.5) / C)); }
+    }
+    var tr = new Float64Array(P), ti = new Float64Array(P);
+    for (y = 0; y < C; y++) { for (x = 0; x < P; x++) { tr[x] = re[y * P + x]; ti[x] = 0; } fftN(tr, ti, P); for (x = 0; x < P; x++) { re[y * P + x] = tr[x]; im[y * P + x] = ti[x]; } }
+    for (x = 0; x < P; x++) { for (y = 0; y < P; y++) { tr[y] = re[y * P + x]; ti[y] = im[y * P + x]; } fftN(tr, ti, P); for (y = 0; y < P; y++) { re[y * P + x] = tr[y]; im[y * P + x] = ti[y]; } }
+    var mag = new Float32Array(P * P), ii = new Float64Array((P + 1) * (P + 1));
+    for (i = 0; i < P * P; i++) mag[i] = Math.hypot(re[i], im[i]);
+    for (y = 0; y < P; y++) { var rs = 0; for (x = 0; x < P; x++) { rs += mag[y * P + x]; ii[(y + 1) * (P + 1) + x + 1] = ii[y * (P + 1) + x + 1] + rs; } }
+    var RAD = Math.max(8, Math.round(4 * P / C)), loc = function (ky, kx) {
+      var a = Math.max(0, ky - RAD), b = Math.min(P, ky + RAD + 1), c = Math.max(0, kx - RAD), d = Math.min(P, kx + RAD + 1);
+      return (ii[b * (P + 1) + d] - ii[a * (P + 1) + d] - ii[b * (P + 1) + c] + ii[a * (P + 1) + c]) / ((b - a) * (d - c)) + 1e-9;
+    };
+    var samp = function (ky, kx) {
+      var fy = Math.floor(ky), fx = Math.floor(kx), wy = ky - fy, wx = kx - fx, y1 = ((fy % P) + P) % P, y2 = (y1 + 1) % P, x1 = ((fx % P) + P) % P, x2 = (x1 + 1) % P;
+      return (mag[y1 * P + x1] * (1 - wx) + mag[y1 * P + x2] * wx) * (1 - wy) + (mag[y2 * P + x1] * (1 - wx) + mag[y2 * P + x2] * wx) * wy;
+    };
+    var cand = [];
+    for (var s = 0.1; s <= 8; s *= 1.001) {
+      var sc = 0;
+      for (k = 0; k < TPL.length; k++) {
+        var kx = TPL[k].fx / s * P, ky = TPL[k].fy / s * P;
+        if (Math.hypot(kx, ky) > P * 0.46 || Math.hypot(kx, ky) < Math.max(10, 3 * P / C)) continue;
+        var iy = ((Math.round(ky) % P) + P) % P, ix = ((Math.round(kx) % P) + P) % P;
+        sc += Math.min(6, Math.log(Math.max(1, samp(ky, kx) / loc(iy, ix))));
+      }
+      cand.push({ s: s, score: sc });
+    }
+    cand.sort(function (a, b) { return b.score - a.score; });
+    var out = [];
+    for (i = 0; i < cand.length && out.length < 3; i++) if (out.every(function (o) { return Math.abs(Math.log(cand[i].s / o.s)) > 0.02; })) out.push(cand[i]);
+    return out;
+  }
+
+  /** One short text goes into BOTH layers: QOM moments (global) first, then DCT micro-marks on every 8x8 block. */
+  function embed(rgba, w, h, tag, timeSec, M) {
+    var HD = CFG.head; for (var ci = 0; ci < rgba.length; ci++) if ((ci & 3) !== 3) rgba[ci] = rgba[ci] < HD ? HD : rgba[ci] > 255 - HD ? 255 - HD : rgba[ci];   // headroom so white or black areas can carry the mark
+    addTemplate(rgba, w, h, M * CFG.tpl);
+    var tpl = new Uint8ClampedArray(rgba);
+    var q = qEmbedImg(rgba, w, h, tag), mid = new Uint8ClampedArray(rgba);
+    var base = new Uint8ClampedArray(rgba), sk = CFG.skip, mid2, blocks;
+    for (var pass = 0; pass < 2; pass++) {
+      embedLayer(rgba, w, h, S, tag, timeSec, M * CFG.c4, null, 4);   // coarse layers first: they survive zoomed-out screenshots
+      embedLayer(rgba, w, h, S, tag, timeSec, M * CFG.c2, null, 2);
+      mid2 = new Uint8ClampedArray(rgba);
+      blocks = embedLayer(rgba, w, h, S, tag, timeSec, M, null);
+      if (!sk || CFG.emb >= 0.08 * blocks) break;   // too few textured blocks (clean gradient): redo, marking every block
+      rgba.set(base); CFG.skip = 0;
+    }
+    CFG.skip = sk;
+    return { repeats: blocks / S.NB, blocks: blocks, qom: q, mid: mid, mid2: mid2, tpl: tpl, tplN: TPL.length, tplA: M * CFG.tpl, qd: CFG.qd };
+  }
+
+  function maxRepeats(w, h) { return (Math.floor(w / 8) * Math.floor(h / 8)) / S.NB; }
+
+  function decodeAcc(acc, cnt, L) {
+    var NB = L.NB, TW = L.TW, TH = L.TH, FR = L.FRAME, CN = L.CRCN, bytes = new Uint8Array(FR), best = null;
+    for (var o = 0; o < 64; o++) {
+      var ob = o * NB;
+      for (var dy = 0; dy < TH; dy++) for (var dx = 0; dx < TW; dx++) {
+        bytes.fill(0);
+        for (var cy = 0; cy < TH; cy++) {
+          var ty = (cy + dy) % TH;
+          for (var cx = 0; cx < TW; cx++) {
+            if (acc[ob + cy * TW + cx] > 0) { var pos = L.PERM[ty * TW + (cx + dx) % TW]; bytes[pos >> 3] |= 128 >> (pos & 7); }
+          }
+        }
+        var len = bytes[0] ^ L.KEY[0];
+        if (len > L.MAXTEXT) continue;
+        for (var q = 1; q < FR; q++) bytes[q] ^= L.KEY[q];
+        bytes[0] = len;
+        var crc = crc32(bytes, FR - CN) >>> (8 * (4 - CN)), want = 0;
+        for (var i = 0; i < CN; i++) want = want * 256 + bytes[FR - CN + i];
+        if (crc !== want) continue;
+        var time = ((bytes[1] << 24) | (bytes[2] << 16) | (bytes[3] << 8) | bytes[4]) >>> 0;
+        var text = new TextDecoder().decode(bytes.subarray(5, 5 + len));
+        var fr = encodeFrame(L, text, time).bytes, sum = 0, tot = 0;
+        for (var c2 = 0; c2 < TH; c2++) for (var c3 = 0; c3 < TW; c3++) {
+          var p3 = L.PERM[((c2 + dy) % TH) * TW + (c3 + dx) % TW], bit = (fr[p3 >> 3] >> (7 - (p3 & 7))) & 1, ci = ob + c2 * TW + c3;
+          sum += (bit ? 1 : -1) * acc[ci]; tot += cnt[ci];
+        }
+        var strength = tot ? Math.max(0, sum / tot) : 0;
+        if (!best || strength > best.strength) best = { text: text, time: time, strength: strength, offset: [o & 7, o >> 3], phase: [dx, dy] };
+      }
+    }
+    return best;
+  }
+
+  /** Vote over the pixel window [wx0,wx1) x [wy0,wy1) of a grayscale image and try to decode layer L. */
+  function scan(gray, w, L, wx0, wy0, wx1, wy1) {
+    var NB = L.NB, TW = L.TW, TH = L.TH, acc = new Float32Array(64 * NB), cnt = new Float32Array(64 * NB);
+    var Va = new Float32Array(w), Vb = new Float32Array(w);
+    var bua = B1[L.pa[0]], bva = B1[L.pa[1]], bub = B1[L.pb[0]], bvb = B1[L.pb[1]], x, k;
+    for (var y0 = wy0; y0 + 8 <= wy1; y0++) {
+      var oy = (y0 - wy0) & 7, cy = ((y0 - wy0) >> 3) % TH;
+      for (x = wx0; x < wx1; x++) { Va[x] = 0; Vb[x] = 0; }
+      for (var yy = 0; yy < 8; yy++) {
+        var base = (y0 + yy) * w, c1 = bva[yy], c2 = bvb[yy];
+        for (x = wx0; x < wx1; x++) { var g = gray[base + x]; Va[x] += c1 * g; Vb[x] += c2 * g; }
+      }
+      for (var ox = 0; ox < 8; ox++) {
+        var ab = (oy * 8 + ox) * NB;
+        for (var bx = 0, xs = wx0 + ox; xs + 8 <= wx1; bx++, xs += 8) {
+          var ca = 0, cb = 0;
+          for (k = 0; k < 8; k++) { ca += bua[k] * Va[xs + k]; cb += bub[k] * Vb[xs + k]; }
+          var sv = (ca - cb) / CFG.soft; if (sv > 1) sv = 1; else if (sv < -1) sv = -1;
+          var cell = ab + cy * TW + (bx % TW);
+          acc[cell] += sv; cnt[cell] += 1;
+        }
+      }
+    }
+    return decodeAcc(acc, cnt, L);
+  }
+
+  /** DCT micro-marks first; QOM moments are read when DCT fails (or tryQ). Returns {found,dct,qom,text,time,...}. */
+  function extract(rgba, w, h, tryQ) {
+    var repeats = maxRepeats(w, h);
+    if (w < 16 || h < 16 || repeats < 1) return { found: false, repeats: repeats, tooSmall: true };
+    var gray = new Uint8Array(w * h), n = w * h, i;
+    for (i = 0; i < n; i++) gray[i] = (299 * rgba[i * 4] + 587 * rgba[i * 4 + 1] + 114 * rgba[i * 4 + 2] + 500) / 1000;
+    var s = scan(gray, w, S, 0, 0, w, h), mm = 1;
+    for (var m2 = 2; m2 <= 4 && !s; m2 *= 2) {
+      var wm = Math.floor(w / m2), hm = Math.floor(h / m2);
+      if (wm < 140 || hm < 76) break;
+      var gm = new Uint8Array(wm * hm);
+      for (var yy = 0; yy < hm; yy++) for (var xx = 0; xx < wm; xx++) { var sm = 0; for (var dy = 0; dy < m2; dy++) for (var dx = 0; dx < m2; dx++) sm += gray[(yy * m2 + dy) * w + xx * m2 + dx]; gm[yy * wm + xx] = sm / (m2 * m2); }
+      s = scan(gm, wm, S, 0, 0, wm, hm); mm = m2;
+    }
+    var q = null; if (s || tryQ) { for (var qi = 0; qi < CFG.qds.length && !(q && q.found); qi++) q = qRead(rgba, w, h, CFG.qds[qi]); }
+    if (s) return { found: true, dct: true, m: mm, qom: !!(q && q.found), text: s.text, time: s.time, strength: s.strength, repeats: repeats, offset: s.offset, phase: s.phase };
+    if (q && q.found) return { found: true, dct: false, qom: true, text: q.text, time: null, strength: 0.6, repeats: repeats, offset: [0, 0], phase: [0, 0] };
+    return { found: false, repeats: repeats };
+  }
+
+  var api = { cfg: CFG, embed: embed, extract: extract, maxRepeats: maxRepeats, byteLength: byteLength, MAXTEXT: 6, TAGMAX: 6, NB: S.NB, basis: { A: S.A, B: S.B }, qRead: qRead, syncScale: syncScale };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.WM = api;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var MAX_EMBED_PX = 16e6, MAX_SCAN_PX = 24e6;
+  var MAXB = WM.MAXTEXT;
+  var $ = function (id) { return document.getElementById(id); };
+  var frame = function () { return new Promise(function (r) { requestAnimationFrame(function () { setTimeout(r, 0); }); }); };
+  var capDownloads = (window.claude && window.claude.use) ? window.claude.use('downloads').catch(function () { return null; }) : Promise.resolve(null);
+
+  var state = { tab: 'seal', src: null, origUrl: null, sealCanvas: null, sealBlob: null, sealUrl: null, sealText: '', view: 'sealed', busy: false };
+  var scanToken = 0, thumbUrl = null;
+
+  /* ---------- helpers ---------- */
+  function fmtLocal(ts) {
+    try {
+      return new Intl.DateTimeFormat(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' }).format(new Date(ts * 1000));
+    } catch (e) { return new Date(ts * 1000).toString(); }
+  }
+  function fmtUTC(ts) { return new Date(ts * 1000).toISOString().replace('T', ' ').replace('.000Z', ' UTC'); }
+  function fmtAgo(ts) {
+    var s = Math.round(Date.now() / 1000 - ts);
+    if (s < -90) return 'later than this device’s clock';
+    var a = Math.abs(s), u, n;
+    if (a < 60) return 'just now';
+    if (a < 3600) { n = Math.round(a / 60); u = 'minute'; }
+    else if (a < 86400) { n = Math.round(a / 3600); u = 'hour'; }
+    else if (a < 86400 * 60) { n = Math.round(a / 86400); u = 'day'; }
+    else if (a < 86400 * 730) { n = Math.round(a / (86400 * 30.4)); u = 'month'; }
+    else { n = Math.round(a / (86400 * 365.25)); u = 'year'; }
+    return n + ' ' + u + (n === 1 ? '' : 's') + ' ago';
+  }
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function toBlob(canvas, type, q) { return new Promise(function (res) { canvas.toBlob(res, type, q); }); }
+
+  async function loadCanvas(blob, maxPx) {
+    var url = URL.createObjectURL(blob);
+    try {
+      var img = new Image(); img.src = url; await img.decode();
+      var nw = img.naturalWidth, nh = img.naturalHeight, w = nw, h = nh, scaled = false;
+      if (w * h > maxPx) { var k = Math.sqrt(maxPx / (w * h)); w = Math.floor(w * k); h = Math.floor(h * k); scaled = true; }
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var x = c.getContext('2d', { willReadFrequently: true });
+      x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.imageSmoothingQuality = 'high'; x.drawImage(img, 0, 0, w, h);
+      return { canvas: c, w: w, h: h, scaled: scaled, nw: nw, nh: nh };
+    } finally { URL.revokeObjectURL(url); }
+  }
+
+  function makeSample() {
+    var w = 1200, h = 800, c = document.createElement('canvas'); c.width = w; c.height = h;
+    var x = c.getContext('2d', { willReadFrequently: true });
+    var g = x.createLinearGradient(0, 0, 0, h * 0.66);
+    g.addColorStop(0, '#1d2b64'); g.addColorStop(0.5, '#c9506f'); g.addColorStop(1, '#f7b868');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    var sun = x.createRadialGradient(840, 430, 10, 840, 430, 150);
+    sun.addColorStop(0, 'rgba(255,244,214,1)'); sun.addColorStop(0.35, 'rgba(255,214,150,.9)'); sun.addColorStop(1, 'rgba(255,190,120,0)');
+    x.fillStyle = sun; x.fillRect(600, 200, 480, 480);
+    var layers = [['#6b3b63', 470, 38, 0.006, 1.1], ['#4a2a55', 540, 46, 0.008, 2.3], ['#2b1d45', 620, 52, 0.011, 4.1], ['#150f2b', 710, 40, 0.014, 5.7]];
+    layers.forEach(function (L) {
+      x.beginPath(); x.moveTo(0, h);
+      for (var i = 0; i <= w; i += 8) x.lineTo(i, L[1] + Math.sin(i * L[3] + L[4]) * L[2] + Math.sin(i * L[3] * 2.7 + L[4] * 2) * L[2] * 0.35);
+      x.lineTo(w, h); x.closePath(); x.fillStyle = L[0]; x.fill();
+    });
+    var id = x.getImageData(0, 0, w, h), d = id.data, s = 12345;
+    for (var i = 0; i < d.length; i += 4) {
+      s = (Math.imul(s, 1664525) + 1013904223) | 0;
+      var n = ((s >>> 24) - 128) / 128 * 6;
+      d[i] += n; d[i + 1] += n; d[i + 2] += n;
+    }
+    x.putImageData(id, 0, 0);
+    return c;
+  }
+
+  /* ---------- tabs ---------- */
+  function setTab(t) {
+    state.tab = t;
+    var seal = t === 'seal';
+    $('tabSeal').setAttribute('aria-selected', seal); $('tabSeal').tabIndex = seal ? 0 : -1;
+    $('tabRead').setAttribute('aria-selected', !seal); $('tabRead').tabIndex = seal ? -1 : 0;
+    $('panelSeal').hidden = !seal; $('panelRead').hidden = seal;
+    try { history.replaceState(null, '', seal ? '#seal' : '#read'); } catch (e) { /* ignored */ }
+  }
+  $('tabSeal').addEventListener('click', function () { setTab('seal'); });
+  $('tabRead').addEventListener('click', function () { setTab('read'); });
+  document.querySelector('.tabs').addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { var t = state.tab === 'seal' ? 'read' : 'seal'; setTab(t); $(t === 'seal' ? 'tabSeal' : 'tabRead').focus(); }
+  });
+
+  /* ---------- SEAL tab ---------- */
+  function clampNote() { return clampTag(); }
+  function clampTag() {
+    var i = $('tag'), v = i.value;
+    while (WM.byteLength(v) > WM.TAGMAX) v = v.slice(0, -1);
+    if (v !== i.value) i.value = v;
+    $('tagCount').textContent = WM.byteLength(v) + ' / ' + WM.TAGMAX + ' bytes';
+    return v;
+  }
+  function tickClock() { $('clock').textContent = fmtLocal(Date.now() / 1000); }
+
+  function showSealMsg(t) { var m = $('sealMsg'); m.textContent = t || ''; m.hidden = !t; }
+
+  function revokeSeal() {
+    if (state.sealUrl) URL.revokeObjectURL(state.sealUrl);
+    state.sealUrl = null; state.sealBlob = null; state.sealCanvas = null;
+  }
+  function setResult(on) { $('panelSeal').classList.toggle('result', !!on); }
+  function invalidateSeal() {
+    revokeSeal(); setResult(false);
+    $('receipt').hidden = true; $('trace').hidden = true; $('viewSeg').hidden = true; $('patNote').hidden = true; $('dropHint').hidden = false;
+    state.view = 'orig'; renderView();
+  }
+
+  function renderView() {
+    var s = state.src, img = $('viewImg'), pat = $('viewPat'), tag = $('viewTag');
+    if (!s) return;
+    var hasSeal = !!state.sealCanvas;
+    if (!hasSeal) state.view = 'orig';
+    $('viewSeg').querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.view === state.view); });
+    $('patNote').hidden = state.view !== 'pattern';
+    $('dropHint').hidden = hasSeal;
+    if (state.view === 'pattern') {
+      drawPattern(); img.hidden = true; pat.hidden = false; tag.textContent = 'Pattern ×8';
+    } else {
+      pat.hidden = true; img.hidden = false;
+      var url = state.view === 'sealed' ? state.sealUrl : state.origUrl;
+      if (img.getAttribute('src') !== url) img.src = url;
+      tag.textContent = state.view === 'sealed' ? 'Watermarked' : (s.sample ? 'Sample image' : 'Original');
+      img.alt = state.view === 'sealed' ? 'Watermarked image' : 'Source image';
+    }
+  }
+
+  function drawPattern() {
+    var s = state.src, cw = Math.min(280, s.w), ch = Math.min(210, s.h);
+    var x0 = Math.floor((s.w - cw) / 2), y0 = Math.floor((s.h - ch) / 2);
+    var a = s.canvas.getContext('2d').getImageData(x0, y0, cw, ch).data;
+    var b = state.sealCanvas.getContext('2d').getImageData(x0, y0, cw, ch).data;
+    var out = new ImageData(cw, ch), o = out.data;
+    for (var i = 0; i < o.length; i += 4) {
+      var dlt = ((b[i] - a[i]) + (b[i + 1] - a[i + 1]) + (b[i + 2] - a[i + 2])) / 3;
+      var v = 128 + dlt * 8; v = v < 0 ? 0 : v > 255 ? 255 : v;
+      o[i] = o[i + 1] = o[i + 2] = v; o[i + 3] = 255;
+    }
+    var pc = $('viewPat'); pc.width = cw; pc.height = ch; pc.getContext('2d').putImageData(out, 0, 0);
+  }
+
+  async function setSource(blob, name, isSample) {
+    showSealMsg('');
+    try {
+      var r = await loadCanvas(blob, MAX_EMBED_PX);
+      if (state.origUrl) URL.revokeObjectURL(state.origUrl);
+      revokeSeal();
+      state.src = { canvas: r.canvas, w: r.w, h: r.h, name: name, sample: !!isSample, scaled: r.scaled, nw: r.nw, nh: r.nh };
+      state.origUrl = URL.createObjectURL(blob);
+      $('receipt').hidden = true; $('trace').hidden = true; $('viewSeg').hidden = true; setResult(false);
+      state.view = 'orig'; renderView();
+      var rep = WM.maxRepeats(r.w, r.h);
+      var meta = r.w + ' × ' + r.h + ' px · room for ' + (rep < 10 ? rep.toFixed(1) : Math.floor(rep)) + '× repeats' + (isSample ? ' · sample' : '');
+      $('stageMeta').textContent = meta;
+      if (r.scaled) showSealMsg('This image was reduced from ' + r.nw + ' × ' + r.nh + ' to ' + r.w + ' × ' + r.h + ' px to fit browser limits.');
+      else if (rep < 2) showSealMsg('This image is too small to hold a watermark. Use one at least about 160 × 160 px.');
+      else if (rep < 6) showSealMsg('This is a small image, so the watermark has few repeats and may not survive heavy editing.');
+      $('sealBtn').disabled = rep < 2;
+    } catch (e) {
+      showSealMsg('That file could not be opened as an image.');
+    }
+  }
+
+  async function doSeal() {
+    if (state.busy || !state.src) return;
+    var text = clampNote();
+    if (!text.trim()) { showSealMsg('Write a short text to hide first.'); $('tag').focus(); return; }
+    showSealMsg(''); state.busy = true;
+    var btn = $('sealBtn'), M = +document.querySelector('input[name="str"]:checked').value;
+    btn.disabled = true; btn.textContent = 'Embedding…';
+    await frame();
+    try {
+      var s = state.src, ctx = s.canvas.getContext('2d');
+      var id = ctx.getImageData(0, 0, s.w, s.h);
+      var t = Math.floor(Date.now() / 1000); state.sealTime = t;
+      WM.cfg.qd = M >= 26 ? 3 : 2;
+      var stats = WM.embed(id.data, s.w, s.h, text, t, M);
+      var out = document.createElement('canvas'); out.width = s.w; out.height = s.h;
+      out.getContext('2d', { willReadFrequently: true }).putImageData(id, 0, 0);
+      var blob = await toBlob(out, 'image/png');
+      if (!blob) throw new Error('png');
+      revokeSeal();
+      state.sealCanvas = out; state.sealBlob = blob; state.sealUrl = URL.createObjectURL(blob); state.sealText = text;
+      state.view = 'sealed'; renderView();
+      $('viewSeg').hidden = false;
+      $('rNote').textContent = text;
+      var tm = el('span', null, fmtLocal(t)); var sub = el('span', 'sub', fmtUTC(t)); $('rTime').replaceChildren(tm, sub);
+      $('rRep').textContent = (stats.repeats < 10 ? stats.repeats.toFixed(1) : Math.floor(stats.repeats)) + ' DCT micro-marks across the image, ' + stats.qom.moments + ' QOM moments, ' + stats.tplN + ' sync sinusoids';
+      try { buildTrace(stats, id.data, s, M); } catch (e) { /* trace is optional */ }
+      setCheck('chk1', 'run'); setCheck('chk2', 'run');
+      $('receipt').hidden = false;
+      setResult(true); window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      selfTest(id.data, s.w, s.h, out, text, M);
+    } catch (e) {
+      showSealMsg('Embedding failed. Try a smaller image.');
+    } finally {
+      state.busy = false; btn.disabled = false; btn.textContent = 'Embed watermark';
+    }
+  }
+
+  function setCheck(id, st, why) {
+    var li = $(id); li.dataset.s = st;
+    var ico = li.querySelector('.ico');
+    var old = li.querySelector('.why'); if (old) old.remove();
+    ico.innerHTML = st === 'ok' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>'
+      : st === 'bad' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' : '';
+    if (why) { var w = el('span', 'why', why); li.lastElementChild.appendChild(w); }
+  }
+
+  async function selfTest(data, w, h, canvas, text, M) {
+    var mine = state.sealBlob;
+    await frame();
+    var r1 = WM.extract(data, w, h, true);
+    if (mine !== state.sealBlob) return;
+    var ok1 = r1.found && r1.dct && r1.qom && r1.text === text;
+    setCheck('chk1', ok1 ? 'ok' : 'bad', ok1 ? '' : 'The watermark could not be read back. Try Strong, or a larger image.');
+    try {
+      var jb = await toBlob(canvas, 'image/jpeg', 0.7);
+      var bmp = await createImageBitmap(jb);
+      var c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+      var x2 = c2.getContext('2d', { willReadFrequently: true }); x2.drawImage(bmp, 0, 0);
+      if (bmp.close) bmp.close();
+      await frame();
+      var r2 = WM.extract(x2.getImageData(0, 0, w, h).data, w, h, true);
+      if (mine !== state.sealBlob) return;
+      var ok = r2.found;
+      setCheck('chk2', ok ? 'ok' : 'bad', ok ? (r2.dct ? '' : 'DCT marks lost; the QOM moments still carried the text.') : (M < 26 ? 'Not at this strength. Choose a stronger setting and embed again.' : 'Not at this strength. A larger image holds more repeats.'));
+    } catch (e) {
+      if (mine === state.sealBlob) setCheck('chk2', 'bad', 'The browser could not run this test.');
+    }
+  }
+
+  async function saveSealed() {
+    if (!state.sealBlob) return;
+    var base = state.src.sample ? 'tracemark-sample' : (state.src.name || 'image').replace(/\.[^.]+$/, '').slice(0, 80) + '-watermarked';
+    var dl = await capDownloads;
+    if (!dl) {
+      var a = document.createElement('a');
+      a.href = state.sealUrl; a.download = base + '.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      showSealMsg('');
+      return;
+    }
+    try { await dl.save({ filename: base + '.png', data: state.sealBlob }); showSealMsg(''); }
+    catch (e) {
+      if (e && e.code === 'declined') return;
+      showSealMsg('The file could not be saved from this page. Press and hold (or right-click) the Watermarked preview and choose Save image.');
+    }
+  }
+
+  document.querySelectorAll('input[name="str"]').forEach(function (r) { r.addEventListener('change', function () { if (state.sealCanvas) invalidateSeal(); }); });
+  $('tag').addEventListener('input', function () { clampTag(); if (state.sealCanvas) invalidateSeal(); });
+  $('sealBtn').addEventListener('click', doSeal);
+  $('tag').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !$('sealBtn').disabled) { e.preventDefault(); doSeal(); } });
+  $('saveBtn').addEventListener('click', async function () {
+    var b = $('saveBtn'), o = 'Save watermarked PNG';
+    await saveSealed(); b.textContent = 'Saved \u2713';
+    setTimeout(function () { b.textContent = o; }, 2200);
+  });
+  $('againBtn').addEventListener('click', function () { invalidateSeal(); window.scrollTo(0, 0); });
+  $('pickSeal').addEventListener('click', function () { $('fileSeal').click(); });
+  $('fileSeal').addEventListener('change', function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) setSource(f, f.name, false); });
+  $('viewSeg').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; state.view = b.dataset.view; renderView(); });
+  $('readThis').addEventListener('click', function () { if (state.sealBlob) { setTab('read'); readBlob(state.sealBlob, 'sealed image'); } });
+
+  /* ---------- drag and drop, paste ---------- */
+  function wireDrop(node, handler) {
+    ['dragenter', 'dragover'].forEach(function (ev) { node.addEventListener(ev, function (e) { e.preventDefault(); node.classList.add('drag'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { node.addEventListener(ev, function (e) { e.preventDefault(); node.classList.remove('drag'); }); });
+    node.addEventListener('drop', function (e) {
+      var f = Array.prototype.find.call(e.dataTransfer.files || [], function (f) { return /^image\//.test(f.type); });
+      if (f) handler(f, f.name);
+    });
+  }
+  wireDrop($('stage'), function (f, n) { setSource(f, n, false); });
+  wireDrop($('drop'), function (f, n) { readBlob(f, n); });
+  document.addEventListener('paste', function (e) {
+    var f = Array.prototype.find.call((e.clipboardData && e.clipboardData.files) || [], function (f) { return /^image\//.test(f.type); });
+    if (!f) return;
+    e.preventDefault();
+    if (state.tab === 'seal') setSource(f, 'pasted-image', false); else readBlob(f, 'pasted image');
+  });
+
+  /* ---------- READ tab ---------- */
+  var COMMON = [2, 0.5, 4 / 3, 0.75, 1.5, 2 / 3, 3, 1 / 3, 1.25, 0.8, 1.2, 0.6, 2.5, 0.4, 4, 0.25];
+
+  function show(card) {
+    ['scanCard', 'foundCard', 'missCard'].forEach(function (id) { $(id).hidden = id !== card; });
+    $('readIdle').hidden = !!card;
+  }
+
+  async function readBlob(blob, name) {
+    var token = ++scanToken;
+    try {
+      var r = await loadCanvas(blob, MAX_SCAN_PX);
+      if (token !== scanToken) return;
+      if (thumbUrl) URL.revokeObjectURL(thumbUrl);
+      thumbUrl = URL.createObjectURL(blob);
+      $('thumbImg').src = thumbUrl; $('thumb').hidden = false;
+      $('thumbMeta').hidden = false; $('thumbMeta').textContent = (name || 'image') + ' · ' + r.nw + ' × ' + r.nh + ' px';
+      $('drop').style.minHeight = '0';
+      runScan(r.canvas, token, false);
+    } catch (e) {
+      show('missCard'); $('missText').textContent = 'That file could not be opened as an image.'; $('deepRow').hidden = true;
+    }
+  }
+
+  async function extractAt(canvas, s) {
+    var w = Math.round(canvas.width * s), h = Math.round(canvas.height * s);
+    if (w < 48 || h < 48 || w * h > MAX_SCAN_PX) return null;
+    var id;
+    if (s === 1) id = canvas.getContext('2d').getImageData(0, 0, w, h);
+    else {
+      var t = document.createElement('canvas'); t.width = w; t.height = h;
+      var x = t.getContext('2d', { willReadFrequently: true }); x.imageSmoothingQuality = 'high'; x.drawImage(canvas, 0, 0, w, h);
+      id = x.getImageData(0, 0, w, h);
+    }
+    return WM.extract(id.data, w, h, s === 1);
+  }
+
+  function fmtScale(s) { return s >= 1 ? '×' + (Math.round(s * 100) / 100) : '÷' + (Math.round(100 / s) / 100); }
+
+  async function runScan(canvas, token, deep) {
+    show('scanCard');
+    var bar = $('scanBar'), txt = $('scanText');
+    var list = deep ? [] : [1].concat(COMMON), i;
+    if (deep) {
+      var seen = [1].concat(COMMON), step = 1.007, cand = [];
+      for (i = 1; Math.pow(step, i) <= 4.0; i++) cand.push(Math.pow(step, i));
+      for (i = 1; Math.pow(step, -i) >= 0.25; i++) cand.push(Math.pow(step, -i));
+      cand.sort(function (a, b) { return Math.abs(Math.log(a)) - Math.abs(Math.log(b)); });
+      list = cand.filter(function (s) { return !seen.some(function (c) { return Math.abs(Math.log(s / c)) < 0.003; }); });
+    }
+    var tooSmall = false;
+    if (!deep) {
+      txt.textContent = 'Looking for the scale marker (Fourier sync)…'; bar.style.width = '2%'; await frame();
+      if (token !== scanToken) return;
+      var C = Math.min(1024, canvas.width, canvas.height), xs = [(canvas.width - C) >> 1, 0, canvas.width - C], ys = [(canvas.height - C) >> 1, 0, canvas.height - C], wins = [], tried = [];
+      xs.forEach(function (x) { ys.forEach(function (y) { if (!wins.some(function (q) { return q[0] === x && q[1] === y; })) wins.push([x, y]); }); });
+      var jit = [0, -0.002, 0.002], jitW = [0];
+      for (var jk = 1; jk <= 12; jk++) jitW.push(jk * 0.001, -jk * 0.001);
+      for (var wi = 0; wi < wins.length && C >= 96; wi++) {
+        if (token !== scanToken) return;
+        txt.textContent = 'Looking for the scale marker (Fourier sync), area ' + (wi + 1) + ' of ' + wins.length + '…'; await frame();
+        var cands = [];
+        try { cands = WM.syncScale(canvas.getContext('2d').getImageData(wins[wi][0], wins[wi][1], C, C).data, C, C).slice(0, wi === 0 ? 2 : 1); } catch (e) { cands = []; }
+        for (var ci = 0; ci < cands.length; ci++) {
+          if (tried.some(function (t) { return Math.abs(Math.log(t / cands[ci].s)) < 0.01; })) continue;
+          tried.push(cands[ci].s);
+          var jl = (canvas.width * canvas.height / (cands[ci].s * cands[ci].s) <= 2.5e6) ? jitW : jit;   // small originals are cheap: search the scale finely
+          for (var ji = 0; ji < jl.length; ji++) {
+            if (token !== scanToken) return;
+            var sy = 1 / (cands[ci].s * (1 + jl[ji]));
+            txt.textContent = 'Sync candidate: image is about ' + Math.round(cands[ci].s * 100) + '% of its original size…';
+            await frame();
+            var rs = await extractAt(canvas, sy);
+            if (rs && rs.found) { rs.sync = true; showFound(rs, sy, canvas); return; }
+          }
+        }
+      }
+    }
+    for (i = 0; i < list.length; i++) {
+      if (token !== scanToken) return;
+      var s = list[i];
+      txt.textContent = deep ? ('Trying sizes: ' + (i + 1) + ' of ' + list.length + ' (' + fmtScale(s) + ')')
+        : (i === 0 ? 'Checking the image as it is…' : 'Trying a resized copy ' + i + ' of ' + (list.length - 1) + ' (' + fmtScale(s) + ')…');
+      bar.style.width = Math.round((i / list.length) * 100) + '%';
+      await frame();
+      if (token !== scanToken) return;
+      var r = await extractAt(canvas, s);
+      if (r && r.tooSmall && s === 1) tooSmall = true;
+      if (r && r.found) { showFound(r, s, canvas); return; }
+      if (tooSmall) break;
+    }
+    if (token !== scanToken) return;
+    showMiss(tooSmall, deep, canvas);
+  }
+
+  function showFound(r, s, canvas) {
+    show('foundCard');
+    $('fNote').textContent = r.text || '(empty note)'; $('fLabel').textContent = 'Short text';
+    var main = el('span', null, r.time == null ? 'Not stored in the QOM layer' : fmtLocal(r.time)), u = el('span', 'sub', r.time == null ? 'Time is only kept by the DCT layer' : fmtUTC(r.time) + ' · ' + fmtAgo(r.time));
+    $('fTime').replaceChildren(main, u);
+    var n = Math.max(1, Math.round(r.strength * 10)), m = $('fMeter'); m.replaceChildren();
+    for (var i = 0; i < 10; i++) m.appendChild(el('i', i < n ? 'on' : ''));
+    $('fSignal').textContent = Math.round(r.strength * 100) + '% · ' + (r.strength > 0.8 ? 'strong, pixels barely changed' : r.strength > 0.45 ? 'fair, the image was altered' : 'weak, but the checksum still matches');
+    var chips = $('fChips'); chips.replaceChildren();
+    var altered = false;
+    if (Math.abs(s - 1) > 1e-6) { chips.appendChild(el('span', 'chip', 'Resized to about ' + Math.round(100 / s) + '% of the original size')); altered = true; }
+    if (r.offset[0] || r.offset[1] || r.phase[0] || r.phase[1]) { chips.appendChild(el('span', 'chip', 'Cropped or shifted')); altered = true; }
+    if (r.strength <= 0.8) { chips.appendChild(el('span', 'chip', 'Compressed or edited')); altered = true; }
+    if (r.sync) chips.appendChild(el('span', 'chip', 'Scale recovered by Fourier sync'));
+    chips.appendChild(el('span', 'chip', r.dct ? 'DCT micro-marks read' + (r.m > 1 ? ' (coarse ×' + r.m + ' layer)' : '') : 'DCT lost, text recovered from QOM'));
+    chips.appendChild(el('span', 'chip', r.qom ? 'QOM moments agree' : 'QOM not readable (cropped or altered)'));
+    if (!altered) chips.appendChild(el('span', 'chip', 'Pixels unchanged'));
+    chips.appendChild(el('span', 'chip', canvas.width + ' × ' + canvas.height + ' px'));
+  }
+
+  function showMiss(tooSmall, deepDone, canvas) {
+    show('missCard');
+    var t = $('missText');
+    if (tooSmall) { t.textContent = 'This image is too small to hold a full watermark. It needs to be at least about 150 × 100 px.'; $('deepRow').hidden = true; return; }
+    t.textContent = deepDone
+      ? 'Nothing matched at any size tried. The image was probably never watermarked with this page, or it was changed too much: rotated, photographed from a screen, or compressed very hard.'
+      : 'Nothing matched at the original size or the common screenshot sizes. The image may not be watermarked, or it was resized by an unusual amount.';
+    $('deepRow').hidden = !!deepDone;
+    $('deepBtn').onclick = function () { var tk = ++scanToken; runScan(canvas, tk, true); };
+  }
+
+  $('scanCancel').addEventListener('click', function () {
+    scanToken++;
+    show('missCard'); $('missText').textContent = 'Scan stopped.'; $('deepRow').hidden = true;
+  });
+  $('pickRead').addEventListener('click', function () { $('fileRead').click(); });
+  $('fileRead').addEventListener('change', function (e) { var f = e.target.files[0]; e.target.value = ''; if (f) readBlob(f, f.name); });
+
+
+  /* ---------- model trace (right column) ---------- */
+  function buildTrace(st, fin, s, M) {
+    var w = s.w, h = s.h, cw = Math.min(160, w & ~7), ch = Math.min(120, h & ~7), x0 = ((w - cw) >> 1) & ~7, y0 = ((h - ch) >> 1) & ~7;
+    var orig = s.canvas.getContext('2d').getImageData(0, 0, w, h).data, mid = st.mid2, i, c, mse = 0, mx = 0;
+    for (i = 0; i < w * h * 4; i += 4) for (c = 0; c < 3; c++) { var d = fin[i + c] - orig[i + c]; mse += d * d; if (Math.abs(d) > mx) mx = Math.abs(d); }
+    var psnr = 10 * Math.log10(65025 / (mse / (w * h * 3) || 1e-9));
+    var lum = function (a, p) { return 0.299 * a[p] + 0.587 * a[p + 1] + 0.114 * a[p + 2]; };
+    var nbx = cw >> 3, nby = ch >> 3, NB = nbx * nby, A = WM.basis.A, B = WM.basis.B;
+    var z0 = new Float64Array(2 * NB), dl = new Float64Array(2 * NB), bi, k, x, y;
+    for (bi = 0; bi < NB; bi++) {
+      var ca = 0, cb = 0, fa = 0, fb = 0, bx = x0 + (bi % nbx) * 8, by = y0 + ((bi / nbx) | 0) * 8;
+      for (k = 0, y = 0; y < 8; y++) for (x = 0; x < 8; x++, k++) { var p = ((by + y) * w + bx + x) * 4, l0 = lum(mid, p), l1 = lum(fin, p); ca += l0 * A[k]; cb += l0 * B[k]; fa += l1 * A[k]; fb += l1 * B[k]; }
+      z0[2 * bi] = ca; z0[2 * bi + 1] = cb; dl[2 * bi] = fa - ca; dl[2 * bi + 1] = fb - cb;
+    }
+    // latent diffusion: forward noise to t=T, then guided deterministic DDIM steps back to t=0
+    var T = 6, ab = function (t) { return t === 0 ? 1 : Math.pow(Math.cos(t / T * Math.PI / 2 * 0.97), 2); };
+    var seed = 0xD1FF, rnd = function () { seed = (Math.imul(seed, 1664525) + 1013904223) | 0; return ((seed >>> 8) + 1) / 16777217; };
+    var z = new Float64Array(2 * NB), snaps = {};
+    for (i = 0; i < 2 * NB; i++) { var g = Math.sqrt(-2 * Math.log(rnd())) * Math.cos(2 * Math.PI * rnd()) * M / 2; z[i] = Math.sqrt(ab(T)) * z0[i] + Math.sqrt(1 - ab(T)) * g; }
+    snaps[T] = Float64Array.from(z);
+    for (var t = T; t >= 1; t--) {
+      var gd = (T - t + 1) / T;
+      for (i = 0; i < 2 * NB; i++) {
+        var zh = z0[i] + gd * dl[i], e = (z[i] - Math.sqrt(ab(t)) * zh) / Math.sqrt(1 - ab(t));
+        z[i] = Math.sqrt(ab(t - 1)) * zh + Math.sqrt(1 - ab(t - 1)) * e;
+      }
+      if (t - 1 === 4 || t - 1 === 2 || t - 1 === 0) snaps[t - 1] = Float64Array.from(z);
+    }
+    var panel = function (label, fill) {
+      var f = document.createElement('figure'), cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      var id = new ImageData(cw, ch), o = id.data; fill(o); cv.getContext('2d').putImageData(id, 0, 0);
+      f.appendChild(cv); f.appendChild(el('figcaption', null, label)); return f;
+    };
+    var gray = function (v) { return v < 0 ? 0 : v > 255 ? 255 : v; };
+    var diffPanel = function (a, b, gain) { return function (o) { for (y = 0; y < ch; y++) for (x = 0; x < cw; x++) { var p = ((y0 + y) * w + x0 + x) * 4, q = (y * cw + x) * 4, dd = 0; for (c = 0; c < 3; c++) dd += b[p + c] - a[p + c]; o[q] = o[q + 1] = o[q + 2] = gray(128 + gain * dd / 3); o[q + 3] = 255; } }; };
+    var imgPanel = function (a) { return function (o) { for (y = 0; y < ch; y++) for (x = 0; x < cw; x++) { var p = ((y0 + y) * w + x0 + x) * 4, q = (y * cw + x) * 4; o[q] = a[p]; o[q + 1] = a[p + 1]; o[q + 2] = a[p + 2]; o[q + 3] = 255; } }; };
+    var zPanel = function (zs) { return function (o) {
+      for (bi = 0; bi < NB; bi++) {
+        var da = zs[2 * bi] - z0[2 * bi], db = zs[2 * bi + 1] - z0[2 * bi + 1], bx = (bi % nbx) * 8, by = ((bi / nbx) | 0) * 8;
+        for (k = 0, y = 0; y < 8; y++) for (x = 0; x < 8; x++, k++) { var q = ((by + y) * cw + bx + x) * 4, v = gray(128 + 6 * (da * A[k] + db * B[k])); o[q] = o[q + 1] = o[q + 2] = v; o[q + 3] = 255; }
+      } }; };
+
+    var qr = WM.qRead(fin, w, h), good = 0, bitsEl = el('div', 'bits');
+    qr.bits.forEach(function (b, j) { var ok = b === st.qom.bits[j]; if (ok) good++; bitsEl.appendChild(el('i', (b ? 'on' : '') + (ok ? '' : ' x'))); });
+    var bitsBox = el('div', 'bitsbox');
+    bitsBox.appendChild(el('span', 'label', 'Colour-fingerprint check · 64 bits'));
+    bitsBox.appendChild(bitsEl);
+    bitsBox.appendChild(el('p', 'hint', good + ' of 64 dots match what we wrote. We re-measured the finished image and compared. Filled dot = 1, empty dot = 0, red ring = mismatch.'));
+
+    var tt = state.sealTime || Math.floor(Date.now() / 1000), txt = state.sealText || '', nbytes = WM.byteLength(txt);
+    var rp = st.repeats < 10 ? st.repeats.toFixed(1) : Math.floor(st.repeats);
+    var lvl = M <= 10 ? 'Light' : M <= 16 ? 'Standard' : 'Strong';
+    var vis = psnr >= 45 ? 'far below what the eye can notice' : psnr >= 38 ? 'practically invisible' : psnr >= 32 ? 'faint, may show in smooth areas' : 'visible in smooth areas';
+    $('trLegend').textContent = 'Photos get shrunk, cropped, screenshotted and compressed, and no single trick survives all of that. So your text is written four different ways, and if one layer is damaged another can still be read. The small pictures show a ' + cw + ' × ' + ch + ' px piece from the middle of your photo. The changes are so faint that most pictures are brightened (boosted) so you can see them: grey means no change, lighter or darker grey means the pixels were changed there.';
+
+    var tiles = $('trTiles'); tiles.replaceChildren();
+    var tile = function (l, v, n) { var d = el('div', 'tile'); d.appendChild(el('span', 'label', l)); d.appendChild(el('b', null, v)); d.appendChild(el('i', null, n)); tiles.appendChild(d); };
+    tile('Image quality', psnr.toFixed(1) + ' dB', vis);
+    tile('Repeats', rp + '×', 'full copies of the text across the image');
+    tile('Colour check', good + ' / 64', good === 64 ? 'bits verified after embedding' : 'bits matched after embedding');
+    tile('Strength', lvl, 'margin up to ' + M);
+
+    var host = $('trStages'); host.replaceChildren();
+    var stage = function (n, title, tag, sum, det, chipList, figs, wide) {
+      var sec = el('section', 'stg' + (wide ? ' wide' : '')), box = el('div', 'stg-t'), hd = el('div', 'stg-h');
+      hd.appendChild(el('span', 'step-n', String(n))); hd.appendChild(el('h3', null, title)); if (tag) hd.appendChild(el('span', 'stg-tag', tag));
+      box.appendChild(hd); box.appendChild(el('p', 'sum', sum)); box.appendChild(el('p', 'det', det));
+      if (chipList && chipList.length) { var cr = el('div', 'chips'); chipList.forEach(function (cc) { cr.appendChild(el('span', 'chip', cc)); }); box.appendChild(cr); }
+      sec.appendChild(box);
+      if (figs && figs.length) { var fg = el('div', 'stg-f n' + figs.length); figs.forEach(function (f) { fg.appendChild(f); }); sec.appendChild(fg); }
+      host.appendChild(sec);
+    };
+    stage(1, 'What we hid', '', 'Your text and the time, packed into a small protected package.',
+      'Your text "' + txt + '" (' + nbytes + ' of 6 allowed bytes) and the time ' + fmtLocal(tt) + ' (' + fmtUTC(tt) + ') are packed into a small frame with a length byte and a CRC-32 checksum. The checksum is like a fingerprint of the data: when someone reads the watermark later, a matching checksum proves the text came out exactly right. The frame is also scrambled with a fixed secret pattern and its bits are shuffled, so the mark looks like random noise. This is for tidiness only: it is not encryption, and anyone can read it with this page.',
+      [nbytes + ' of 6 bytes', 'CRC-32 checksum', 'scrambled + shuffled', 'not encrypted'], null, true);
+    stage(2, 'Layer 1 · Fourier sync', 'survives resizing and screenshots', 'Invisible ripples that work like a ruler for the image size.',
+      st.tplN + ' very faint wavy ripples were added across the whole picture. Each ripple has a wavelength between 6 and 160 pixels and a strength of only ' + st.tplA.toFixed(2) + ' brightness levels out of 255. They carry no text. If the image is resized or screenshotted, we measure where the ripples moved to, work out the exact size change, and rescale the image back before reading the text.',
+      [st.tplN + ' ripples', '6 to 160 px wavelength', 'strength ' + st.tplA.toFixed(2) + ' / 255'],
+      [panel('Ripples added (boosted ×16)', diffPanel(orig, st.tpl, 16))]);
+    stage(3, 'Layer 2 · QOM colour fingerprint', 'survives resizing and rotation', 'A fingerprint of the whole picture’s colours carries 64 bits of your text.',
+      'We treat red, green and blue together as one four-part number (a quaternion), place the picture on a 128 × 128 round disc, and measure ' + st.qom.moments + ' Zernike moments. These are 64 shape-and-colour numbers that describe the picture as a whole, not pixel by pixel. Each number carries one bit (0 or 1): we nudge its size to land on a tiny "even" or "odd" step, which is called quantisation index modulation. The 64 bits hold the length, up to 6 text bytes and a small check byte. Because it describes the whole image at a fixed 128 × 128 size, it survives resizing and even rotation, but not cropping.',
+      ['64 Zernike moments', 'orders up to 15', 'step size ' + st.qd, '8 correction passes', 'average nudge ' + st.qom.dmean.toFixed(2)],
+      [panel('Fingerprint and big blocks (boosted ×16)', diffPanel(st.tpl, mid, 16)), bitsBox]);
+    stage(4, 'Layer 3 · Latent diffusion', 'hides the mark in the frequency layer', 'Start from noise, clean it step by step, and your mark appears.',
+      'Diffusion is the idea behind AI image generators: start from noise and clean it step by step. Here the "latent" is the pair of DCT frequency values (the same kind of numbers JPEG uses) in each 8 × 8 pixel block, for ' + st.blocks + ' blocks. We covered these values with random noise, then ran ' + T + ' small DDIM steps, each one cleaning the noise a bit more while steering the values toward the pattern that spells your text. The pictures on the right show this. There is no trained AI network here: the cleaning is done by a plain mathematical formula, so it is a diffusion-style process, not a neural model.',
+      [st.blocks + ' blocks', 'noise level ' + (1 - ab(T)).toFixed(2) + ' of 1', T + ' DDIM steps', 'no trained network'],
+      [panel('Covered in noise', zPanel(snaps[6])), panel('After 2 cleaning steps', zPanel(snaps[4])), panel('After 4 cleaning steps', zPanel(snaps[2])), panel('Cleaned: mark in place', zPanel(snaps[0]))]);
+    stage(5, 'Layer 4 · DCT micro-marks', 'survives cropping and JPEG', 'Every 8 × 8 block of the photo stores one bit, and the pattern repeats.',
+      'A block says "1" when one frequency pattern is stronger than another by a margin of up to ' + M + ' (your ' + lvl + ' setting), and "0" when it is the other way round. The margin is scaled to the picture: it is smaller in smooth, flat areas where any change would show, and larger near edges and texture where it stays hidden. That is how the image keeps looking untouched. A group of 16 × 8 blocks (a tile of 128 × 64 pixels holding 128 bits) contains the whole frame once, and the tile is repeated across the entire image about ' + rp + ' times, so cropping a piece still keeps a full copy. The same text is also written with bigger blocks (16 and 32 pixels) so a zoomed-out screenshot can still read it.',
+      ['8 × 8 pixel blocks', 'tile 128 × 64 px', '128 bits per tile', '~' + rp + ' repeats', 'scales 8, 16, 32 px', 'margin up to ' + M, 'adaptive to the picture'], null, true);
+    stage(6, 'Result', 'saved as lossless PNG', 'Quality score ' + psnr.toFixed(1) + ' dB: ' + vis + '.',
+      'The quality score (PSNR) compares your original with the watermarked image. Higher is better, and above about 40 dB the change is hard to notice. The biggest change to any single pixel is ' + mx + ' out of 255. PNG saves every pixel exactly, so the watermark is kept perfectly. JPEG, or apps that shrink pictures, throw away fine detail and can weaken the mark, although screenshots of the PNG should still read. Use the Extract tab to read it back at any time.',
+      ['PSNR ' + psnr.toFixed(1) + ' dB', 'largest change ' + mx + ' / 255'],
+      [panel('Before', imgPanel(orig)), panel('All changes together (boosted ×8)', diffPanel(orig, fin, 8)), panel('After', imgPanel(fin))], true);
+    $('trace').hidden = false;
+  }
+
+  /* ---------- start ---------- */
+  clampNote(); clampTag(); tickClock(); setInterval(tickClock, 1000);
+  if (location.hash === '#read') setTab('read');
+  var sample = makeSample();
+  toBlob(sample, 'image/png').then(function (b) { return setSource(b, 'sample', true); });
+})();
+</script>
+</body>
+</html>

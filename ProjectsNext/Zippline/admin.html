@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chatbox admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+<!-- GATE: set or enter admin password -->
+<section class="gate hidden" id="gate">
+  <form class="card" id="gate-form">
+    <h1 id="gate-title">Admin sign in</h1>
+    <p id="gate-sub">Enter the admin password to manage accounts.</p>
+    <div style="margin-top:20px">
+      <label for="g-pass" id="g-label">Admin password</label>
+      <input type="password" id="g-pass" autocomplete="current-password" required>
+    </div>
+    <div class="hidden" id="g-confirm-wrap" style="margin-top:14px">
+      <label for="g-pass2">Confirm password</label>
+      <input type="password" id="g-pass2" autocomplete="new-password">
+    </div>
+    <div class="error" id="gate-error" role="alert"></div>
+    <button class="btn" id="gate-btn" type="submit" style="width:100%;margin-top:14px">Sign in</button>
+  </form>
+</section>
+
+<!-- ADMIN PANEL -->
+<div class="wrap hidden" id="panel">
+  <div class="top">
+    <h1>User accounts</h1>
+    <div class="links">
+      <a class="btn ghost sm" href="index.html">Open chat</a>
+      <button class="btn ghost sm" id="signout" type="button">Sign out</button>
+    </div>
+  </div>
+
+  <form class="card" id="add-form" autocomplete="off">
+    <h2>Create account</h2>
+    <div class="grid-form">
+      <div>
+        <label for="a-user">Username</label>
+        <input type="text" id="a-user" autocapitalize="off" required>
+      </div>
+      <div>
+        <label for="a-pass">Password</label>
+        <input type="text" id="a-pass" required>
+      </div>
+      <button class="btn" id="add-btn" type="submit">Create account</button>
+      <p class="field-note">Usernames use 3–20 lowercase letters, numbers or underscores. Passwords need at least 4 characters.</p>
+    </div>
+    <div class="error" id="add-error" role="alert"></div>
+  </form>
+
+  <section class="card">
+    <h2>All accounts <span class="muted" id="count"></span></h2>
+    <div id="users-box"></div>
+  </section>
+
+  <form class="card" id="add-special-form" autocomplete="off">
+    <h2>Create special user</h2>
+    <div class="grid-form">
+      <div>
+        <label for="as-user">Username</label>
+        <input type="text" id="as-user" autocapitalize="off" required>
+      </div>
+      <div>
+        <label for="as-pass">Password</label>
+        <input type="text" id="as-pass" required>
+      </div>
+      <button class="btn" id="add-special-btn" type="submit">Create special user</button>
+      <p class="field-note">Special users can do everything a normal user can in the chat, plus extra features reserved for this group. Usernames are shared with regular accounts, so they must still be unique.</p>
+    </div>
+    <div class="error" id="add-special-error" role="alert"></div>
+  </form>
+
+  <section class="card">
+    <h2>Special users <span class="muted" id="special-count"></span></h2>
+    <div id="special-users-box"></div>
+  </section>
+
+  <form class="card" id="admin-pass-form" autocomplete="off">
+    <h2>Change admin password</h2>
+    <div class="grid-form">
+      <div>
+        <label for="ap-new">New password</label>
+        <input type="password" id="ap-new" autocomplete="new-password" required>
+      </div>
+      <div>
+        <label for="ap-new2">Confirm new password</label>
+        <input type="password" id="ap-new2" autocomplete="new-password" required>
+      </div>
+      <button class="btn" type="submit">Update password</button>
+    </div>
+    <div class="error" id="ap-error" role="alert"></div>
+  </form>
+</div>
+
+<div id="toast" role="status"></div>
+
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
