@@ -91,3 +91,17 @@ short-lived delete token, so they'll still show the "could not be
 auto-removed" message if it's been more than ~10 minutes since upload —
 you'll need to clear those specific files manually in the Cloudinary
 console. Everything from here on will delete cleanly.
+
+---
+
+# Token pages, price editing and earnings (database notes)
+
+* Each request now has its own private page: `token.html?h=<secret><requestKey>`.
+  The secret is saved on the request as `tokenHash`. Older requests (made before
+  this update) have no link.
+* The print desk edits `amount` on the request (and sets `priceSet: true`);
+  `estimatedAmount` keeps the price worked out at upload time.
+* Earnings live in `earnings/total` and `earnings/days/<yyyy-mm-dd>`. "Clear tokens",
+  "Printed" and "Cancel" save earnings there first, so deleting tokens never
+  reduces them. Your Realtime Database rules must allow read/write on the
+  `earnings` path (like `printRequests` and `tokenCounter`).
