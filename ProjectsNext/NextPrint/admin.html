@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — NextPrint</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ---- admin.html — scoped styles (shared tokens come from style.css) ---- */
+  body.admin { background: var(--paper); min-height: 100vh; }
+  .admin-wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 70px; }
+
+  /* top bar */
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:22px; }
+  .topbar h1 { font-size:1.7rem; margin:0; }
+  .topbar .sub { font-size:.82rem; color:var(--ink-soft); margin:2px 0 0; }
+  .top-actions { display:flex; gap:8px; flex-wrap:wrap; }
+  .chip-btn { font:inherit; font-size:.82rem; padding:8px 14px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:999px; cursor:pointer; text-decoration:none; transition:.15s; }
+  .chip-btn:hover { border-color:var(--red); color:var(--red); }
+
+  /* section tabs */
+  .seg { display:inline-flex; background:var(--paper-dim); border:1px solid var(--line); border-radius:999px; padding:4px; margin-bottom:22px; }
+  .seg button { font:inherit; font-size:.88rem; font-weight:500; border:none; background:none; padding:9px 20px; border-radius:999px; cursor:pointer; color:var(--ink-soft); transition:.15s; }
+  .seg button.active { background:var(--ink); color:#fff; }
+  .panel { display:none; }
+  .panel.active { display:block; animation:fade .25s ease; }
+  @keyframes fade { from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none} }
+
+  /* cards */
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .card h3 { font-size:1.05rem; margin:0 0 14px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .card h3 small { font-family:"IBM Plex Sans",sans-serif; font-weight:400; font-size:.75rem; color:var(--ink-soft); }
+  .grid { display:grid; gap:14px; }
+  .g-stats { grid-template-columns:repeat(4,1fr); margin-bottom:14px; }
+  .g-two { grid-template-columns:1.6fr 1fr; margin-bottom:14px; }
+  .g-two-even { grid-template-columns:1fr 1fr; margin-bottom:14px; }
+  @media (max-width:820px){ .g-stats{grid-template-columns:repeat(2,1fr)} .g-two,.g-two-even{grid-template-columns:1fr} }
+
+  .stat { position:relative; overflow:hidden; }
+  .stat .lbl { font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); }
+  .stat .val { font-family:"Fraunces",serif; font-weight:600; font-size:2rem; line-height:1.15; margin-top:6px; }
+  .stat .note { font-size:.74rem; color:var(--ink-soft); margin-top:2px; }
+  .stat::after { content:""; position:absolute; right:-18px; top:-18px; width:64px; height:64px; border-radius:50%; background:var(--paper-dim); }
+  .stat.accent::after { background:#f6dcdb; }
+  .stat.accent .val { color:var(--red); }
+
+  /* bar chart */
+  .chart { display:flex; align-items:flex-end; gap:6px; height:170px; padding-top:10px; }
+  .chart .col { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; min-width:0; }
+  .chart .bar { width:100%; max-width:34px; background:var(--ink); border-radius:5px 5px 0 0; min-height:2px; position:relative; transition:height .4s; }
+  .chart .col.today .bar { background:var(--red); }
+  .chart .bar span { position:absolute; top:-18px; left:50%; transform:translateX(-50%); font-size:.68rem; color:var(--ink-soft); }
+  .chart .day { font-size:.64rem; color:var(--ink-soft); margin-top:6px; white-space:nowrap; }
+
+  /* ranked lists */
+  .rank { list-style:none; margin:0; padding:0; }
+  .rank li { margin-bottom:12px; }
+  .rank .row { display:flex; justify-content:space-between; font-size:.86rem; margin-bottom:4px; gap:8px; }
+  .rank .row span:first-child { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rank .track { height:6px; background:var(--paper-dim); border-radius:6px; overflow:hidden; }
+  .rank .fill { height:100%; background:var(--blue); border-radius:6px; transition:width .4s; }
+  .empty { color:var(--ink-soft); font-size:.86rem; padding:12px 0; }
+
+  /* table */
+  .tbl-wrap { overflow-x:auto; }
+  table.vt { width:100%; border-collapse:collapse; font-size:.82rem; }
+  table.vt th { text-align:left; font-weight:500; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  table.vt td { padding:10px; border-bottom:1px solid var(--paper-dim); white-space:nowrap; }
+  table.vt tr:last-child td { border-bottom:none; }
+  .pg { display:inline-block; background:var(--paper-dim); padding:2px 9px; border-radius:999px; font-size:.74rem; }
+  .mono { font-family:"IBM Plex Mono",monospace; font-size:.78rem; }
+
+  /* ---------- availability ---------- */
+  .shop-card { display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; padding:24px; margin-bottom:14px; border-width:2px; transition:.25s; }
+  .shop-card.open { border-color:var(--ok); background:linear-gradient(135deg,#fff,#eaf5ee); }
+  .shop-card.closed { border-color:var(--red); background:linear-gradient(135deg,#fff,#fbeceb); }
+  .shop-state { display:flex; align-items:center; gap:14px; }
+  .pulse { width:14px; height:14px; border-radius:50%; background:var(--ok); box-shadow:0 0 0 0 rgba(47,122,77,.5); animation:pulse 1.8s infinite; flex:none; }
+  .closed .pulse { background:var(--red); animation:none; }
+  @keyframes pulse { 70%{box-shadow:0 0 0 12px rgba(47,122,77,0)} 100%{box-shadow:0 0 0 0 rgba(47,122,77,0)} }
+  .shop-state h2 { font-size:1.5rem; margin:0; }
+  .shop-state p { margin:2px 0 0; font-size:.84rem; }
+
+  .switch { position:relative; width:76px; height:42px; flex:none; }
+  .switch input { opacity:0; width:0; height:0; position:absolute; }
+  .switch .sl { position:absolute; inset:0; background:#c9c5b8; border-radius:999px; cursor:pointer; transition:.25s; }
+  .switch .sl::before { content:""; position:absolute; width:34px; height:34px; left:4px; top:4px; background:#fff; border-radius:50%; transition:.25s; box-shadow:0 2px 5px rgba(0,0,0,.25); }
+  .switch input:checked + .sl { background:var(--ok); }
+  .switch input:checked + .sl::before { transform:translateX(34px); }
+  .switch input:focus-visible + .sl { outline:2px solid var(--blue); outline-offset:3px; }
+
+  .slots-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .slots-head h3 { margin:0; }
+  .slots-tools { display:flex; gap:8px; }
+  .slots-help { font-size:.84rem; margin-bottom:16px; }
+  .slots { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  @media (max-width:820px){ .slots{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:520px){ .slots{grid-template-columns:repeat(2,1fr)} }
+  .slot { position:relative; }
+  .slot input { position:absolute; opacity:0; inset:0; width:100%; height:100%; cursor:pointer; margin:0; z-index:2; }
+  .slot .box { display:flex; align-items:center; gap:10px; padding:12px; border:1.5px solid var(--line); border-radius:10px; background:#fff; font-size:.84rem; transition:.15s; }
+  .slot .tick { width:20px; height:20px; border-radius:6px; border:1.5px solid #b9b5a8; display:grid; place-items:center; color:transparent; font-size:.8rem; flex:none; transition:.15s; }
+  .slot input:checked + .box { border-color:var(--ok); background:#eaf5ee; }
+  .slot input:checked + .box .tick { background:var(--ok); border-color:var(--ok); color:#fff; }
+  .slot input:focus-visible + .box { outline:2px solid var(--blue); outline-offset:2px; }
+  .slot.past .box { opacity:.55; }
+  .next-pill { display:inline-block; margin-top:14px; padding:8px 14px; border-radius:999px; background:var(--paper-dim); font-size:.84rem; }
+  .save-note { font-size:.78rem; color:var(--ok); height:1em; margin-top:10px; }
+
+  .info-banner { background:#fff8e1; border:1px solid #ecd98b; border-radius:10px; padding:12px 14px; font-size:.84rem; margin-bottom:14px; display:none; }
+
+  /* ---------- ratings ---------- */
+  .star-row { color:#e0a210; letter-spacing:1px; white-space:nowrap; }
+  .star-row .off { color:#d6d2c4; }
+  .rt-toggle { display:inline-flex; gap:6px; }
+  .rt-toggle .chip-btn.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .rt-row { display:grid; grid-template-columns:130px 1fr 110px; gap:10px; align-items:center; font-size:.84rem; margin-bottom:10px; }
+  .rt-row .track { height:8px; background:var(--paper-dim); border-radius:8px; overflow:hidden; }
+  .rt-row .fill { height:100%; background:#e0a210; border-radius:8px; transition:width .4s; }
+  .rt-row .num { text-align:right; color:var(--ink-soft); }
+  .rt-row .num b { color:var(--ink); }
+  .fb-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .fb-head h3 { margin:0; }
+  .btn-danger { font:inherit; font-size:.82rem; padding:8px 14px; border:1px solid var(--red); background:#fff; color:var(--red); border-radius:999px; cursor:pointer; transition:.15s; }
+  .btn-danger:hover { background:var(--red); color:#fff; }
+  .btn-danger:disabled { opacity:.5; cursor:default; }
+  .fb-note { font-size:.78rem; color:var(--ink-soft); margin:0 0 14px; }
+  .fb-item { border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; background:#fff; }
+  .fb-top { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:.78rem; color:var(--ink-soft); margin-bottom:6px; }
+  .fb-tags { display:flex; flex-wrap:wrap; gap:6px; margin:6px 0; }
+  .fb-comment { font-size:.88rem; margin:6px 0 0; white-space:pre-wrap; word-break:break-word; }
+  @media (max-width:640px){ .rt-row { grid-template-columns:90px 1fr 84px; font-size:.78rem; } }
+
+  /* ---------- mobile (desktop layout above is untouched) ---------- */
+  html, body.admin { overflow-x: hidden; }
+  @media (max-width: 640px) {
+    :root { font-size: 16px; }
+    .admin-wrap { padding: 16px 12px 56px; }
+
+    .topbar { margin-bottom: 16px; align-items: flex-start; }
+    .topbar > div:first-child { width: 100%; }
+    .topbar h1 { font-size: 1.4rem; }
+    .top-actions { width: 100%; display: grid; grid-template-columns: repeat(3, auto); gap: 8px; }
+    .chip-btn { text-align: center; padding: 10px 8px; font-size: .8rem; white-space: nowrap; }
+
+    .seg { display: flex; width: 100%; margin-bottom: 16px; }
+    .seg button { flex: 1; padding: 10px 8px; font-size: .86rem; }
+
+    .card { padding: 14px; border-radius: 10px; }
+    .card h3 { font-size: 1rem; margin-bottom: 12px; flex-wrap: wrap; }
+    .grid { gap: 10px; }
+    .g-stats, .g-two, .g-two-even { margin-bottom: 10px; }
+
+    .g-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stat .val { font-size: 1.55rem; }
+    .stat .lbl { font-size: .64rem; }
+    .stat .note { font-size: .68rem; }
+    .stat::after { width: 46px; height: 46px; right: -14px; top: -14px; }
+
+    /* 14 bars: tighter, and label every other day so they don't collide */
+    .chart { gap: 3px; height: 140px; }
+    .chart .bar { max-width: 22px; }
+    .chart .bar span { font-size: .58rem; top: -15px; }
+    .chart .day { font-size: .56rem; margin-top: 5px; }
+    .chart .col:nth-child(even) .day { visibility: hidden; }
+
+    .rank .row { font-size: .82rem; }
+
+    /* recent visitors: table becomes a stack of small cards */
+    .tbl-wrap { overflow-x: visible; }
+    table.vt, table.vt tbody, table.vt tr, table.vt td { display: block; width: 100%; }
+    table.vt thead { display: none; }
+    table.vt tr { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; background: #fff; }
+    table.vt tr:last-child { margin-bottom: 0; }
+    table.vt td { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; border-bottom: 1px dashed var(--paper-dim); white-space: normal; text-align: right; word-break: break-word; }
+    table.vt td:last-child { border-bottom: none; }
+    table.vt td[data-label]::before { content: attr(data-label); flex: none; font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-soft); text-align: left; }
+    table.vt td[colspan] { display: block; text-align: center; }
+
+    /* availability */
+    .shop-card { padding: 16px; gap: 14px; flex-wrap: nowrap; }
+    .shop-state { gap: 12px; min-width: 0; }
+    .shop-state h2 { font-size: 1.25rem; }
+    .shop-state p { font-size: .8rem; }
+    .slots-head { align-items: flex-start; }
+    .slots-tools { width: 100%; }
+    .slots-tools .chip-btn { flex: 1; }
+    .slots { gap: 8px; }
+    .slot .box { padding: 12px 10px; font-size: .8rem; gap: 8px; min-height: 46px; }
+    .next-pill { display: block; border-radius: 12px; line-height: 1.4; }
+    .info-banner { font-size: .8rem; }
+  }
+  @media (max-width: 360px) {
+    .top-actions { grid-template-columns: 1fr 1fr; }
+    .top-actions .chip-btn:last-child { grid-column: 1 / -1; }
+    .stat .val { font-size: 1.35rem; }
+  }
+
+  /* ===== login screen ===== */
+  .pd-gate { position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center; padding:20px; background:radial-gradient(900px 500px at 15% 10%, #fde9e7, transparent 60%), radial-gradient(800px 500px at 90% 90%, #e3eefb, transparent 60%), #f4f2ea; font-family:"IBM Plex Sans", -apple-system, "Segoe UI", sans-serif; color:#17181c; }
+  .pd-gate button, .pd-gate input { font:inherit; }
+  .pd-login { width:100%; max-width:800px; display:grid; grid-template-columns:1fr 1fr; background:#fff; border:1px solid #e3e0d4; border-radius:28px; overflow:hidden; box-shadow:0 24px 60px rgba(23,24,28,.14); }
+  .pd-gate-card { display:flex; flex-direction:column; justify-content:center; gap:12px; padding:44px 36px; background:#fff; text-align:left; }
+  .pd-gate-intro { margin:0; font-size:.88rem; color:#8a4b00; background:#fdf0d9; border-radius:12px; padding:10px 12px; }
+  .pd-gate-intro:empty { display:none; }
+  .pd-gate-err { margin:0; min-height:1.2em; font-size:.84rem; color:#c6332e; }
+  .pd-field { position:relative; display:block; }
+  .pd-field input { width:100%; box-sizing:border-box; border:1.5px solid #ddd9ca; background:#fcfbf7; border-radius:13px; padding:12px 62px 12px 14px; font-size:16px; outline:none; transition:border-color .15s; }
+  .pd-field input:focus { border-color:#17181c; background:#fff; }
+  .pd-eye { position:absolute; right:6px; top:50%; transform:translateY(-50%); border:0; background:none; color:#62625c; font-size:.78rem; font-weight:600; padding:8px; cursor:pointer; }
+  .pd-btn { display:inline-flex; align-items:center; justify-content:center; border:1px solid #d9d6c8; background:#fff; color:#17181c; border-radius:13px; font-weight:600; cursor:pointer; }
+  .pd-btn.primary { background:#17181c; border-color:#17181c; color:#fff; }
+  .pd-btn.block { width:100%; padding:12px 14px; font-size:.95rem; }
+  .pd-btn:active { transform:scale(.98); }
+  .pd-login-art { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-between; gap:10px; padding:28px 24px; color:#fff; background:radial-gradient(260px 200px at 30% 20%, rgba(198,51,46,.55), transparent 70%), radial-gradient(240px 200px at 80% 90%, rgba(31,95,168,.5), transparent 70%), #17181c; min-height:340px; }
+  .pd-art-logo { align-self:flex-start; font-family:"Fraunces", Georgia, serif; font-size:1.55rem; font-weight:600; }
+  .pd-art-logo span { color:#ff6b64; }
+  .pd-art-printer { width:100%; max-width:230px; height:auto; filter:drop-shadow(0 14px 22px rgba(0,0,0,.4)); }
+  .pd-art-paper { animation:pdfeed 3.2s ease-in-out infinite; }
+  @keyframes pdfeed { 0% { transform:translateY(-64px); } 55%, 80% { transform:translateY(0); } 100% { transform:translateY(0); opacity:0; } }
+  .pd-led { animation:pdblink 1s steps(2) infinite; }
+  .pd-led2 { animation-delay:.5s; }
+  @keyframes pdblink { 50% { opacity:.25; } }
+  @media (max-width:700px) {
+    .pd-login { grid-template-columns:1fr; max-width:400px; }
+    .pd-login-art { min-height:0; padding:18px 20px; flex-direction:row; flex-wrap:wrap; justify-content:space-between; }
+    .pd-art-printer { max-width:110px; order:3; }
+    .pd-gate-card { padding:26px 22px; }
+  }
+  /* ---- stock manager ---- */
+  .pcard { display:grid; grid-template-columns:110px 1fr 220px; gap:16px; border:1px solid var(--line); border-radius:12px; padding:14px; margin-bottom:12px; background:#fff; }
+  .pcard.draft { border-color:var(--ink); background:var(--paper-dim); }
+  .pcard.out { border-left:4px solid var(--red); }
+  .pcard.low { border-left:4px solid #e0a210; }
+  .pcard.hidden { opacity:.7; }
+  .p-img img { width:110px; height:140px; object-fit:cover; border-radius:6px; background:var(--paper-dim); display:block; border:1px solid var(--line); }
+  .p-img .ph { width:110px; height:140px; border-radius:6px; background:var(--paper-dim); border:1px dashed var(--line); display:grid; place-items:center; font-size:.72rem; color:var(--ink-soft); text-align:center; padding:6px; }
+  .p-img .chip-btn { margin-top:8px; width:100%; padding:6px 8px; font-size:.76rem; }
+  .pcard label { display:block; font-size:.7rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:8px; }
+  .pcard input[type=text], .pcard input[type=number] { display:block; width:100%; font:inherit; font-size:.9rem; text-transform:none; letter-spacing:0; color:var(--ink); padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-top:3px; }
+  .p-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .p-side { display:flex; flex-direction:column; gap:10px; }
+  .stepper { display:flex; align-items:center; gap:6px; margin-top:3px; }
+  .stepper button { width:36px; height:36px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:1.1rem; cursor:pointer; }
+  .stepper button:hover { border-color:var(--ink); }
+  .pcard .stepper input { margin-top:0; text-align:center; font-weight:600; }
+  .badge { display:inline-block; font-size:.72rem; font-weight:600; padding:3px 10px; border-radius:999px; background:#dff1e5; color:#1f5a37; }
+  .badge.low { background:#fdf0d9; color:#8a5200; }
+  .badge.out { background:#fbe3e1; color:var(--red); }
+  .pcard .vis { display:flex; align-items:center; gap:8px; text-transform:none; letter-spacing:0; font-size:.86rem; color:var(--ink); margin:0; }
+  .p-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; }
+  .p-actions .chip-btn:disabled { opacity:.45; cursor:default; }
+  .p-msg { font-size:.78rem; min-height:1em; color:var(--ink-soft); }
+  .p-msg.ok { color:var(--ok); } .p-msg.err { color:var(--red); }
+  .p-row2 { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:8px; }
+  .p-row2 .vis { padding-bottom:10px; white-space:nowrap; }
+  .cat-head { display:flex; align-items:baseline; gap:8px; margin:20px 0 10px; font-family:"Fraunces",Georgia,serif; font-size:1.05rem; font-weight:600; }
+  .cat-head small { font-family:inherit; font-size:.8rem; font-weight:400; color:var(--ink-soft); }
+  .oos-zone { margin-top:26px; padding:4px 14px 2px; border:1.5px dashed var(--red); border-radius:14px; background:#fdf3f2; }
+  .oos-zone > .cat-head { color:var(--red); }
+  .oos-zone .cat-head.sub { font-size:.9rem; margin-top:14px; color:var(--ink-soft); }
+  @media (max-width:820px){ .pcard { grid-template-columns:1fr; } .p-img { display:flex; gap:12px; align-items:flex-start; } .p-img .chip-btn { width:auto; } }
+</style>
+</head>
+<body class="admin">
+
+<!-- ================= password gate (same password as print.html) ================= -->
+<div id="gate" class="pd-gate">
+  <div class="pd-login">
+    <aside class="pd-login-art" aria-hidden="true">
+      <div class="pd-art-logo">Next<span>Print</span></div>
+      <svg class="pd-art-printer" viewBox="0 0 220 170">
+        <defs><clipPath id="pdOut"><rect x="0" y="136" width="220" height="40"/></clipPath></defs>
+        <g clip-path="url(#pdOut)">
+          <g class="pd-art-paper">
+            <rect x="70" y="128" width="80" height="62" rx="4" fill="#fff"/>
+            <rect x="80" y="142" width="60" height="4" rx="2" fill="#d8d5c8"/>
+            <rect x="80" y="152" width="46" height="4" rx="2" fill="#d8d5c8"/>
+            <rect x="80" y="162" width="54" height="4" rx="2" fill="#d8d5c8"/>
+          </g>
+        </g>
+        <rect x="26" y="70" width="168" height="70" rx="16" fill="#2c2e36"/>
+        <rect x="26" y="70" width="168" height="26" rx="14" fill="#3a3d47"/>
+        <rect x="52" y="112" width="116" height="8" rx="4" fill="#101114"/>
+        <circle class="pd-led" cx="48" cy="83" r="4" fill="#25d366"/>
+        <circle class="pd-led pd-led2" cx="62" cy="83" r="4" fill="#ff9d1c"/>
+        <rect x="70" y="24" width="80" height="52" rx="5" fill="#f4f2ea"/>
+        <rect x="80" y="36" width="60" height="4" rx="2" fill="#cfcbbb"/>
+        <rect x="80" y="46" width="44" height="4" rx="2" fill="#cfcbbb"/>
+      </svg>
+    </aside>
+    <div class="pd-gate-card" id="gateCard">
+      <p class="pd-gate-intro" id="gateIntro"></p>
+      <label class="pd-field"><input type="password" id="pw" placeholder="Password" autocomplete="current-password"><button type="button" class="pd-eye" id="pwEye">Show</button></label>
+      <button class="pd-btn primary block" id="unlockBtn">Unlock</button>
+      <p class="pd-gate-err" id="gateError"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= dashboard ================= -->
+<div id="app" style="display:none;">
+  <div class="admin-wrap">
+
+    <div class="topbar">
+      <div>
+        <h1>Admin</h1>
+      </div>
+      <div class="top-actions">
+        <a class="chip-btn" href="print.html" target="_blank">Print desk</a>
+        <a class="chip-btn" href="index.html" target="_blank" rel="noopener">View site</a>
+        <button class="chip-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
+    </div>
+
+    <div class="seg" role="tablist">
+      <button type="button" class="active" data-panel="visitors">Visitors</button>
+      <button type="button" data-panel="availability">Availability</button>
+      <button type="button" data-panel="stock">Stock</button>
+      <button type="button" data-panel="ratings">Ratings</button>
+    </div>
+
+    <!-- ===== Visitors ===== -->
+    <section class="panel active" id="panel-visitors">
+      <div class="grid g-stats">
+        <div class="card stat accent"><div class="lbl">Total visits</div><div class="val" id="sTotal">–</div></div>
+        <div class="card stat"><div class="lbl">Today</div><div class="val" id="sToday">–</div></div>
+        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="sWeek">–</div></div>
+        <div class="card stat"><div class="lbl">Unique visitors</div><div class="val" id="sUnique">–</div></div>
+      </div>
+
+      <div class="grid g-two">
+        <div class="card">
+          <h3>Visits — last 14 days <small id="chartNote"></small></h3>
+          <div class="chart" id="chart"></div>
+        </div>
+        <div class="card">
+          <h3>Pages</h3>
+          <ul class="rank" id="pagesRank"><li class="empty">Loading…</li></ul>
+        </div>
+      </div>
+
+      <div class="grid g-two-even">
+        <div class="card">
+          <h3>Top locations</h3>
+          <ul class="rank" id="locRank"><li class="empty">Loading…</li></ul>
+        </div>
+        <div class="card">
+          <h3>Devices</h3>
+          <ul class="rank" id="devRank"><li class="empty">Loading…</li></ul>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Recent visitors <small id="logNote"></small></h3>
+        <div class="tbl-wrap">
+          <table class="vt">
+            <thead><tr><th>When</th><th>Page</th><th>IP</th><th>Location</th><th>ISP</th><th>Device</th></tr></thead>
+            <tbody id="visitRows"><tr><td colspan="6" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Availability ===== -->
+    <section class="panel" id="panel-availability">
+      <div class="info-banner" id="dbError"></div>
+
+      <div class="card shop-card closed" id="shopCard">
+        <div class="shop-state">
+          <span class="pulse"></span>
+          <div>
+            <h2 id="shopTitle">Loading…</h2>
+            <p id="shopSub">Fetching current status.</p>
+          </div>
+        </div>
+        <label class="switch" title="Shop open / closed">
+          <input type="checkbox" id="shopToggle" aria-label="Shop is open">
+          <span class="sl"></span>
+        </label>
+      </div>
+
+      <div class="card" id="slotsCard" style="display:none;">
+        <div class="slots-head">
+          <h3>Available time slots</h3>
+          <div class="slots-tools">
+            <button type="button" class="chip-btn" id="selAll">Select all</button>
+            <button type="button" class="chip-btn" id="selNone">Clear</button>
+          </div>
+        </div>
+        <div class="slots" id="slots"></div>
+        <div class="next-pill" id="nextPill"></div>
+        <div class="save-note" id="saveNote"></div>
+      </div>
+    </section>
+
+  
+    <!-- ===== Ratings ===== -->
+    <!-- ===== Stock ===== -->
+    <section class="panel" id="panel-stock">
+      <div class="info-banner" id="stError"></div>
+      <div class="grid g-stats">
+        <div class="card stat accent"><div class="lbl">Products</div><div class="val" id="stProducts">–</div><div class="note" id="stProductsN"></div></div>
+        <div class="card stat"><div class="lbl">Units in stock</div><div class="val" id="stUnits">–</div></div>
+        <div class="card stat"><div class="lbl">Low / out of stock</div><div class="val" id="stLow">–</div></div>
+        <div class="card stat"><div class="lbl">Stock value</div><div class="val" id="stValue">–</div></div>
+      </div>
+      <div class="card">
+        <div class="slots-head">
+          <h3>Products <small id="stCount"></small></h3>
+          <div class="slots-tools"><button type="button" class="chip-btn" id="stAdd">＋ Add product</button></div>
+        </div>
+        <datalist id="stCats"></datalist>
+        <div id="stDrafts"></div>
+        <div id="stList"><div class="empty">Loading…</div></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-ratings">
+      <div class="info-banner" id="rtError"></div>
+      <div class="grid g-stats">
+        <div class="card stat accent"><div class="lbl">Today</div><div class="val" id="rToday">–</div><div class="note" id="rTodayN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="rWeek">–</div><div class="note" id="rWeekN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">This month</div><div class="val" id="rMonth">–</div><div class="note" id="rMonthN">no ratings</div></div>
+        <div class="card stat"><div class="lbl">All time</div><div class="val" id="rAll">–</div><div class="note" id="rAllN">no ratings</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px;">
+        <h3>Average rating
+          <span class="rt-toggle" id="rtToggle">
+            <button type="button" class="chip-btn active" data-v="day">Day</button>
+            <button type="button" class="chip-btn" data-v="week">Week</button>
+            <button type="button" class="chip-btn" data-v="month">Month</button>
+          </span>
+        </h3>
+        <div id="rtList"><div class="empty">Loading…</div></div>
+      </div>
+
+      <div class="card">
+        <div class="fb-head">
+          <h3>All feedback <small id="fbCount"></small></h3>
+          <button type="button" class="btn-danger" id="clearFb">Clear all feedback</button>
+        </div>
+        <div id="fbList"><div class="empty">Loading…</div></div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+<script>
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+const $ = id => document.getElementById(id);
+
+/* ---------- password check: same hash print.html uses (adminAuth/passwordHash) ---------- */
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function tryUnlock() {
+  $('gateError').textContent = '';
+  try {
+    const snap = await db.ref('adminAuth/passwordHash').once('value');
+    if (!snap.exists()) {
+      $('gateError').textContent = 'No password set yet. Open print.html once and create the password there.';
+      return;
+    }
+    if (await sha256Hex($('pw').value) === snap.val()) {
+      sessionStorage.setItem('np_admin_page_ok', '1');
+      showApp();
+    } else {
+      $('gateError').textContent = 'Incorrect password.';
+    }
+  } catch (err) {
+    $('gateError').textContent = 'Could not reach the database (' + (err.message || err) + ').';
+  }
+}
+$('unlockBtn').addEventListener('click', tryUnlock);
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+$('pwEye').addEventListener('click', () => {
+  const show = $('pw').type === 'password';
+  $('pw').type = show ? 'text' : 'password';
+  $('pwEye').textContent = show ? 'Hide' : 'Show';
+});
+$('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('np_admin_page_ok');
+  location.reload();
+});
+
+/* ======================== STOCK ======================== */
+const stCards = {};                 // product key -> card element
+let stData = {};                    // product key -> data (live)
+let stSeeded = false;
+const ST_DEFAULTS = [
+  { category: 'Notebooks', isNew: false, name: 'Quick Work Ruled Notebook', note: '21 × 29.7 cm (A4) · Ruled · 140 pages', mrp: 80, price: 60, stock: 20, img: 'notebook1.jpg' },
+  { category: 'Notebooks', isNew: false, name: 'Cube Works Spiral Notebook', note: '14.7 × 20.5 cm · Spiral, ruled · 160 pages', mrp: 160, price: 60, stock: 20, img: 'notebook3.jpg' },
+  { category: 'Notebooks', isNew: false, name: 'Cube Works 5 Subject Notebook Spiral', note: '14.7 × 20.5 cm · Single ruled · 300 pages', mrp: 300, price: 100, stock: 20, img: 'notebook2.jpg' }
+];
+
+function stShowError(err) {
+  const b = $('stError');
+  b.style.display = 'block';
+  b.textContent = 'Could not reach the database (' + (err && err.message || err) + '). Check your Firebase Realtime Database rules for the "store" path.';
+}
+const stNum = v => { const n = Number(v); return isFinite(n) && n >= 0 ? Math.floor(n) : 0; };
+function stStatus(stock, lowAt) { return stock <= 0 ? 'out' : stock <= lowAt ? 'low' : 'ok'; }
+function stBadge(stock, lowAt) {
+  const st = stStatus(stock, lowAt);
+  return st === 'out' ? '<span class="badge out">Out of stock</span>' : st === 'low' ? '<span class="badge low">Low stock</span>' : '<span class="badge">In stock</span>';
+}
+
+function stCardHtml() {
+  return `
+    <div class="p-img">
+      <div class="pv"></div>
+      <button type="button" class="chip-btn p-up">Upload image</button>
+      <input type="file" class="p-file" accept="image/*" hidden>
+    </div>
+    <div class="p-fields">
+      <label>Name<input type="text" class="f-name" maxlength="80"></label>
+      <label>Description<input type="text" class="f-note" maxlength="140"></label>
+      <div class="p-row2">
+        <label>Category<input type="text" class="f-cat" list="stCats" maxlength="40" autocomplete="off"></label>
+        <label class="vis"><input type="checkbox" class="f-new"> New arrival</label>
+      </div>
+      <div class="p-row">
+        <label>MRP (₹)<input type="number" class="f-mrp" min="0" step="1"></label>
+        <label>Selling price (₹)<input type="number" class="f-price" min="0" step="1"></label>
+        <label>Low-stock alert at<input type="number" class="f-low" min="0" step="1"></label>
+      </div>
+      <label>Image URL<input type="text" class="f-img"></label>
+    </div>
+    <div class="p-side">
+      <div><label style="margin-bottom:0">Stock</label>
+        <div class="stepper"><button type="button" class="s-minus" aria-label="One less">−</button><input type="number" class="f-stock" min="0" step="1"><button type="button" class="s-plus" aria-label="One more">+</button></div>
+      </div>
+      <div class="bdg"></div>
+      <label class="vis"><input type="checkbox" class="f-active"> Visible in store</label>
+      <div class="p-actions"><button type="button" class="chip-btn p-save" disabled>Save</button><button type="button" class="btn-danger p-del">Delete</button></div>
+      <div class="p-msg"></div>
+    </div>`;
+}
+
+function stSetPreview(card) {
+  const url = card.querySelector('.f-img').value.trim();
+  const pv = card.querySelector('.pv');
+  if (!url) { pv.innerHTML = '<div class="ph">No image</div>'; return; }
+  pv.innerHTML = '<img alt="">';
+  const im = pv.querySelector('img');
+  im.onerror = () => { pv.innerHTML = '<div class="ph">Image not found</div>'; };
+  im.src = url;
+}
+function stMsg(card, text, cls) {
+  const m = card.querySelector('.p-msg');
+  m.textContent = text || ''; m.className = 'p-msg' + (cls ? ' ' + cls : '');
+  if (text && cls === 'ok') setTimeout(() => { if (m.textContent === text) m.textContent = ''; }, 2500);
+}
+function stCardState(card) {
+  const stock = stNum(card.querySelector('.f-stock').value), lowAt = stNum(card.querySelector('.f-low').value);
+  card.querySelector('.bdg').innerHTML = stBadge(stock, lowAt);
+  const st = stStatus(stock, lowAt);
+  card.classList.toggle('out', st === 'out'); card.classList.toggle('low', st === 'low');
+  card.classList.toggle('hidden', !card.querySelector('.f-active').checked);
+}
+
+// fill a card's inputs from data (never overwrites a field the admin is typing in)
+function stFill(card, p, fillAll) {
+  const set = (sel, val) => { const el = card.querySelector(sel); if (el && document.activeElement !== el) el.value = val; };
+  if (fillAll) {
+    set('.f-name', p.name || ''); set('.f-note', p.note || ''); set('.f-mrp', p.mrp || 0);
+    set('.f-price', p.price || 0); set('.f-low', p.lowAt == null ? 5 : p.lowAt); set('.f-img', p.img || '');
+    set('.f-cat', p.category || ''); card.querySelector('.f-new').checked = p.isNew === true;
+    card.querySelector('.f-active').checked = p.active !== false;
+    stSetPreview(card);
+  }
+  set('.f-stock', stNum(p.stock));
+  stCardState(card);
+}
+
+function stBuildCard(key) {
+  const card = document.createElement('div');
+  card.className = 'pcard' + (key ? '' : ' draft');
+  card.innerHTML = stCardHtml();
+  const q = s => card.querySelector(s);
+  const saveBtn = q('.p-save');
+  const dirty = () => { saveBtn.disabled = false; card._dirty = true; stCardState(card); };
+  ['.f-name', '.f-note', '.f-cat', '.f-new', '.f-mrp', '.f-price', '.f-low', '.f-img', '.f-active'].forEach(sel => {
+    q(sel).addEventListener('input', () => { if (sel === '.f-img') stSetPreview(card); dirty(); });
+    q(sel).addEventListener('change', dirty);
+  });
+
+  // stock: applied instantly + atomically for saved products
+  const applyStock = delta => {
+    const inp = q('.f-stock');
+    if (!key) { inp.value = Math.max(0, stNum(inp.value) + delta); stCardState(card); return; }
+    db.ref('store/products/' + key + '/stock').transaction(cur => Math.max(0, (Number(cur) || 0) + delta))
+      .then(r => { inp.value = r.snapshot.val(); stCardState(card); stMsg(card, 'Stock updated', 'ok'); })
+      .catch(stShowError);
+  };
+  q('.s-minus').onclick = () => applyStock(-1);
+  q('.s-plus').onclick = () => applyStock(1);
+  q('.f-stock').addEventListener('change', () => {
+    const n = stNum(q('.f-stock').value);
+    q('.f-stock').value = n; stCardState(card);
+    if (key) db.ref('store/products/' + key + '/stock').set(n).then(() => stMsg(card, 'Stock updated', 'ok')).catch(stShowError);
+  });
+  q('.f-stock').addEventListener('input', () => stCardState(card));
+
+  // image upload (same Cloudinary preset the upload page uses)
+  q('.p-up').onclick = () => q('.p-file').click();
+  q('.p-file').addEventListener('change', async () => {
+    const f = q('.p-file').files[0]; if (!f) return;
+    stMsg(card, 'Uploading image…');
+    try {
+      const fd = new FormData();
+      fd.append('file', f); fd.append('upload_preset', CONFIG.cloudinary.uploadPreset);
+      const res = await fetch('https://api.cloudinary.com/v1_1/' + CONFIG.cloudinary.cloudName + '/image/upload', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!data.secure_url) throw new Error((data.error && data.error.message) || 'upload failed');
+      q('.f-img').value = data.secure_url; stSetPreview(card); dirty();
+      stMsg(card, 'Image uploaded — press Save', 'ok');
+    } catch (err) { stMsg(card, 'Upload failed: ' + (err.message || err), 'err'); }
+    q('.p-file').value = '';
+  });
+
+  saveBtn.onclick = async () => {
+    const name = q('.f-name').value.trim();
+    if (!name) { stMsg(card, 'Enter a name.', 'err'); return; }
+    const price = stNum(q('.f-price').value);
+    const rec = {
+      name, note: q('.f-note').value.trim(), category: q('.f-cat').value.trim(), isNew: q('.f-new').checked, mrp: stNum(q('.f-mrp').value), price,
+      lowAt: stNum(q('.f-low').value), img: q('.f-img').value.trim(),
+      active: q('.f-active').checked, updatedAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    saveBtn.disabled = true; stMsg(card, 'Saving…');
+    try {
+      if (key) { await db.ref('store/products/' + key).update(rec); card._dirty = false; stMsg(card, 'Saved', 'ok'); }
+      else {
+        rec.stock = stNum(q('.f-stock').value); rec.createdAt = firebase.database.ServerValue.TIMESTAMP;
+        await db.ref('store/products').push().set(rec);
+        card.remove();
+      }
+    } catch (err) { saveBtn.disabled = false; stMsg(card, 'Could not save: ' + (err.message || err), 'err'); }
+  };
+  q('.p-del').onclick = () => {
+    if (!key) { card.remove(); return; }
+    const nm = q('.f-name').value || 'this product';
+    if (!confirm('Delete "' + nm + '" from the store? This cannot be undone.')) return;
+    db.ref('store/products/' + key).remove().catch(stShowError);
+  };
+  return card;
+}
+
+let stSig = '';
+const ST_OTHER = 'Other';
+const stCatOf = p => String(p.category || '').trim() || ST_OTHER;
+function stCatCmp(x, y) {
+  if (x === y) return 0;
+  if (x === ST_OTHER) return 1;
+  if (y === ST_OTHER) return -1;
+  return x.toLowerCase().localeCompare(y.toLowerCase());
+}
+// new arrivals first, then selling price ascending
+function stCmp(a, b) {
+  const A = stData[a], B = stData[b];
+  return ((A.isNew === true ? 0 : 1) - (B.isNew === true ? 0 : 1)) ||
+    ((Number(A.price) || 0) - (Number(B.price) || 0)) ||
+    String(A.name || '').localeCompare(String(B.name || ''));
+}
+function stGroup(arr) {
+  const m = {};
+  arr.forEach(k => { (m[stCatOf(stData[k])] = m[stCatOf(stData[k])] || []).push(k); });
+  return Object.keys(m).sort(stCatCmp).map(c => ({ cat: c, keys: m[c].sort(stCmp) }));
+}
+
+function renderStock() {
+  const keys = Object.keys(stData).sort((a, b) => (stData[a].createdAt || 0) - (stData[b].createdAt || 0));
+  const list = $('stList');
+
+  // stats
+  let units = 0, value = 0, low = 0, vis = 0;
+  keys.forEach(k => {
+    const p = stData[k], stock = stNum(p.stock), lowAt = p.lowAt == null ? 5 : stNum(p.lowAt);
+    if (p.active !== false) { vis++; units += stock; value += stock * (Number(p.price) || 0); if (stStatus(stock, lowAt) !== 'ok') low++; }
+  });
+  $('stProducts').textContent = keys.length;
+  $('stProductsN').textContent = vis + ' visible in store';
+  $('stUnits').textContent = units;
+  $('stLow').textContent = low;
+  $('stValue').textContent = '₹' + value.toLocaleString('en-IN');
+  $('stCount').textContent = keys.length ? keys.length + ' product' + (keys.length === 1 ? '' : 's') : '';
+
+  // remove cards for deleted products
+  Object.keys(stCards).forEach(k => { if (!stData[k]) { stCards[k].remove(); delete stCards[k]; } });
+
+  if (!keys.length) {
+    stSig = '';
+    list.innerHTML = '<div class="empty">No products <button type="button" class="chip-btn" id="stSeed">Add starter notebooks</button></div>';
+    const sb = $('stSeed');
+    if (sb) sb.onclick = async () => {
+      sb.disabled = true;
+      const updates = {};
+      ST_DEFAULTS.forEach((d, i) => {
+        const k = db.ref('store/products').push().key;
+        updates['store/products/' + k] = Object.assign({ lowAt: 5, active: true, createdAt: Date.now() + i }, d);
+      });
+      try { await db.ref().update(updates); } catch (err) { sb.disabled = false; stShowError(err); }
+    };
+    return;
+  }
+  if (list.querySelector('.empty')) list.innerHTML = '';
+
+  // make sure every product has a card
+  keys.forEach(k => {
+    let card = stCards[k];
+    if (!card) { card = stCards[k] = stBuildCard(k); stFill(card, stData[k], true); }
+    else stFill(card, stData[k], !card._dirty);
+  });
+
+  // category suggestions for the Category field
+  const cats = Array.from(new Set(keys.map(k => String(stData[k].category || '').trim()).filter(Boolean))).sort(stCatCmp);
+  $('stCats').innerHTML = cats.map(c => '<option value="' + c.replace(/"/g, '&quot;') + '"></option>').join('');
+
+  // layout: category by category (new arrivals first, then price low to high);
+  // out-of-stock products are pulled into their own zone at the bottom
+  const inStock = keys.filter(k => stNum(stData[k].stock) > 0);
+  const outStock = keys.filter(k => stNum(stData[k].stock) <= 0);
+  const layout = { main: stGroup(inStock), out: stGroup(outStock) };
+  const sig = JSON.stringify(layout);
+  if (list.querySelector('.empty')) list.innerHTML = '';
+  if (sig === stSig) return;            // same order: leave the DOM (and any typing) alone
+  stSig = sig;
+
+  const head = (txt, n, cls) => { const h = document.createElement('div'); h.className = 'cat-head' + (cls ? ' ' + cls : ''); h.innerHTML = '';
+    h.appendChild(document.createTextNode(txt + ' ')); const sm = document.createElement('small'); sm.textContent = n; h.appendChild(sm); return h; };
+  list.innerHTML = '';
+  layout.main.forEach(g => {
+    list.appendChild(head(g.cat, g.keys.length));
+    g.keys.forEach(k => list.appendChild(stCards[k]));
+  });
+  if (layout.out.length) {
+    const zone = document.createElement('div'); zone.className = 'oos-zone';
+    zone.appendChild(head('Out of stock', outStock.length));
+    layout.out.forEach(g => {
+      zone.appendChild(head(g.cat, g.keys.length, 'sub'));
+      g.keys.forEach(k => zone.appendChild(stCards[k]));
+    });
+    list.appendChild(zone);
+  }
+}
+
+function startStock() {
+  db.ref('store/products').on('value', snap => { stData = snap.val() || {}; renderStock(); }, stShowError);
+  $('stAdd').addEventListener('click', () => {
+    const card = stBuildCard(null);
+    stFill(card, { name: '', note: '', category: '', isNew: false, mrp: 0, price: 0, stock: 10, lowAt: 5, img: '', active: true }, true);
+    card.querySelector('.p-save').disabled = false;
+    $('stDrafts').prepend(card);
+    card.querySelector('.f-name').focus();
+  });
+}
+
+let started = false;
+function showApp() {
+  $('gate').style.display = 'none';
+  $('app').style.display = 'block';
+  if (!started) { started = true; startVisitors(); startAvailability(); startRatings(); startStock(); }
+}
+if (sessionStorage.getItem('np_admin_page_ok') === '1') showApp(); else $('pw').focus();
+
+/* ---------- tabs ---------- */
+document.querySelectorAll('.seg button').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + btn.dataset.panel));
+}));
+
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+const dayKey = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+
+/* ======================== VISITORS ======================== */
+function parseUA(ua) {
+  ua = ua || '';
+  let os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad|iOS/i.test(ua) ? 'iOS' : /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'macOS' : /Linux/i.test(ua) ? 'Linux' : 'Other';
+  let br = /Edg\//.test(ua) ? 'Edge' : /OPR\//.test(ua) ? 'Opera' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : 'Browser';
+  return { os, br };
+}
+
+function rankList(el, entries, total) {
+  if (!entries.length) { el.innerHTML = '<li class="empty">No data yet.</li>'; return; }
+  const max = Math.max(...entries.map(e => e[1]));
+  el.innerHTML = entries.map(([k, v]) =>
+    `<li><div class="row"><span>${esc(k)}</span><b>${v}</b></div><div class="track"><div class="fill" style="width:${Math.max(4, v / max * 100)}%"></div></div></li>`
+  ).join('');
+}
+
+function topN(list, keyFn, n) {
+  const m = {};
+  list.forEach(v => { const k = keyFn(v); if (k) m[k] = (m[k] || 0) + 1; });
+  return Object.entries(m).sort((a, b) => b[1] - a[1]).slice(0, n);
+}
+
+function startVisitors() {
+  db.ref('stats/totalVisits').on('value', s => { $('sTotal').textContent = s.val() || 0; });
+
+  db.ref('stats/pageViews').on('value', s => {
+    const entries = Object.entries(s.val() || {}).sort((a, b) => b[1] - a[1]);
+    rankList($('pagesRank'), entries.map(([k, v]) => [k + '.html', v]));
+  });
+
+  db.ref('visitors').orderByKey().limitToLast(1000).on('value', snap => {
+    const list = Object.values(snap.val() || {}).filter(v => v && v.timestamp).sort((a, b) => b.timestamp - a.timestamp);
+
+    // headline numbers
+    const now = new Date();
+    const todayKey = dayKey(now);
+    const weekAgo = now.getTime() - 7 * 86400000;
+    $('sToday').textContent = list.filter(v => dayKey(new Date(v.timestamp)) === todayKey).length;
+    $('sWeek').textContent = list.filter(v => v.timestamp >= weekAgo).length;
+    const ips = new Set(list.map(v => v.ip).filter(Boolean));
+    $('sUnique').textContent = ips.size;
+
+    // 14-day chart
+    const days = [];
+    for (let i = 13; i >= 0; i--) { const d = new Date(now); d.setDate(d.getDate() - i); days.push(d); }
+    const counts = {};
+    list.forEach(v => { const k = dayKey(new Date(v.timestamp)); counts[k] = (counts[k] || 0) + 1; });
+    const max = Math.max(1, ...days.map(d => counts[dayKey(d)] || 0));
+    $('chart').innerHTML = days.map(d => {
+      const c = counts[dayKey(d)] || 0;
+      const isToday = dayKey(d) === todayKey;
+      return `<div class="col ${isToday ? 'today' : ''}"><div class="bar" style="height:${c / max * 100}%">${c ? `<span>${c}</span>` : ''}</div><div class="day">${d.getDate()}/${d.getMonth() + 1}</div></div>`;
+    }).join('');
+    $('chartNote').textContent = list.length >= 1000 ? 'based on latest 1000 visits' : '';
+
+    // breakdowns
+    rankList($('locRank'), topN(list, v => v.city ? (v.city + (v.region ? ', ' + v.region : '')) : v.country, 6));
+    rankList($('devRank'), topN(list, v => { const u = parseUA(v.userAgent); return u.os + ' · ' + u.br; }, 6));
+
+    // recent table
+    $('logNote').textContent = list.length ? 'latest ' + Math.min(25, list.length) + ' of ' + list.length : '';
+    $('visitRows').innerHTML = list.length ? list.slice(0, 25).map(v => {
+      const u = parseUA(v.userAgent);
+      const t = new Date(v.timestamp);
+      return `<tr>
+        <td data-label="When">${t.toLocaleDateString(undefined, { day:'2-digit', month:'short' })}, ${t.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' })}</td>
+        <td data-label="Page"><span class="pg">${esc(v.page || '—')}</span></td>
+        <td data-label="IP" class="mono">${esc(v.ip || '—')}</td>
+        <td data-label="Location">${esc([v.city, v.country].filter(Boolean).join(', ') || '—')}</td>
+        <td data-label="ISP">${esc(v.isp || '—')}</td>
+        <td data-label="Device">${esc(u.os)} · ${esc(u.br)}</td></tr>`;
+    }).join('') : '<tr><td colspan="6" class="empty">No visits logged yet.</td></tr>';
+  }, err => {
+    $('visitRows').innerHTML = '<tr><td colspan="6" class="empty">Could not load visitors: ' + esc(err.message) + '</td></tr>';
+  });
+}
+
+/* ======================== AVAILABILITY ======================== */
+// Data layout in Realtime Database:
+//   shop/open        -> true | false
+//   shop/slots/<0-23> -> true when that hour (e.g. 10 = 10 AM–11 AM) is available
+const hourLabel = h => { h = ((h % 24) + 24) % 24; return ((h % 12) || 12) + ' ' + (h < 12 ? 'AM' : 'PM'); };
+const slotLabel = h => hourLabel(h) + ' – ' + hourLabel((h + 1) % 24);
+const istHour = () => parseInt(new Intl.DateTimeFormat('en-GB', { hour:'2-digit', hour12:false, timeZone:'Asia/Kolkata' }).format(new Date()), 10) % 24;
+
+let shopOpen = false;
+let slots = {};
+let slotsBuilt = false;
+
+function buildSlots() {
+  if (slotsBuilt) return;
+  slotsBuilt = true;
+  $('slots').innerHTML = Array.from({ length: 24 }, (_, h) => `
+    <label class="slot" data-h="${h}">
+      <input type="checkbox" data-h="${h}">
+      <span class="box"><span class="tick">✓</span><span>${slotLabel(h)}</span></span>
+    </label>`).join('');
+  $('slots').addEventListener('change', e => {
+    const h = e.target.dataset.h;
+    if (h === undefined) return;
+    saveSlots({ [h]: e.target.checked });
+  });
+  $('selAll').addEventListener('click', () => saveSlots(Object.fromEntries(Array.from({ length: 24 }, (_, h) => [h, true]))));
+  $('selNone').addEventListener('click', () => saveSlots(Object.fromEntries(Array.from({ length: 24 }, (_, h) => [h, false]))));
+}
+
+let noteTimer;
+function flashSaved(msg) {
+  $('saveNote').style.color = 'var(--ok)';
+  $('saveNote').textContent = msg;
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(() => { $('saveNote').textContent = ''; }, 1800);
+}
+
+function saveSlots(changes) {
+  const updates = {};
+  Object.entries(changes).forEach(([h, v]) => { updates['shop/slots/' + h] = v; });
+  updates['shop/updatedAt'] = firebase.database.ServerValue.TIMESTAMP;
+  db.ref().update(updates)
+    .then(() => flashSaved('Saved ✓'))
+    .catch(showDbError);
+}
+
+function showDbError(err) {
+  const b = $('dbError');
+  b.style.display = 'block';
+  b.innerHTML = '<b>Could not save.</b> ' + esc(err.message || err) + ' — make sure your Firebase Realtime Database rules allow read/write on the <code>shop</code> path (see the note in the setup instructions).';
+}
+
+// length of the consecutive ticked run starting at hour `start` (capped at 24)
+function runLength(map, start) {
+  let n = 0;
+  while (n < 24 && map[(start + n) % 24] === true) n++;
+  return n;
+}
+
+function renderAvailability() {
+  const nowH = istHour();
+  const slotOpen = slots[nowH] === true;
+  const isOpen = shopOpen || slotOpen;
+  const card = $('shopCard');
+  card.classList.toggle('open', isOpen);
+  card.classList.toggle('closed', !isOpen);
+  $('shopToggle').checked = shopOpen;
+  $('shopTitle').textContent = isOpen ? 'Shop is open' : 'Shop is closed';
+  $('shopSub').textContent = shopOpen
+    ? 'Manually switched on — visitors see “Shop is open”. Switch off to follow your ticked slots.'
+    : slotOpen
+      ? 'Open automatically — the current hour is one of your ticked slots.'
+      : 'Visitors see “Shop is closed” plus your next available slot.';
+  $('slotsCard').style.display = 'block';
+
+  buildSlots();
+  document.querySelectorAll('.slot').forEach(l => {
+    const h = +l.dataset.h;
+    l.querySelector('input').checked = slots[h] === true;
+    l.classList.toggle('past', h < nowH);
+  });
+
+  const next = nextSlot(slots);
+  if (shopOpen) {
+    $('nextPill').textContent = 'Visitors currently see: Shop is open (manual switch is on)';
+  } else if (slotOpen) {
+    const left = runLength(slots, nowH);
+    $('nextPill').textContent = 'Visitors currently see: Shop is open' + (left < 24 ? ' until ' + hourLabel(nowH + left) : '');
+  } else {
+    $('nextPill').textContent = next
+      ? 'Visitors currently see: Next available — ' + next.text
+      : 'No slots ticked — visitors will see “Shop is closed” with no next slot.';
+  }
+}
+
+// next upcoming slot after the current hour: the first ticked hour plus the
+// consecutive ticked hours after it (7,8,9 ticked -> "7 AM – 10 AM")
+function nextSlot(map) {
+  const nowH = istHour();
+  for (let i = 1; i < 24; i++) {
+    const h = (nowH + i) % 24;
+    if (map[h] === true) {
+      const len = runLength(map, h);
+      const when = h > nowH ? 'Today' : 'Tomorrow';
+      return { hour: h, text: when + ', ' + hourLabel(h) + ' – ' + hourLabel(h + len) };
+    }
+  }
+  return null;
+}
+
+/* ======================== RATINGS ======================== */
+let ratingStats = {};
+let ratingView = 'day';
+
+function mondayKey(d) {
+  const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (x.getDay() + 6) % 7; // Monday = 0
+  x.setDate(x.getDate() - dow);
+  return dayKey(x);
+}
+const monthKey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+const parseDay = k => { const p = k.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const fmtAvg = (sum, n) => n ? (sum / n).toFixed(2) : '–';
+const starRow = n => { const r = Math.round(n); return '<span class="star-row">' + '★'.repeat(r) + '<span class="off">' + '★'.repeat(5 - r) + '</span></span>'; };
+
+function sumRange(days, from, to) {
+  let c = 0, s = 0;
+  Object.keys(days).forEach(k => {
+    const d = parseDay(k);
+    if (d >= from && d <= to) { c += days[k].count || 0; s += days[k].sum || 0; }
+  });
+  return { c, s };
+}
+
+function renderRatings() {
+  const days = ratingStats.days || {};
+  const total = ratingStats.total || {};
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekAgo = new Date(today); weekAgo.setDate(weekAgo.getDate() - 6);
+  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  const far = new Date(9999, 0, 1);
+
+  const t = sumRange(days, today, today);
+  const w = sumRange(days, weekAgo, far);
+  const m = sumRange(days, monthStart, far);
+  const setStat = (id, o) => {
+    $(id).textContent = fmtAvg(o.s, o.c);
+    $(id + 'N').textContent = o.c ? (o.c + (o.c === 1 ? ' rating' : ' ratings')) : 'no ratings';
+  };
+  setStat('rToday', t); setStat('rWeek', w); setStat('rMonth', m);
+  setStat('rAll', { c: total.count || 0, s: total.sum || 0 });
+
+  // grouped averages
+  const groups = {};
+  Object.keys(days).forEach(k => {
+    const d = parseDay(k);
+    const key = ratingView === 'day' ? k : ratingView === 'week' ? mondayKey(d) : monthKey(d);
+    const g = groups[key] || (groups[key] = { c: 0, s: 0 });
+    g.c += days[k].count || 0; g.s += days[k].sum || 0;
+  });
+  const keys = Object.keys(groups).sort().reverse().slice(0, ratingView === 'day' ? 30 : ratingView === 'week' ? 12 : 12);
+  const label = key => {
+    if (ratingView === 'month') return parseDay(key + '-01').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    const d = parseDay(key);
+    const s = d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+    return ratingView === 'week' ? 'Week of ' + s : s;
+  };
+  $('rtList').innerHTML = keys.length ? keys.map(k => {
+    const g = groups[k], avg = g.s / g.c;
+    return '<div class="rt-row"><span>' + esc(label(k)) + '</span><div class="track"><div class="fill" style="width:' + (avg / 5 * 100) + '%"></div></div><span class="num"><b>' + avg.toFixed(2) + '</b> · ' + g.c + '</span></div>';
+  }).join('') : '<div class="empty">No ratings yet.</div>';
+}
+
+function renderFeedback(list) {
+  $('fbCount').textContent = list.length ? list.length + ' shown' : '';
+  $('clearFb').disabled = !list.length;
+  $('fbList').innerHTML = list.length ? list.map(f => {
+    const when = f.createdAt ? new Date(f.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '';
+    const tags = (f.reasons || []).map(r => '<span class="pg">' + esc(r) + '</span>').join('');
+    return '<div class="fb-item"><div class="fb-top"><span>' + starRow(f.rating || 0) + ' &nbsp;' + (f.rating || 0) + '/5</span><span>' + esc(when) + (f.token ? ' · token ' + esc(f.token) : '') + '</span></div>' +
+      (tags ? '<div class="fb-tags">' + tags + '</div>' : '') +
+      (f.comment ? '<p class="fb-comment">' + esc(f.comment) + '</p>' : '') + '</div>';
+  }).join('') : '<div class="empty">No feedback yet.</div>';
+}
+
+function showRtError(err) {
+  const b = $('rtError');
+  b.style.display = 'block';
+  b.innerHTML = '<b>Database error.</b> ' + esc(err.message || err) + ' — make sure your Realtime Database rules allow read/write on the <code>feedback</code> and <code>ratingStats</code> paths.';
+}
+
+function startRatings() {
+  db.ref('ratingStats').on('value', snap => { ratingStats = snap.val() || {}; renderRatings(); }, showRtError);
+  db.ref('feedback').orderByChild('createdAt').limitToLast(300).on('value', snap => {
+    const list = [];
+    snap.forEach(c => { list.push(c.val()); });
+    renderFeedback(list.reverse());
+  }, showRtError);
+
+  $('rtToggle').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    ratingView = b.dataset.v;
+    document.querySelectorAll('#rtToggle button').forEach(x => x.classList.toggle('active', x === b));
+    renderRatings();
+  });
+
+  $('clearFb').addEventListener('click', () => {
+    if (!confirm('Delete ALL written feedback? Average ratings will NOT be affected. This cannot be undone.')) return;
+    $('clearFb').disabled = true;
+    db.ref('feedback').remove().catch(err => { $('clearFb').disabled = false; showRtError(err); });
+  });
+}
+
+function startAvailability() {
+  db.ref('shop').on('value', snap => {
+    const v = snap.val() || {};
+    shopOpen = v.open === true;
+    const raw = v.slots || {};
+    slots = {};
+    for (let h = 0; h < 24; h++) slots[h] = raw[h] === true;
+    renderAvailability();
+  }, showDbError);
+
+  $('shopToggle').addEventListener('change', e => {
+    db.ref().update({ 'shop/open': e.target.checked, 'shop/updatedAt': firebase.database.ServerValue.TIMESTAMP })
+      .catch(err => { e.target.checked = shopOpen; showDbError(err); });
+  });
+  setInterval(renderAvailability, 60000); // keep "past" hours and next-slot pill fresh
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#f4f2ea">
+<meta name="robots" content="noindex, nofollow">
+<title>Your token — NextPrint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     NextPrint — token page · one private URL per token
+     token.html?h=<hash>
+     ============================================================ */
+  :root {
+    --bg: #f4f2ea; --paper-dim: #ebe8dd; --card: #fff; --ink: #17181c; --ink-soft: #62625c;
+    --line: #e3e0d4; --red: #c6332e; --red-dark: #a02722; --blue: #1f5fa8; --ok: #2f7a4d; --amber: #a56200;
+    --r: 18px; --r-sm: 12px;
+    --shadow: 0 1px 2px rgba(23,24,28,.05), 0 6px 18px rgba(23,24,28,.06);
+    font-size: 15px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "IBM Plex Sans", -apple-system, "Segoe UI", sans-serif; line-height: 1.4; -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  button { font: inherit; color: inherit; touch-action: manipulation; }
+  h1, h2, h3, h4 { font-family: "Fraunces", Georgia, serif; font-weight: 600; margin: 0; letter-spacing: -.01em; line-height: 1.12; }
+  [hidden] { display: none !important; }
+  :focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+  .site-header { position: sticky; top: 0; z-index: 30; background: rgba(244,242,234,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .site-header .in { max-width: 520px; margin: 0 auto; padding: 0 14px; height: 48px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.25rem; color: var(--ink); text-decoration: none; }
+  .logo .dot { color: var(--red); }
+  .room-pill { font-size: .76rem; font-weight: 500; padding: 5px 11px; border-radius: 999px; background: var(--paper-dim); }
+
+  .app { max-width: 520px; margin: 0 auto; padding: 16px 14px 60px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ----- state screens ----- */
+  .state { text-align: center; padding: 56px 18px; background: var(--card); border: 1px dashed var(--line); border-radius: var(--r); }
+  .state .ic { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 12px; display: grid; place-items: center; font-size: 1.5rem; background: var(--paper-dim); }
+  .state h2 { font-size: 1.3rem; margin-bottom: 6px; }
+  .state p { margin: 0 0 16px; color: var(--ink-soft); font-size: .9rem; }
+  .spinner { width: 26px; height: 26px; margin: 0 auto; border: 3px solid #ddd9cb; border-top-color: var(--red); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ----- buttons ----- */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1.5px solid transparent; border-radius: 14px; padding: 14px 16px; font-weight: 600; font-size: 1rem; cursor: pointer; text-decoration: none; }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .btn-pay { background: var(--ok); color: #fff; }
+  .btn-outline { background: #fff; border-color: var(--ink); color: var(--ink); }
+  .btn-outline:hover { border-color: var(--red); color: var(--red); }
+  .btn-dark { background: var(--ink); color: #fff; }
+
+  .note { display: flex; gap: 8px; align-items: flex-start; padding: 11px 14px; border-radius: var(--r-sm); font-size: .88rem; }
+  .note.ok { background: #eef6f0; color: var(--ok); border: 1px solid #c9e4d1; }
+  .note.err { background: #fbeceb; color: var(--red-dark); border: 1px solid #f0c9c7; }
+  .note.info { background: #eaf1fa; color: #1b4f8c; border: 1px solid #c8daef; }
+  .note .x { margin-left: auto; border: 0; background: none; font-size: 1rem; cursor: pointer; opacity: .6; padding: 0 2px; }
+
+  /* ----- ticket ----- */
+  .ticket { position: relative; overflow: hidden; background: var(--red); color: #fff; text-align: center; border-radius: var(--r); padding: 22px 16px 18px; box-shadow: var(--shadow); animation: burst .5s cubic-bezier(.2,1.2,.4,1); }
+  .ticket::before, .ticket::after { content: ""; position: absolute; top: 50%; width: 24px; height: 24px; border-radius: 50%; background: var(--bg); transform: translateY(-50%); }
+  .ticket::before { left: -12px; } .ticket::after { right: -12px; }
+  @keyframes burst { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  .ticket .k { font-size: .7rem; letter-spacing: .14em; text-transform: uppercase; font-weight: 600; color: rgba(255,255,255,.78); }
+  .ticket .code { font-family: "IBM Plex Mono", monospace; font-size: 4rem; font-weight: 500; letter-spacing: .2em; padding-left: .2em; line-height: 1.1; margin: 4px 0 12px; }
+  .ticket .row { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
+  .ticket .pill { border: 1.5px solid rgba(255,255,255,.65); background: transparent; color: #fff; border-radius: 999px; padding: 8px 16px; font-size: .84rem; cursor: pointer; }
+  .ticket .pill:active { background: #fff; color: var(--red); }
+  .ticket.printed { background: #55575f; }
+  .ticket .chip { display: inline-block; margin-bottom: 4px; font-size: .7rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: rgba(255,255,255,.18); }
+
+  /* ----- progress ----- */
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 12px 10px; box-shadow: var(--shadow); }
+  .step { text-align: center; font-size: .72rem; font-weight: 600; color: var(--ink-soft); }
+  .step i { display: grid; place-items: center; width: 26px; height: 26px; margin: 0 auto 5px; border-radius: 50%; background: var(--paper-dim); color: var(--ink-soft); font-style: normal; font-size: .8rem; }
+  .step.on { color: var(--ink); }
+  .step.on i { background: var(--ok); color: #fff; }
+
+  /* ----- cards ----- */
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; box-shadow: var(--shadow); }
+  .card .k { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--ink-soft); }
+  .price-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+  .price { font-family: "Fraunces", Georgia, serif; font-size: 2.5rem; font-weight: 600; line-height: 1; margin-top: 4px; }
+  .tag { display: inline-block; font-size: .7rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #fdf0d9; color: #8a5200; white-space: nowrap; }
+  .tag.final { background: #e6f3ea; color: #1f5a37; }
+  .tag.none { background: #eee; color: #555; }
+  .tag.paid { background: #dff1e5; color: #1f5a37; }
+  .price-sub { margin: 8px 0 0; font-size: .82rem; color: var(--ink-soft); }
+  .price-lines { margin: 10px 0 0; padding: 10px 0 0; border-top: 1px dashed var(--line); font-size: .86rem; display: grid; gap: 4px; }
+  .price-lines div { display: flex; justify-content: space-between; }
+  .price-lines .due { font-weight: 600; }
+  .flash { animation: flash 1.6s ease; }
+  @keyframes flash { 0%, 40% { background: #fff7d6; } 100% { background: var(--card); } }
+  #payMsg:empty { display: none; }
+  #payMsg { margin-top: 10px; }
+  .pay-wrap { margin-top: 12px; }
+  .pay-wrap small { display: block; text-align: center; margin-top: 6px; color: var(--ink-soft); font-size: .76rem; }
+
+  .where { display: flex; align-items: center; gap: 12px; }
+  .where .pin { font-size: 1.6rem; }
+  .where b { display: block; font-size: 1.05rem; }
+  .where span { font-size: .8rem; color: var(--ink-soft); }
+
+  .items { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+  .items li { display: flex; justify-content: space-between; gap: 10px; padding: 9px 11px; border-radius: 11px; background: #faf9f4; font-size: .86rem; }
+  .items li .n { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .items li .n small { display: block; color: var(--ink-soft); font-size: .74rem; }
+  .items li .p { font-weight: 600; white-space: nowrap; }
+  .items-note { margin: 8px 0 0; font-size: .82rem; color: var(--ink-soft); white-space: pre-line; }
+
+  /* ----- survey ----- */
+  .survey { position: relative; padding: 18px 14px 14px; text-align: center; overflow: hidden; background: linear-gradient(180deg, #fffdf7 0%, #fff 60%); }
+  .survey::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--red), #e0a210, var(--ok)); }
+  .survey-skip { position: absolute; top: 10px; right: 10px; font-size: .74rem; color: var(--ink-soft); background: var(--paper-dim); border: none; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .survey h4 { font-size: 1.05rem; margin-bottom: 4px; }
+  .stars { display: flex; justify-content: center; }
+  .stars button { font-size: 2.4rem; line-height: 1; background: none; border: none; cursor: pointer; color: #dcd8ca; padding: 0 4px; transition: transform .15s, color .15s; }
+  .stars button.on { color: #f0b010; }
+  .rate-label { min-height: 1.3em; font-size: .84rem; font-weight: 600; color: var(--ink-soft); }
+  .survey[data-tone="low"] .rate-label { color: var(--red); } .survey[data-tone="mid"] .rate-label { color: #b27a00; } .survey[data-tone="high"] .rate-label { color: var(--ok); }
+  .survey-more { display: none; margin-top: 10px; text-align: left; } .survey-more.show { display: block; }
+  .survey-title { font-size: .86rem; font-weight: 600; margin-bottom: 8px; text-align: center; }
+  .survey-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+  .survey-opt { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 999px; font-size: .8rem; cursor: pointer; background: #fff; user-select: none; }
+  .survey-opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+  .survey-opt .tick { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #b9b5a8; display: grid; place-items: center; font-size: .54rem; color: transparent; flex: none; }
+  .survey-opt:has(input:checked) { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .survey-opt:has(input:checked) .tick { background: #fff; border-color: #fff; color: var(--ink); }
+  .survey textarea { width: 100%; min-height: 60px; font: inherit; font-size: 16px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; resize: vertical; background: #fcfbf7; }
+  .survey-submit { margin-top: 8px; width: 100%; font-weight: 600; padding: 13px; border: none; border-radius: 12px; cursor: pointer; color: #fff; background: var(--ink); }
+  .survey[data-tone="low"] .survey-submit { background: var(--red); } .survey[data-tone="mid"] .survey-submit { background: #d9970a; } .survey[data-tone="high"] .survey-submit { background: var(--ok); }
+  .survey-submit:disabled { opacity: .65; }
+  .survey-thanks { padding: 10px 0 4px; font-weight: 600; color: var(--ok); }
+
+  .foot { text-align: center; font-size: .74rem; color: var(--ink-soft); padding-top: 6px; }
+  .toast { position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 30px); opacity: 0; pointer-events: none; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 12px; font-size: .86rem; font-weight: 500; transition: all .25s; z-index: 90; max-width: 90vw; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; transition: none !important; } }
+</style>
+</head>
+<body data-page="token">
+
+<header class="site-header">
+  <div class="in">
+    <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+    <span class="room-pill">📍 Room 136</span>
+  </div>
+</header>
+
+<main class="app" id="app">
+  <div class="state"><div class="spinner"></div></div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="config.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const app = $('app');
+firebase.initializeApp(CONFIG.firebase);
+const db = firebase.database();
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('show'), 2400); }
+
+// ---- the URL carries one opaque hash: <secret><requestKey>. The secret is
+// stored on the request as tokenHash, so only someone holding the link can
+// open it (the 4-digit token alone is not enough). ----
+const qs = new URLSearchParams(location.search);
+const HASH = (qs.get('h') || '').trim();
+const parsed = (function (h) {
+  if (h.length < 21) return null;
+  const key = h.slice(-20);
+  if (!/^[-_0-9A-Za-z]{20}$/.test(key)) return null;
+  return { key, secret: h.slice(0, -20) };
+})(HASH);
+
+// one-off messages passed in the URL by the page that created/updated the token
+const FLASH = {
+  isNew: qs.get('new') === '1',
+  appended: qs.get('ap') === '1',
+  addedFiles: Number(qs.get('af')) || 0,
+  addedPaper: Number(qs.get('pa')) || 0,
+  notice: (qs.get('n') || '').slice(0, 240),
+};
+if (parsed && history.replaceState) { try { history.replaceState(null, '', 'token.html?h=' + encodeURIComponent(HASH)); } catch (e) {} }
+
+function paidOf(r) {
+  if (r.paymentStatus === 'paid') return r.paidAmount != null ? Number(r.paidAmount) || 0 : Number(r.amount) || 0;
+  return Number(r.paidAmount) || 0;
+}
+function typeLabel(t) { return t === 'color' ? 'Colour' : t === 'photo' ? 'Glossy paper' : 'Black & white'; }
+
+function showState(icon, title, text, extra) {
+  app.innerHTML = `<div class="state"><div class="ic">${icon}</div><h2>${title}</h2><p>${text}</p>${extra || ''}</div>`;
+}
+
+if (!parsed) {
+  showState('🔗', 'This link doesn’t look right', 'Open the token link you were given after uploading, or send your files again.', '<a class="btn btn-dark" href="upload.html">Send files</a>');
+} else {
+  start();
+}
+
+let req = null, prevAmount = null, surveyHandled = false, flashOpen = true;
+
+function start() {
+  db.ref('printRequests/' + parsed.key).on('value', snap => {
+    const v = snap.val();
+    if (!v || !v.tokenHash || v.tokenHash !== parsed.secret) {
+      req = null;
+      if (!v) showState('✅', 'This token is closed', 'The shop has already handled this order, or it was cancelled or cleared. If you still need prints, send your files again.', '<a class="btn btn-dark" href="upload.html">Send new files</a>');
+      else showState('🔗', 'This link doesn’t look right', 'Open the token link you were given after uploading.', '<a class="btn btn-dark" href="upload.html">Send files</a>');
+      return;
+    }
+    const old = req;
+    req = Object.assign({ key: parsed.key }, v);
+    render(old);
+  }, err => {
+    showState('⚠️', 'Could not load your token', esc(err && err.message || err) + '. Please check your connection and try again.', '<button class="btn btn-dark" onclick="location.reload()">Retry</button>');
+  });
+}
+
+function render(old) {
+  const amount = Number(req.amount) || 0;
+  const paid = paidOf(req);
+  const due = Math.max(0, amount - paid);
+  const fullyPaid = amount > 0 && due <= 0;
+  const isStore = req.source === 'store' || req.source === 'notebook';
+  const priceSet = !!req.priceSet;
+  const printed = req.status === 'printed';
+  const files = Array.isArray(req.files) ? req.files : Object.values(req.files || {});
+  const items = Array.isArray(req.items) ? req.items : Object.values(req.items || {});
+  const paper = req.paper && Number(req.paper.qty) > 0 ? req.paper : null;
+  const canPay = CONFIG.paymentsEnabled && window.Razorpay && due > 0 && !printed;
+  const canAdd = !isStore && req.source !== 'whatsapp' && !printed;
+
+  // tell the customer when the shop changes the price while they are watching
+  const priceChanged = old && Number(old.amount) !== amount;
+  if (priceChanged) toast('The shop updated your price to ₹' + amount);
+
+  // ---- price card ----
+  let tag, sub;
+  if (isStore) { tag = '<span class="tag paid">Paid online</span>'; sub = 'Your store order is paid. Show the token to collect it.'; }
+  else if (amount <= 0) { tag = '<span class="tag none">Not set yet</span>'; sub = 'The shop will add your price after checking your order. This page updates by itself.'; }
+  else if (priceSet) { tag = '<span class="tag final">Final price</span>'; sub = 'Set by the shop. This is the only amount you pay.'; }
+  else { tag = '<span class="tag">Estimate</span>'; sub = 'Worked out from your print settings. The shop confirms the final price here, and you only pay the amount shown on this page.'; }
+
+  const lines = (paid > 0 || due > 0) ? `
+    <div class="price-lines">
+      ${paid > 0 ? `<div><span>Paid so far</span><span>₹${paid}</span></div>` : ''}
+      ${due > 0 && paid > 0 ? `<div class="due"><span>Balance to pay</span><span>₹${due}</span></div>` : ''}
+      ${fullyPaid ? `<div class="due" style="color:var(--ok)"><span>Status</span><span>✓ Fully paid</span></div>` : ''}
+    </div>` : '';
+
+  const payBlock = canPay ? `
+    <div class="pay-wrap">
+      <button type="button" class="btn btn-pay" id="payBtn">${paid > 0 ? 'Pay balance' : 'Pay now'} · ₹${due}</button>
+      <small>${priceSet || isStore ? 'Or pay at the counter when you collect.' : 'You can also pay at the counter once the price is confirmed.'}</small>
+      <div id="payMsg"></div>
+    </div>` : '<div id="payMsg"></div>';
+
+  // ---- order details ----
+  const rows = [];
+  files.forEach(f => {
+    const pg = f.pageMode === 'custom' ? 'pages ' + esc(f.pages || '') : 'all pages';
+    rows.push(`<li><span class="n">${esc(f.name)}<small>${typeLabel(f.printType)} · ${pg} · ${f.copies || 1} cop${(f.copies || 1) === 1 ? 'y' : 'ies'}</small></span></li>`);
+  });
+  if (paper) rows.push(`<li><span class="n">A4 paper<small>${Number(paper.qty)} blank sheets</small></span><span class="p">₹${Number(paper.total) || 0}</span></li>`);
+  items.forEach(i => rows.push(`<li><span class="n">${Number(i.qty) || 0} × ${esc(i.name)}</span><span class="p">₹${i.total != null ? i.total : (Number(i.qty) || 0) * (Number(i.price) || 0)}</span></li>`));
+  if (req.source === 'whatsapp' && !rows.length) rows.push('<li><span class="n">Files sent on WhatsApp<small>The shop prints them from the chat</small></span></li>');
+
+  // ---- one-off banner ----
+  let banner = '';
+  if (flashOpen) {
+    if (FLASH.notice) banner = `<div class="note info" id="flashBox"><span>ℹ️</span><span>${esc(FLASH.notice)}</span><button class="x" id="flashX" aria-label="Dismiss">✕</button></div>`;
+    else if (FLASH.appended) {
+      const bits = [];
+      if (FLASH.addedFiles) bits.push(FLASH.addedFiles + ' file' + (FLASH.addedFiles > 1 ? 's' : ''));
+      if (FLASH.addedPaper) bits.push(FLASH.addedPaper + ' A4 sheet' + (FLASH.addedPaper > 1 ? 's' : ''));
+      banner = `<div class="note ok" id="flashBox"><span>✅</span><span>${esc(bits.join(' + ') || 'Items')} added to your token. Price updated.</span><button class="x" id="flashX" aria-label="Dismiss">✕</button></div>`;
+    } else if (FLASH.isNew) {
+      banner = `<div class="note ok" id="flashBox"><span>✅</span><span>${isStore ? 'Payment received. Collect your items at the desk.' : 'Files uploaded. Keep this page — it shows your price and payment.'}</span><button class="x" id="flashX" aria-label="Dismiss">✕</button></div>`;
+    }
+  }
+
+  const showSurvey = FLASH.isNew && !surveyHandled && !localStorage.getItem('np_survey_' + req.key);
+
+  const html = `
+    ${banner}
+    <section class="ticket${printed ? ' printed' : ''}">
+      ${printed ? '<span class="chip">Printed</span>' : ''}
+      <div class="k">Your token number</div>
+      <div class="code">${esc(req.token || '—')}</div>
+      <div class="row">
+        <button type="button" class="pill" id="copyToken">Copy token</button>
+        <button type="button" class="pill" id="copyLink">Copy link</button>
+      </div>
+    </section>
+
+    <section class="steps" aria-label="Progress">
+      <div class="step on"><i>✓</i>${isStore ? 'Order placed' : 'Files received'}</div>
+      <div class="step ${priceSet || isStore ? 'on' : ''}"><i>${priceSet || isStore ? '✓' : '2'}</i>Price confirmed</div>
+      <div class="step ${fullyPaid ? 'on' : ''}"><i>${fullyPaid ? '✓' : '3'}</i>Paid</div>
+    </section>
+
+    <section class="card ${priceChanged ? 'flash' : ''}" id="priceCard">
+      <div class="price-top">
+        <div><div class="k">Amount to pay</div><div class="price">${amount > 0 ? '₹' + amount : '—'}</div></div>
+        ${tag}
+      </div>
+      <p class="price-sub">${sub}</p>
+      ${lines}
+      ${payBlock}
+    </section>
+
+    <section class="card where">
+      <span class="pin">📍</span>
+      <div><b>Collect from Room 136</b><span>Show your token number at the print desk.</span></div>
+    </section>
+
+    ${rows.length ? `
+    <section class="card">
+      <div class="k">Your order</div>
+      <ul class="items">${rows.join('')}</ul>
+      ${req.notes && !isStore && req.source !== 'whatsapp' ? `<p class="items-note"><b>Note:</b> ${esc(req.notes)}</p>` : ''}
+    </section>` : ''}
+
+    ${canAdd ? `<a class="btn btn-outline" href="upload.html?add=${encodeURIComponent(HASH)}">＋ Add more files to this token</a>` : ''}
+    ${isStore ? '<a class="btn btn-outline" href="store.html">＋ Order more items</a>' : ''}
+
+    ${showSurvey ? surveyHtml() : ''}
+    <div class="foot">This private link is only for you · NextPrint</div>`;
+
+  // keep an already-open survey (stars, comment) intact when the page refreshes live
+  const liveSurvey = showSurvey ? $('survey') : null;
+  app.innerHTML = html;
+  if (liveSurvey && $('survey')) $('survey').replaceWith(liveSurvey);
+
+  $('copyToken').addEventListener('click', () => copyText(req.token, $('copyToken'), 'Copy token'));
+  $('copyLink').addEventListener('click', () => copyText(location.href, $('copyLink'), 'Copy link'));
+  const fx = $('flashX'); if (fx) fx.addEventListener('click', () => { flashOpen = false; const b = $('flashBox'); if (b) b.remove(); });
+  const pb = $('payBtn'); if (pb) pb.addEventListener('click', () => startPayment(due, pb));
+  if (showSurvey && !liveSurvey) initSurvey();
+}
+
+async function copyText(text, btn, label) {
+  try { await navigator.clipboard.writeText(String(text)); btn.textContent = 'Copied ✓'; }
+  catch (e) { btn.textContent = 'Press and hold to copy'; }
+  setTimeout(() => { btn.textContent = label; }, 1800);
+}
+
+// ---- Razorpay: charges exactly what is still due on the request right now.
+// The paid amount is added to whatever is already recorded; the print desk
+// folds it into the earnings total. ----
+let paying = false;
+function startPayment(amountDue, btn) {
+  const msg = $('payMsg');
+  if (paying) return;
+  if (!CONFIG.paymentsEnabled || !window.Razorpay) { msg.innerHTML = '<div class="note err">Online payment is unavailable right now. You can pay at the counter.</div>'; return; }
+  msg.innerHTML = '';
+  paying = true;
+  btn.disabled = true;
+  btn.textContent = 'Opening payment…';
+  const label = btn.dataset.label || btn.textContent;
+
+  const rzp = new Razorpay({
+    key: CONFIG.razorpay.keyId,
+    amount: Math.round(amountDue * 100),
+    currency: 'INR',
+    name: 'NextPrint',
+    description: 'Token ' + req.token,
+    handler: async function (response) {
+      btn.textContent = 'Confirming payment…';
+      try {
+        const ref = db.ref('printRequests/' + req.key);
+        const fresh = (await ref.once('value')).val() || req;
+        const newPaid = paidOf(fresh) + amountDue;
+        await ref.update({
+          paymentStatus: newPaid >= (Number(fresh.amount) || 0) ? 'paid' : 'unpaid',
+          paidAmount: newPaid,
+          paymentId: response.razorpay_payment_id,
+          paymentMethod: 'razorpay',
+          paidAt: firebase.database.ServerValue.TIMESTAMP,
+        });
+        paying = false;
+        const m = $('payMsg'); if (m) m.innerHTML = '<div class="note ok">✅ Payment received. Thank you!</div>';
+      } catch (err) {
+        paying = false;
+        const m = $('payMsg'); if (m) m.innerHTML = '<div class="note err">Payment went through (ID: ' + esc(response.razorpay_payment_id) + ') but we could not update your token. Please show this ID at the counter.</div>';
+      }
+    },
+    modal: { ondismiss: function () { paying = false; const b = $('payBtn'); if (b) { b.disabled = false; render(req); } } },
+  });
+  rzp.on('payment.failed', function (response) {
+    paying = false;
+    const b = $('payBtn'); if (b) b.disabled = false;
+    const desc = response && response.error && response.error.description;
+    const m = $('payMsg'); if (m) m.innerHTML = '<div class="note err">Payment failed' + (desc ? ': ' + esc(desc) : '.') + ' You can try again or pay at the counter.</div>';
+    if (b) b.textContent = 'Pay now · ₹' + amountDue;
+  });
+  rzp.open();
+}
+
+// ---- optional feedback (shown once, right after upload / store payment) ----
+const SURVEY_OPTIONS = {
+  1: { title: 'Sorry about that. What went wrong?', opts: ['Terrible website', 'Prices are too high', 'WhatsApp is a better option', 'Upload kept failing or was too slow', 'Too confusing to use'] },
+  2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Upload was slow', 'Payment was confusing', 'WhatsApp seems easier'] },
+  3: { title: 'Okay is not great. What could improve?', opts: ['Could be faster', 'Some steps were confusing', 'Pricing is average', 'Needs more print options', 'It was fine overall'] },
+  4: { title: 'Glad it went well! What worked?', opts: ['Easy to use', 'Fast upload', 'Fair prices', 'Smooth payment', 'Just minor issues'] },
+  5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Fast upload', 'Great prices', 'Easy payment', 'Will use again'] },
+};
+const RATE_LABELS = { 1: 'Terrible', 2: 'Poor', 3: 'Okay', 4: 'Good', 5: 'Excellent' };
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+function surveyHtml() {
+  return `
+    <section class="card survey" id="survey">
+      <button type="button" class="survey-skip" id="surveySkip">Skip</button>
+      <h4>How was your experience?</h4>
+      <div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">
+        ${[1,2,3,4,5].map(n => `<button type="button" data-n="${n}" role="radio" aria-checked="false" aria-label="${n} star${n>1?'s':''}">★</button>`).join('')}
+      </div>
+      <div class="rate-label" id="rateLabel">Tap a star (optional)</div>
+      <div class="survey-more" id="surveyMore">
+        <div class="survey-title" id="surveyTitle"></div>
+        <div class="survey-opts" id="surveyOpts"></div>
+        <textarea id="surveyComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>
+        <button type="button" class="survey-submit" id="surveySubmit">Submit feedback</button>
+      </div>
+    </section>`;
+}
+
+function initSurvey() {
+  const box = $('survey'); if (!box) return;
+  const token = req.token, requestKey = req.key;
+  const stars = [...document.querySelectorAll('#surveyStars button')];
+  const more = $('surveyMore'), optsEl = $('surveyOpts');
+  let rating = 0;
+  const done = () => { surveyHandled = true; try { localStorage.setItem('np_survey_' + requestKey, '1'); } catch (e) {} };
+  $('surveySkip').addEventListener('click', () => { done(); box.remove(); });
+  stars.forEach(btn => btn.addEventListener('click', () => {
+    const n = Number(btn.dataset.n), changed = n !== rating;
+    rating = n;
+    stars.forEach(s => { s.classList.toggle('on', Number(s.dataset.n) <= n); s.setAttribute('aria-checked', String(Number(s.dataset.n) === n)); });
+    box.dataset.tone = n <= 2 ? 'low' : n === 3 ? 'mid' : 'high';
+    $('rateLabel').textContent = RATE_LABELS[n];
+    if (changed) {
+      const cfg = SURVEY_OPTIONS[n];
+      $('surveyTitle').textContent = cfg.title;
+      optsEl.innerHTML = cfg.opts.map(o => `<label class="survey-opt"><input type="checkbox" value="${esc(o)}"><span class="tick">✓</span><span>${esc(o)}</span></label>`).join('');
+    }
+    more.classList.add('show');
+  }));
+  $('surveySubmit').addEventListener('click', async e => {
+    if (!rating) return;
+    const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Sending…';
+    const reasons = [...optsEl.querySelectorAll('input:checked')].map(i => i.value);
+    const comment = $('surveyComment').value.trim().slice(0, 500);
+    const dk = dayKey(new Date());
+    try {
+      await db.ref('feedback').push({ rating, reasons, comment, token, requestKey, source: req.source || 'upload', day: dk, createdAt: firebase.database.ServerValue.TIMESTAMP });
+      await db.ref('ratingStats/days/' + dk).transaction(cur => { cur = cur || { count: 0, sum: 0 }; return { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating }; });
+      await db.ref('ratingStats/total').transaction(cur => {
+        cur = cur || { count: 0, sum: 0 };
+        const out = { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + rating };
+        for (let i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === rating ? 1 : 0);
+        return out;
+      });
+      done();
+      box.innerHTML = '<div class="survey-thanks">🙏 Thanks for your feedback!</div>';
+    } catch (err) {
+      btn.disabled = false; btn.textContent = 'Submit feedback';
+      alert('Could not send feedback right now. You can skip it, no problem.');
+    }
+  });
+}
+</script>
+<script src="analytics.js"></script>
+</body>
+</html>
