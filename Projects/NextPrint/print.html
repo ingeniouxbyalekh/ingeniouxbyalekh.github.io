@@ -212,7 +212,31 @@
 
   .pd-actions { display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:8px; }
   .pd-actions.n3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
-  .pd-sub { display:flex; flex-wrap:wrap; gap:2px 16px; margin-top:-2px; }
+  .pd-sub { display:flex; flex-wrap:wrap; align-items:center; gap:2px 16px; margin-top:-2px; }
+  .pd-printbtn { position:relative; flex:none; width:56px; height:56px; display:grid; place-items:center; border:0; border-radius:18px; background:linear-gradient(145deg,#14b8a6 0%,#0d9488 45%,#0f766e 100%); color:#fff; cursor:pointer; box-shadow:0 10px 20px -8px rgba(13,148,136,.75), inset 0 1px 0 rgba(255,255,255,.35); transition:transform .12s, box-shadow .2s, filter .2s; }
+  .pd-printbtn::before { content:""; position:absolute; inset:-3px; border-radius:21px; border:2px solid rgba(20,184,166,.55); animation:pdRing 2.4s ease-out infinite; pointer-events:none; }
+  .pd-printbtn svg { width:30px; height:30px; overflow:visible; }
+  .pd-printbtn .pr-sheet { fill:#fff; stroke:none; animation:pdSheet 2.4s ease-in-out infinite; }
+  .pd-printbtn .pr-line { stroke:#0f766e; stroke-width:1.4; animation:pdSheet 2.4s ease-in-out infinite; }
+  .pd-printbtn .pr-led { fill:#fde047; animation:pdBlink 1.2s steps(2,end) infinite; }
+  .pd-printbtn:hover { filter:brightness(1.08); transform:translateY(-2px); box-shadow:0 14px 24px -8px rgba(13,148,136,.85), inset 0 1px 0 rgba(255,255,255,.4); }
+  .pd-printbtn:active { transform:scale(.93); }
+  @keyframes pdSheet { 0%,12% { transform:translateY(-5px); opacity:0; } 35% { opacity:1; } 70%,100% { transform:translateY(2.5px); opacity:1; } }
+  @keyframes pdRing { 0% { transform:scale(.94); opacity:.9; } 70%,100% { transform:scale(1.22); opacity:0; } }
+  @keyframes pdBlink { 50% { opacity:.25; } }
+  @media (prefers-reduced-motion:reduce) { .pd-printbtn::before, .pd-printbtn .pr-sheet, .pd-printbtn .pr-line, .pd-printbtn .pr-led { animation:none; } }
+  .pd-amount.inline { display:flex; align-items:center; gap:8px; margin-left:auto; text-align:left; }
+  .pd-amount.inline b { display:inline; font-size:1.25rem; }
+  .pd-amount.inline .pd-pay { margin-top:0; }
+  .pd-amount.inline small { display:inline; margin-top:0; }
+  .pd-wa-box { display:flex; flex-direction:column; gap:10px; padding:11px 12px; border-radius:14px; background:#f1faf4; border:1.5px solid #cfe9d8; }
+  .pd-wa-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px 10px; }
+  .pd-wa-grid label { display:flex; flex-direction:column; gap:4px; font-size:.68rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:#2f6b45; }
+  .pd-wa-grid label em { font-style:normal; font-weight:500; text-transform:none; letter-spacing:0; color:var(--mute); }
+  .pd-wa-grid .pd-price-in { width:100%; }
+  .pd-wa-sum { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px 14px; font-size:.8rem; color:var(--soft); }
+  .pd-wa-sum .tot { font-family:"Fraunces", Georgia, serif; font-size:1.3rem; font-weight:600; color:var(--ink); }
+  .pd-wa-note { font-size:.74rem; color:#8a5200; }
   .pd-tl { border:0; background:none; padding:6px 0; font:inherit; font-size:.8rem; font-weight:600; color:var(--soft); cursor:pointer; }
   .pd-tl:hover { color:var(--ink); text-decoration:underline; }
 
@@ -847,12 +871,62 @@ window.savePrice = async function (id) {
   if (paid > n && !(await ask({ title: 'Price is lower than what was paid', body: 'Token ' + (req.token || '') + ' has already paid ₹' + paid + ', which is more than ₹' + n + '.', ok: 'Set it anyway', danger: true }))) return;
   try {
     await db.ref('printRequests/' + id).update({
-      amount: n, priceSet: true, priceSetAt: firebase.database.ServerValue.TIMESTAMP,
+      amount: n, priceSet: true, priceOverride: true, priceSetAt: firebase.database.ServerValue.TIMESTAMP,
       paidAmount: paid, paymentStatus: (n > 0 && paid >= n) ? 'paid' : 'unpaid',
     });
     editingPrice.delete(id);
     toast('Token ' + (req.token || '') + ' price set to ₹' + n);
     inp.blur();
+    renderLater = false; render();
+  } catch (err) { alert('Could not update: ' + (err.message || err)); }
+};
+function waRates(pages, kind) {
+  const P = (CONFIG.pricing || {}), O = (CONFIG.offer || {});
+  const base = kind === 'color' ? P.color : kind === 'photo' ? P.photoPaper : P.blackAndWhite;
+  let rate = Number(base) || 0;
+  if (kind !== 'photo' && O.minPages && pages >= Number(O.minPages)) {
+    const off = kind === 'color' ? O.color : O.blackAndWhite;
+    if (off != null) rate = Number(off) || rate;
+  }
+  return rate;
+}
+// WhatsApp tokens: price = pages x rate (B&W / colour / photo) + extra amount (may be negative)
+function waCalc(bw, col, ph, extra) {
+  bw = Math.max(0, Math.floor(Number(bw) || 0)); col = Math.max(0, Math.floor(Number(col) || 0)); ph = Math.max(0, Math.floor(Number(ph) || 0));
+  extra = Math.round(Number(extra) || 0);
+  const parts = [];
+  const add = (label, n, kind) => { if (n > 0) { const rate = waRates(n, kind); parts.push({ label, n, rate, amt: n * rate }); } };
+  add('B&W', bw, 'bw'); add('Colour', col, 'color'); add('Photo', ph, 'photo');
+  const total = Math.max(0, parts.reduce((t, x) => t + x.amt, 0) + extra);
+  return { parts, extra, total };
+}
+function waBreakdown(c) {
+  const bits = c.parts.map(x => x.label + ' ' + x.n + ' × ₹' + x.rate + ' = ₹' + x.amt);
+  if (c.extra) bits.push('Extra ' + (c.extra < 0 ? '−₹' + Math.abs(c.extra) : '+₹' + c.extra));
+  return bits.length ? bits.join(' · ') : 'Enter the pages to calculate the price';
+}
+function waVal(k, id) { const el = document.getElementById('wa-' + k + '-' + id); return el ? el.value : ''; }
+window.waPreview = function (id) {
+  const c = waCalc(waVal('bw', id), waVal('col', id), waVal('ph', id), waVal('ex', id));
+  const t = document.getElementById('wa-tot-' + id), b = document.getElementById('wa-bd-' + id);
+  if (t) t.textContent = '₹' + c.total;
+  if (b) b.textContent = waBreakdown(c);
+};
+window.saveWaFields = async function (id) {
+  const req = allRequests.find(r => r.id === id);
+  if (!req) return;
+  const bw = Math.max(0, Math.floor(Number(waVal('bw', id)) || 0)), col = Math.max(0, Math.floor(Number(waVal('col', id)) || 0)), ph = Math.max(0, Math.floor(Number(waVal('ph', id)) || 0));
+  const extra = Math.round(Number(waVal('ex', id)) || 0);
+  const c = waCalc(bw, col, ph, extra);
+  if (!req.priceOverride && c.total === (Number(req.amount) || 0) && bw === (Number(req.waBw) || 0) && col === (Number(req.waColor) || 0) && ph === (Number(req.waPhoto) || 0) && extra === (Number(req.waExtra) || 0)) return;
+  const paid = paidOf(req);
+  try {
+    await db.ref('printRequests/' + id).update({
+      waBw: bw, waColor: col, waPhoto: ph, waExtra: extra,
+      amount: c.total, priceSet: c.total > 0, priceOverride: false, priceSetAt: firebase.database.ServerValue.TIMESTAMP,
+      paidAmount: paid, paymentStatus: (c.total > 0 && paid >= c.total) ? 'paid' : 'unpaid',
+    });
+    toast('Token ' + (req.token || '') + ' price ₹' + c.total);
     renderLater = false; render();
   } catch (err) { alert('Could not update: ' + (err.message || err)); }
 };
@@ -948,14 +1022,29 @@ function startDashboard() {
     if (!req) return;
     const isStoreOrder = req.source === 'store' || req.source === 'notebook';
 
-    if (!isPaid(req)) {
-      toast('Mark token ' + (req.token || '') + ' as paid first. It can only be completed once paid.');
+    // Completing a token also counts it as paid, so there is no separate
+    // "Mark as paid" step.
+    const wasPaid = isPaid(req);
+    if (!wasPaid && !isStoreOrder && !(Number(req.amount) > 0)) {
+      toast('Set the price for token ' + (req.token || '') + ' first, then complete it.');
       return;
     }
+    const dueNow = Math.max(0, (Number(req.amount) || 0) - paidOf(req));
     if (!(await ask(isStoreOrder
       ? { title: 'Complete this order?', body: 'Store order, token ' + (req.token || '') + ' — handed over.\nIt moves to the Printed tab.', ok: 'Complete' }
-      : { title: 'Complete this token?', body: 'Token ' + (req.token || '') + ' — printed.\nIt moves to the Printed tab and its uploaded files are deleted.', ok: 'Complete' }))) {
+      : { title: 'Complete this token?', body: 'Token ' + (req.token || '') + ' — printed' + (wasPaid ? '.' : ' and ₹' + dueNow + ' received at the counter.\nIt will be marked as paid and added to your earnings.') + '\nIt moves to the Printed tab and its uploaded files are deleted.', ok: wasPaid ? 'Complete' : 'Complete & mark paid' }))) {
       return;
+    }
+
+    if (!wasPaid) {
+      const amtNow = Number(req.amount) || 0;
+      try {
+        await db.ref('printRequests/' + id).update({
+          paymentStatus: 'paid', paidAmount: amtNow, paymentMethod: 'counter',
+          paidAt: firebase.database.ServerValue.TIMESTAMP,
+        });
+        bankEarnings([Object.assign({}, req, { paymentStatus: 'paid', paidAmount: amtNow, paidAt: Date.now() })]);
+      } catch (err) { alert('Could not update: ' + (err.message || err)); return; }
     }
 
     if (!(await bankOrWarn())) return;
@@ -1163,7 +1252,7 @@ function renderCard(r) {
   const isNew = freshIds.delete(r.id);
 
   // what the desk should do next: highlighted button + stepper
-  const next = printed ? '' : (amt <= 0 && !isNB) ? 'price' : !paid ? 'paid' : 'done';
+  const next = printed ? '' : (amt <= 0 && !isNB) ? 'price' : 'done';
   const stepDone = [isNB || priceSet || printed, paid, printed];
   const curStep = stepDone.indexOf(false);
   const steps = ['Price', 'Paid', 'Done'].map((t, i) => `<li class="${stepDone[i] ? 'done' : i === curStep ? 'cur' : ''}">${t}</li>`).join('');
@@ -1195,9 +1284,29 @@ function renderCard(r) {
     : partial ? `<span class="pd-pay partial">₹${paidSoFar} paid · ₹${balance} left</span>`
     : '<span class="pd-pay unpaid">To pay</span>';
   const amtNote = isNB ? 'Store price'
+    : (isWA && r.priceOverride) ? 'Manual price'
+    : (isWA && priceSet) ? 'From pages'
     : priceSet ? (expected > 0 && expected !== amt ? 'Expected ₹' + expected : 'Price confirmed')
     : amt > 0 ? 'Estimate' : 'Needs a price';
-  const amountHtml = `<div class="pd-amount"><b>${amt > 0 ? '₹' + amt : '—'}</b>${payPill}<small>${amtNote}</small></div>`;
+  const showPrintBtn = !printed && !isNB;
+  const amountHtml = `<div class="pd-amount${showPrintBtn ? ' inline' : ''}"><b>${amt > 0 ? '₹' + amt : '—'}</b>${payPill}<small>${amtNote}</small></div>`;
+
+  const waC = waCalc(r.waBw, r.waColor, r.waPhoto, r.waExtra);
+  const waField = (k, label, val, attrs) => `<label>${label}<input class="pd-price-in pd-wa-in" id="wa-${k}-${r.id}" type="number" inputmode="numeric" step="1" ${attrs} placeholder="0" value="${val ? val : ''}" oninput="waPreview('${r.id}')" onchange="saveWaFields('${r.id}')" onkeydown="if(event.key==='Enter'){this.blur()}"></label>`;
+  const waHtml = (isWA && !printed) ? `
+      <div class="pd-wa-box">
+        <div class="pd-wa-grid">
+          ${waField('bw', 'Black &amp; white <em>pages</em>', Number(r.waBw) || 0, 'min="0"')}
+          ${waField('col', 'Colour <em>pages</em>', Number(r.waColor) || 0, 'min="0"')}
+          ${waField('ph', 'Photo paper <em>pages</em>', Number(r.waPhoto) || 0, 'min="0"')}
+          ${waField('ex', 'Extra amount <em>₹, can be −</em>', Number(r.waExtra) || 0, '')}
+        </div>
+        <div class="pd-wa-sum">
+          <span id="wa-bd-${r.id}">${r.priceOverride ? 'Price was set manually' : escapeHtml(waBreakdown(waC))}</span>
+          <span class="tot" id="wa-tot-${r.id}">₹${amt}</span>
+        </div>
+        ${r.priceOverride ? '<div class="pd-wa-note">Manual price in use — change any field above to recalculate from pages.</div>' : ''}
+      </div>` : '';
 
   const editorHtml = editing ? `
       <div class="pd-editor">
@@ -1216,14 +1325,14 @@ function renderCard(r) {
       <div class="pd-actions${isNB ? ' n3' : ''}">
         ${isNB ? '' : `<button type="button" class="pd-btn${next === 'price' ? ' next' : ''}" onclick="startPriceEdit('${r.id}')">${priceSet ? 'Change price' : 'Set price'}</button>`}
         ${paid ? '<button type="button" class="pd-btn ok done" disabled>✓ Paid</button>' : `<button type="button" class="pd-btn ok${next === 'paid' ? ' next' : ''}" onclick="markPaid('${r.id}')">Mark as paid</button>`}
-        <button type="button" class="pd-btn${next === 'done' ? ' next' : ''}${paid ? '' : ' locked'}" onclick="completeRequest('${r.id}')" title="${paid ? 'Mark as printed / handed over' : 'Mark as paid first'}">Completed</button>
+        <button type="button" class="pd-btn${next === 'done' ? ' next' : ''}" onclick="completeRequest('${r.id}')" title="${paid ? 'Mark as printed / handed over' : 'Mark as printed and paid'}">Completed</button>
         <button type="button" class="pd-btn danger" onclick="cancelRequest('${r.id}')">Cancel</button>
       </div>`;
   const subHtml = `
       <div class="pd-sub">
-        ${!printed && !isNB ? `<button type="button" class="pd-tl" onclick="mergeAndPrint('${r.id}')">🖨 Print</button>` : ''}
         ${!printed && !isNB && r.tokenHash ? `<button type="button" class="pd-tl" onclick="copyTokenLink('${r.id}')" title="Copy the customer's private token link">🔗 Copy link</button>` : ''}
         <button type="button" class="pd-tl" onclick="toggleDetails('${r.id}')" aria-expanded="${expanded}">${expanded ? 'Hide details ▴' : 'Details ▾'}</button>
+        ${showPrintBtn ? amountHtml : ''}
       </div>`;
 
   const filesHtml = files.map((f) => {
@@ -1260,14 +1369,21 @@ function renderCard(r) {
           ${filesLine}
           ${metaLine}
         </div>
-        ${amountHtml}
+        ${showPrintBtn ? PRINT_BTN(r) : amountHtml}
       </div>
       ${printed ? '' : `<ol class="pd-steps" aria-label="Progress">${steps}</ol>`}
+      ${waHtml}
       ${editorHtml}
       ${actionsHtml}
       ${subHtml}
       ${bodyHtml}
     </article>`;
+}
+
+// ---- animated printer button (top right of a card) ----
+const PRINT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V3.5h10V8"/><g class="pr-out"><rect class="pr-sheet" x="7.5" y="13" width="9" height="8" rx="1"/><path class="pr-line" d="M9.5 16h5M9.5 18.2h3.5"/></g><path d="M7 17H5a2 2 0 01-2-2v-4a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2h-2"/><circle class="pr-led" cx="18" cy="11.5" r=".9" fill="currentColor" stroke="none"/></svg>`;
+function PRINT_BTN(r) {
+  return `<button type="button" class="pd-printbtn" onclick="mergeAndPrint('${r.id}')" title="Print" aria-label="Print token ${escapeAttr(String(r.token || ''))}">${PRINT_ICON}</button>`;
 }
 
 // ---- toggle the details panel for one request, open below its tile ----
