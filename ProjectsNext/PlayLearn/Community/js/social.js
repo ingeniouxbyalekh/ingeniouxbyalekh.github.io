@@ -474,7 +474,7 @@
     Notify.start(me, (n) => (n.postId ? openPost(n.postId) : n.type === "story" ? (n.sid && Stories.openStory(n.sid)) || go("home") : n.type === "group" ? go("groups") : go(n.type === "request" ? "fr-req" : "fr-home")));
     Stories.start(me, { friends: () => ({ has: isF }), member: (id) => members.get(id), openPost });
     const qs = new URLSearchParams(location.search), pp = qs.get("p"), gg = qs.get("g"); const vv = qs.get("v"); if (pp) openPost(pp); else if (gg) go("g:" + gg); else if (["home", "saved", "groups", "fr-home", "fr-req"].includes(vv)) go(vv);   // opened from a shared link
-    watch(db.ref("users"), (k, v) => members.set(k, v), (k) => members.delete(k));
+    watch(db.ref("users"), (k, v) => { members.set(k, v); Auth.watchSpecial([k]); }, (k) => members.delete(k));
     watch(db.ref("presence"), (k) => online.add(k), (k) => online.delete(k));
     watch(db.ref("friends/" + me.id), (k) => friends.add(k), (k) => friends.delete(k));
     watch(db.ref("requests/" + me.id), (k) => incoming.add(k), (k) => incoming.delete(k));

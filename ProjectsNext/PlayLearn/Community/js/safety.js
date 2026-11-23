@@ -38,7 +38,7 @@
       me = p; change = cb || change;
       let n = 0, done; const blocksReady = new Promise((r) => (done = r));
       S.ready = Promise.all([blocksReady, Auth.specialReady]); Auth.onSpecial(() => change());
-      const watch = (path, set) => { let first = true; db.ref(path).on("value", (s) => { set(new Set(Object.keys(s.val() || {}))); if (first) { first = false; if (++n === 2) done(); } change(); }); };
+      const watch = (path, set) => { let first = true; db.ref(path).on("value", (s) => { set(new Set(Object.keys(s.val() || {}))); Auth.watchSpecial(Object.keys(s.val() || {})); if (first) { first = false; if (++n === 2) done(); } change(); }); };
       watch("blocks/" + me.id, (v) => (mine = v));
       watch("blockedBy/" + me.id, (v) => (theirs = v));
     },

@@ -5,9 +5,11 @@
   const shopDb = shopApp.database();
   const db = comApp.database();
 
-  // Special accounts: listed by the admin at special_user/<emailKey>. They are friends with everyone
-  // (no request needed) and nobody can block them. The interface never mentions any of this.
+  // Special accounts: friends with everyone (no request needed) and nobody can block them. The interface
+  // never mentions any of this. An account is special when EITHER the executive panel's Type dropdown is
+  // set to "Special" (shop /users/<emailKey>/type) OR it is listed at special_user/<emailKey> (community db).
   let specialSet = new Set(), specialDone;
+  const shopSpecial = new Set(), typeWatched = new Set();
   const specialCbs = [], specialReady = new Promise((r) => (specialDone = r));
   db.ref("special_user").on("value", (s) => {
     const v = s.val() || {}, n = new Set();
@@ -15,7 +17,19 @@
     specialSet = n; specialDone();
     specialCbs.forEach((f) => { try { f(); } catch (e) {} });
   }, () => specialDone());
-  const isSpecial = (id) => specialSet.has(id);
+  const isSpecial = (id) => specialSet.has(id) || shopSpecial.has(id);
+  // Follow the Type of each given account (reads only users/<id>/type, never the rest of the shop record).
+  function watchSpecial(ids) {
+    (ids || []).forEach((id) => {
+      if (!id || typeWatched.has(id)) return;
+      typeWatched.add(id);
+      shopDb.ref("users/" + id + "/type").on("value", (s) => {
+        const was = shopSpecial.has(id), now = s.val() === "special";
+        if (now) shopSpecial.add(id); else shopSpecial.delete(id);
+        if (was !== now) specialCbs.forEach((f) => { try { f(); } catch (e) {} });
+      }, () => {});
+    });
+  }
 
   const keyOf = (e) => String(e).trim().toLowerCase().replace(/\./g, ",");
   const https = (u) => (typeof u === "string" && /^https:\/\//i.test(u) ? u : "");
@@ -71,6 +85,8 @@
     if (!s) return null;
     let rec = {};
     try { rec = (await shopDb.ref("users/" + keyOf(s.email)).once("value")).val() || {}; } catch (e) {}
+    if (rec.type === "special") shopSpecial.add(keyOf(s.email));   // known before the first screen is drawn
+    watchSpecial([keyOf(s.email)]);
     return {
       id: keyOf(s.email),
       email: s.email,
@@ -81,5 +97,5 @@
     };
   }
 
-  window.Auth = { db, shopDb, keyOf, https, pubId, session, profile, isSpecial, specialIds: () => [...specialSet], onSpecial: (f) => specialCbs.push(f), specialReady };
+  window.Auth = { db, shopDb, keyOf, https, pubId, session, profile, isSpecial, watchSpecial, specialIds: () => [...new Set([...specialSet, ...shopSpecial])], onSpecial: (f) => specialCbs.push(f), specialReady };
 })();

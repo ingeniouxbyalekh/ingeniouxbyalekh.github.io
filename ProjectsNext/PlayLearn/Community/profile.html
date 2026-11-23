@@ -363,7 +363,7 @@
     if (raw && uid === me.id && raw !== me.id && raw !== Auth.pubId(me.id)) uid = raw;   // unknown id -> "doesn't exist"
     if (raw) history.replaceState(null, "", uid === me.id ? "profile.html" : "profile.html?u=" + Auth.pubId(uid));   // never leave the email in the address bar
     face($("me-av"), p.username, p.photoUrl);
-    Safety.start(p, render); await Safety.ready; Auth.onSpecial(render);
+    Auth.watchSpecial(Object.keys(people)); Safety.start(p, render); await Safety.ready; Auth.onSpecial(render);
     if (uid !== me.id && Safety.blockedMe(uid)) { $("boot").textContent = "This profile isn't available."; return; }
     $("gear").onclick = () => ($("menu").hidden = !$("menu").hidden);
     $("m-blocked").onclick = () => { $("menu").hidden = true; Safety.list(); };
