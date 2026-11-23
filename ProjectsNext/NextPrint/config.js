@@ -53,6 +53,8 @@ const CONFIG = {
     blackAndWhite: 4,
     color: 8,
     photoPaper: 30,
+    // Blank A4 sheets sold on the upload page (rupees per sheet).
+    a4Paper: 1,
   },
   // Bulk offer: a file with minPages pages OR MORE is charged these
   // lower per-page rates instead (photo paper has no offer).

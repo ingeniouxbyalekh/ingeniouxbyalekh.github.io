@@ -8,7 +8,7 @@
 <meta name="description" content="Buy stationery and notebooks and pick them up at Room No. 136">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 <style>
   :root { --bg:#e9ecf1; --paper:#fff; --key:#16161a; --mute:#5d6370; --rule:#dfe3ea; --c:#00a3e0; --m:#e6007e; --y:#ffd400; --open:#0f9158; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -65,32 +65,92 @@
   .go:active { transform:scale(.97); }
   .go:disabled { background:#a9aeb9; box-shadow:none; cursor:default; }
   .go strong { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.2rem; }
-  .slip .tk { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:3.2rem; letter-spacing:.14em; line-height:1.1; margin:8px 0 6px; text-align:center; background:var(--key); color:#fff; border-radius:14px; padding:12px 0 12px .14em; }
-  .slip .copy { display:block; margin:0 auto 10px; border:1.5px solid var(--rule); background:var(--paper); border-radius:999px; padding:7px 16px; font:600 .84rem "Instrument Sans",sans-serif; cursor:pointer; }
   .slip .err { color:#b3261e; font-weight:600; }
-  .slip .where { text-align:center; margin:0 0 6px; font-weight:600; }
-  .survey { position:relative; margin-top:16px; padding:16px 0 4px; text-align:center; border-top:1.5px dashed var(--rule); }
-  .survey h4 { margin:0 0 6px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; }
-  .survey .skip { position:absolute; top:10px; right:0; font-size:.74rem; color:var(--mute); background:var(--bg); border:0; border-radius:999px; padding:5px 12px; cursor:pointer; }
-  .stars { display:flex; justify-content:center; gap:4px; }
-  .stars button { border:0; background:none; font-size:2rem; line-height:1; color:#cfd3dc; cursor:pointer; padding:2px 4px; }
-  .stars button.on { color:#f5a300; }
-  .rate-label { font-size:.82rem; color:var(--mute); min-height:1.2em; margin-bottom:4px; }
-  .s-more { display:none; text-align:left; margin-top:8px; }
-  .s-more.show { display:block; }
-  .s-title { font-size:.86rem; font-weight:600; text-align:center; margin-bottom:8px; }
-  .s-opts { display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin-bottom:10px; }
-  .s-opts label { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--rule); border-radius:999px; font-size:.82rem; cursor:pointer; }
-  .s-opts input { accent-color:var(--key); }
-  .survey textarea { width:100%; min-height:62px; border:1px solid var(--rule); border-radius:12px; padding:10px; font:inherit; resize:vertical; }
-  .s-send { width:100%; margin-top:8px; height:44px; border:0; border-radius:12px; background:var(--key); color:#fff; font:600 .95rem "Instrument Sans",sans-serif; cursor:pointer; }
-  .s-send:disabled { background:#a9aeb9; }
-  .thanks { padding:14px 0; font-weight:600; text-align:center; }
   .item.out .cover, .item.out .info { opacity:.55; }
   .stk { display:inline-block; margin-top:3px; font-size:.74rem; font-weight:600; padding:2px 8px; border-radius:999px; background:#fdf0d9; color:#8a5200; }
   .stk.out { background:#fbe3e1; color:#b3261e; }
   .qty button:disabled { opacity:.35; cursor:default; }
   .empty { padding:22px 16px; text-align:center; color:var(--mute); }
+
+  /* ============ token screen (same look as upload.html) ============ */
+  html.tk-mode { font-size: 15px; }
+  body.tk-mode { background: #f4f2ea; }
+  body.tk-mode .app, body.tk-mode .dock { display: none; }
+  #tkScreen { --bg:#f4f2ea; --paper-dim:#ebe8dd; --card:#fff; --ink:#17181c; --ink-soft:#62625c; --line:#e3e0d4; --red:#c6332e; --red-dark:#a02722; --blue:#1f5fa8; --ok:#2f7a4d; --r:18px; --r-sm:12px; --shadow:0 1px 2px rgba(23,24,28,.05), 0 6px 18px rgba(23,24,28,.06); color:var(--ink); font-family:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif; line-height:1.4; min-height:100vh; }
+  #tkScreen[hidden] { display: none; }
+  #tkScreen button { font: inherit; color: inherit; touch-action: manipulation; }
+  #tkScreen h2, #tkScreen h3, #tkScreen h4 { font-family:"Fraunces",Georgia,serif; font-weight:600; margin:0; letter-spacing:-.01em; line-height:1.12; }
+  #tkScreen textarea { font-size: 16px; }
+  #tkScreen .tkapp { max-width: 520px; margin: 0 auto; padding: 14px 14px 60px; }
+  #tkScreen .btn-primary { background: var(--ink); color: #fff; }
+  #tkScreen .btn-outline { background: #fff; border-color: var(--ink); color: var(--ink); }
+  #tkScreen .b.items ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: .92rem; }
+  #tkScreen .b.items li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+  #tkScreen .b.items li.tot { border-top: 1.5px dashed var(--line); margin-top: 4px; padding-top: 8px; font-weight: 600; }
+  #tkScreen footer { text-align: center; font-size: .74rem; color: var(--ink-soft); padding: 18px 16px 0; }
+  @keyframes burst { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+  #tkScreen .site-header { position: sticky; top: 0; z-index: 30; background: rgba(244,242,234,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  #tkScreen .site-header .in { max-width: 520px; margin: 0 auto; padding: 0 14px; height: 48px; display: flex; align-items: center; justify-content: space-between; }
+  #tkScreen .logo { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.25rem; color: var(--ink); text-decoration: none; }
+  #tkScreen .logo .dot { color: var(--red); }
+  #tkScreen .room-pill { font-size: .76rem; font-weight: 500; padding: 5px 11px; border-radius: 999px; background: var(--paper-dim); color: var(--ink); text-decoration: none; }
+  #tkScreen .msg { padding: 11px 14px; border-radius: var(--r-sm); font-size: .88rem; margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; }
+  #tkScreen .msg.error { background: #fbeceb; color: var(--red-dark); border: 1px solid #f0c9c7; }
+  #tkScreen .msg.success { background: #eef6f0; color: var(--ok); border: 1px solid #c9e4d1; }
+  #tkScreen .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid transparent; border-radius: 14px; padding: 14px 18px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background .15s, transform .1s, opacity .15s; width: 100%; min-height: 50px; }
+  #tkScreen .btn:active { transform: scale(.98); }
+  #tkScreen .btn:disabled { opacity: .55; cursor: not-allowed; }
+  #tkScreen .btn-primary { background: var(--ink); color: #fff; }
+  #tkScreen .btn-primary:hover:not(:disabled) { background: var(--red-dark); }
+  #tkScreen .btn-outline { background: #fff; border-color: var(--ink); color: var(--ink); }
+  #tkScreen .btn-outline:hover { border-color: var(--red); color: var(--red); }
+  #tkScreen .done-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  #tkScreen .done-head .check { width: 42px; height: 42px; border-radius: 50%; background: #e6f3ea; color: var(--ok); display: grid; place-items: center; flex: none; animation: burst .45s cubic-bezier(.2,1.4,.4,1); }
+  #tkScreen .done-head h2 { font-size: 1.4rem; }
+  #tkScreen .done-head p { margin: 0; font-size: .84rem; color: var(--ink-soft); }
+  #tkScreen .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #tkScreen .b { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 14px; box-shadow: var(--shadow); }
+  #tkScreen .b.wide { grid-column: 1 / -1; }
+  #tkScreen .b .k { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--ink-soft); }
+  #tkScreen .b .v { font-size: 1.05rem; font-weight: 600; margin-top: 4px; }
+  #tkScreen .b .s { font-size: .74rem; color: var(--ink-soft); }
+  #tkScreen .b.token { background: var(--red); border-color: var(--red); color: #fff; text-align: center; padding: 20px 16px; position: relative; overflow: hidden; animation: burst .5s cubic-bezier(.2,1.2,.4,1); }
+  #tkScreen .b.token::before, #tkScreen .b.token::after { content: ""; position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); transform: translateY(-50%); }
+  #tkScreen .b.token::before { left: -11px; } #tkScreen .b.token::after { right: -11px; }
+  #tkScreen .b.token .k { color: rgba(255,255,255,.75); }
+  #tkScreen .b.token .code { font-family: "IBM Plex Mono", monospace; font-size: 3.6rem; font-weight: 500; letter-spacing: .2em; padding-left: .2em; line-height: 1.1; margin: 4px 0 10px; }
+  #tkScreen .b.token .copy { border: 1.5px solid rgba(255,255,255,.65); background: transparent; color: #fff; border-radius: 999px; padding: 8px 18px; font-size: .84rem; cursor: pointer; }
+  #tkScreen .b.token .copy:active { background: #fff; color: var(--red); }
+  #tkScreen .survey { position: relative; padding: 18px 14px 14px; text-align: center; overflow: hidden; background: linear-gradient(180deg, #fffdf7 0%, #fff 60%); }
+  #tkScreen .survey::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--red), #e0a210, var(--ok)); }
+  #tkScreen .survey-skip { position: absolute; top: 10px; right: 10px; font-size: .74rem; color: var(--ink-soft); background: var(--paper-dim); border: none; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  #tkScreen .survey h4 { font-size: 1.05rem; margin-bottom: 4px; }
+  #tkScreen .stars { display: flex; justify-content: center; }
+  #tkScreen .stars button { font-size: 2.4rem; line-height: 1; background: none; border: none; cursor: pointer; color: #dcd8ca; padding: 0 4px; transition: transform .15s, color .15s; }
+  #tkScreen .stars button.on { color: #f0b010; }
+  #tkScreen .stars button:active { transform: scale(1.15); }
+  #tkScreen .rate-label { min-height: 1.3em; font-size: .84rem; font-weight: 600; color: var(--ink-soft); }
+  #tkScreen .survey[data-tone="low"] .rate-label { color: var(--red); }
+  #tkScreen .survey[data-tone="mid"] .rate-label { color: #b27a00; }
+  #tkScreen .survey[data-tone="high"] .rate-label { color: var(--ok); }
+  #tkScreen .survey-more { display: none; margin-top: 10px; text-align: left; }
+  #tkScreen .survey-more.show { display: block; animation: pop .25s ease; }
+  #tkScreen .survey-title { font-size: .86rem; font-weight: 600; margin-bottom: 8px; text-align: center; }
+  #tkScreen .survey-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+  #tkScreen .survey-opt { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 999px; font-size: .8rem; cursor: pointer; background: #fff; user-select: none; }
+  #tkScreen .survey-opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; display: block; }
+  #tkScreen .survey-opt .tick { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #b9b5a8; display: grid; place-items: center; font-size: .54rem; color: transparent; flex: none; }
+  #tkScreen .survey-opt:has(input:checked) { background: var(--ink); border-color: var(--ink); color: #fff; }
+  #tkScreen .survey-opt:has(input:checked) .tick { background: #fff; border-color: #fff; color: var(--ink); }
+  #tkScreen .survey textarea { width: 100%; min-height: 60px; font: inherit; font-size: 16px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; resize: vertical; background: #fcfbf7; }
+  #tkScreen .survey textarea:focus { outline: none; border-color: var(--ink); background: #fff; }
+  #tkScreen .survey-submit { margin-top: 8px; width: 100%; font-weight: 600; padding: 13px; border: none; border-radius: 12px; cursor: pointer; color: #fff; background: var(--ink); }
+  #tkScreen .survey[data-tone="low"] .survey-submit { background: var(--red); }
+  #tkScreen .survey[data-tone="mid"] .survey-submit { background: #d9970a; }
+  #tkScreen .survey[data-tone="high"] .survey-submit { background: var(--ok); }
+  #tkScreen .survey-submit:disabled { opacity: .65; }
+  #tkScreen .survey-thanks { padding: 10px 0 4px; font-weight: 600; color: var(--ok); }
 </style>
 </head>
 <body>
@@ -114,6 +174,16 @@
   </section>
 
   <section class="slip" id="slip" aria-live="polite"></section>
+</div>
+
+<div id="tkScreen" hidden>
+  <header class="site-header">
+    <div class="in">
+      <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+      <span class="room-pill">📍 Room 136</span>
+    </div>
+  </header>
+  <main class="tkapp" id="tkApp"></main>
 </div>
 
 <div class="dock">
@@ -375,36 +445,66 @@ function renderToken(token, items, total, key) {
   var rows = items.map(function (i) {
     return '<li><span>' + i.qty + ' × ' + esc(i.name) + '</span><span>₹' + i.total + '</span></li>';
   }).join('');
-  showSlip(
-    '<h3>Payment successful ✓</h3><small>Your token number</small>' +
-    '<div class="tk" id="tkCode">' + esc(token) + '</div>' +
-    '<button type="button" class="copy" id="copyTk">Copy token</button>' +
-    '<p class="where">📍 Show it at Room 136 to collect</p>' +
-    '<ul>' + rows + '<li class="tot"><span>Paid</span><span>₹' + total + '</span></li></ul>' +
-    '<div class="survey" id="survey">' +
-      '<button type="button" class="skip" id="sSkip">Skip</button>' +
-      '<h4>How was your experience?</h4>' +
-      '<div class="stars" id="sStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">' +
-        [1,2,3,4,5].map(function (n) { return '<button type="button" data-n="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>'; }).join('') +
+  var tkApp = document.getElementById('tkApp');
+  tkApp.innerHTML =
+    '<div class="done-head">' +
+      '<div class="check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>' +
+      '<div><h2>Order placed</h2><p>Payment received. Collect your items at the desk.</p></div>' +
+    '</div>' +
+    '<div class="bento">' +
+      '<div class="b token wide">' +
+        '<div class="k">Your token number</div>' +
+        '<div class="code" id="tokenCode">' + esc(token) + '</div>' +
+        '<button type="button" class="copy" id="copyToken">Copy token</button>' +
       '</div>' +
-      '<div class="rate-label" id="rLabel">Tap a star (optional)</div>' +
-      '<div class="s-more" id="sMore"><div class="s-title" id="sTitle"></div><div class="s-opts" id="sOpts"></div>' +
-        '<textarea id="sComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>' +
-        '<button type="button" class="s-send" id="sSend">Submit feedback</button></div>' +
-    '</div>'
-  );
-  var cb = document.getElementById('copyTk');
-  cb.onclick = function () {
+      '<div class="b"><div class="k">Collect from</div><div class="v">📍 Room 136</div><div class="s">Show your token</div></div>' +
+      '<div class="b"><div class="k">Amount</div><div class="v">₹' + total + '</div><div class="s">✓ Paid online</div></div>' +
+      '<div class="b items wide"><div class="k">Your items</div><ul>' + rows + '<li class="tot"><span>Paid</span><span>₹' + total + '</span></li></ul></div>' +
+      '<div class="b survey wide" id="survey">' +
+        '<button type="button" class="survey-skip" id="surveySkip">Skip</button>' +
+        '<h4>How was your experience?</h4>' +
+        '<div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">' +
+          [1,2,3,4,5].map(function (n) { return '<button type="button" data-n="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>'; }).join('') +
+        '</div>' +
+        '<div class="rate-label" id="rateLabel">Tap a star (optional)</div>' +
+        '<div class="survey-more" id="surveyMore"><div class="survey-title" id="surveyTitle"></div><div class="survey-opts" id="surveyOpts"></div>' +
+          '<textarea id="surveyComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>' +
+          '<button type="button" class="survey-submit" id="surveySubmit">Submit feedback</button></div>' +
+      '</div>' +
+      '<div style="grid-column:1/-1"><button type="button" class="btn btn-outline" id="orderMoreBtn">＋ Order more items</button></div>' +
+    '</div>';
+
+  // switch from the store to the token screen
+  slip.classList.remove('show');
+  document.documentElement.classList.add('tk-mode');
+  document.body.classList.add('tk-mode');
+  document.getElementById('tkScreen').hidden = false;
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', '#f4f2ea');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  var cb = document.getElementById('copyToken');
+  cb.addEventListener('click', function () {
     var done = function (t) { cb.textContent = t; setTimeout(function () { cb.textContent = 'Copy token'; }, 1800); };
     try { navigator.clipboard.writeText(token).then(function () { done('Copied ✓'); }, function () { done('Press and hold to copy'); }); }
     catch (e) { done('Press and hold to copy'); }
-  };
+  });
+  document.getElementById('orderMoreBtn').addEventListener('click', backToStore);
   initSurvey(token, key);
+}
+
+function backToStore() {
+  document.getElementById('tkScreen').hidden = true;
+  document.getElementById('tkApp').innerHTML = '';
+  document.documentElement.classList.remove('tk-mode');
+  document.body.classList.remove('tk-mode');
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', '#e9ecf1');
+  slip.classList.remove('show');
+  window.scrollTo({ top: 0 });
 }
 
 // Same feedback flow as the upload page: saved to feedback/ and added to
 // the running totals in ratingStats/ so the admin averages include it.
-var RATE_LABELS = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+var RATE_LABELS = { 1: 'Terrible', 2: 'Poor', 3: 'Okay', 4: 'Good', 5: 'Excellent' };
 var SURVEY_OPTIONS = {
   1: { title: 'Sorry about that. What went wrong?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Wrong choices', 'Other'] },
   2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Few product choices', 'Other'] },
@@ -416,32 +516,36 @@ function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).pad
 
 function initSurvey(token, requestKey) {
   var box = document.getElementById('survey');
-  var stars = [].slice.call(document.querySelectorAll('#sStars button'));
-  var more = document.getElementById('sMore'), opts = document.getElementById('sOpts');
+  if (!box) return;
+  var stars = [].slice.call(document.querySelectorAll('#surveyStars button'));
+  var more = document.getElementById('surveyMore'), optsEl = document.getElementById('surveyOpts');
   var rating = 0;
-  document.getElementById('sSkip').onclick = function () { box.remove(); };
+  document.getElementById('surveySkip').addEventListener('click', function () { box.remove(); });
   stars.forEach(function (btn) {
-    btn.onclick = function () {
+    btn.addEventListener('click', function () {
       var n = Number(btn.dataset.n), changed = n !== rating;
       rating = n;
-      stars.forEach(function (b) {
-        b.classList.toggle('on', Number(b.dataset.n) <= n);
-        b.setAttribute('aria-checked', String(Number(b.dataset.n) === n));
+      stars.forEach(function (s) {
+        s.classList.toggle('on', Number(s.dataset.n) <= n);
+        s.setAttribute('aria-checked', String(Number(s.dataset.n) === n));
       });
-      document.getElementById('rLabel').textContent = RATE_LABELS[n];
+      box.dataset.tone = n <= 2 ? 'low' : n === 3 ? 'mid' : 'high';
+      document.getElementById('rateLabel').textContent = RATE_LABELS[n];
       if (changed) {
         var cfg = SURVEY_OPTIONS[n];
-        document.getElementById('sTitle').textContent = cfg.title;
-        opts.innerHTML = cfg.opts.map(function (o) { return '<label><input type="checkbox" value="' + o + '"><span>' + o + '</span></label>'; }).join('');
+        document.getElementById('surveyTitle').textContent = cfg.title;
+        optsEl.innerHTML = cfg.opts.map(function (o) {
+          return '<label class="survey-opt"><input type="checkbox" value="' + esc(o) + '"><span class="tick">✓</span><span>' + esc(o) + '</span></label>';
+        }).join('');
       }
       more.classList.add('show');
-    };
+    });
   });
-  document.getElementById('sSend').onclick = function () {
+  document.getElementById('surveySubmit').addEventListener('click', function (e) {
     if (!rating) return;
-    var btn = this; btn.disabled = true; btn.textContent = 'Sending…';
-    var reasons = [].slice.call(opts.querySelectorAll('input:checked')).map(function (i) { return i.value; });
-    var comment = document.getElementById('sComment').value.trim().slice(0, 500);
+    var btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Sending…';
+    var reasons = [].slice.call(optsEl.querySelectorAll('input:checked')).map(function (i) { return i.value; });
+    var comment = document.getElementById('surveyComment').value.trim().slice(0, 500);
     var dk = dayKey(new Date()), r = rating;
     db.ref('feedback').push({
       rating: r, reasons: reasons, comment: comment, token: token, requestKey: requestKey, source: 'store',
@@ -459,12 +563,12 @@ function initSurvey(token, requestKey) {
         return out;
       });
     }).then(function () {
-      box.innerHTML = '<div class="thanks">🙏 Thanks for your feedback!</div>';
+      box.innerHTML = '<div class="survey-thanks">🙏 Thanks for your feedback!</div>';
     }).catch(function () {
       btn.disabled = false; btn.textContent = 'Submit feedback';
       alert('Could not send feedback right now. You can skip it, no problem.');
     });
-  };
+  });
 }
 update();
 </script>

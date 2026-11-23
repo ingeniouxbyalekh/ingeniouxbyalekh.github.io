@@ -158,6 +158,20 @@
   .append-banner .tx small { display: block; font-size: .72rem; color: var(--ink-soft); }
   .append-banner .link-btn { flex: none; padding: 4px 2px; }
 
+  /* ---------- A4 paper add-on ---------- */
+  .a4 { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 12px; }
+  .a4-row { display: flex; align-items: center; gap: 11px; }
+  .a4-ic { flex: none; width: 46px; height: 58px; border-radius: 8px; background: #fff; border: 1px solid var(--line); box-shadow: 0 2px 6px rgba(23,24,28,.12); display: grid; place-items: center; font-family: "IBM Plex Mono", monospace; font-weight: 500; font-size: .7rem; color: var(--ink-soft); }
+  .a4-info { flex: 1; min-width: 0; line-height: 1.25; }
+  .a4-info b { display: block; font-size: .95rem; font-weight: 600; }
+  .a4-info small { display: block; font-size: .76rem; color: var(--ink-soft); }
+  .a4-sum { margin-top: 2px; font-family: "Fraunces", serif; font-weight: 600; font-size: 1rem; color: var(--ink); min-height: 1.2em; }
+  .a4-quick { display: flex; gap: 6px; margin-top: 10px; }
+  .a4-quick button { flex: 1; border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 0; font-size: .8rem; font-weight: 600; cursor: pointer; }
+  .a4-quick button:active { background: var(--paper-dim); border-color: var(--ink); }
+  .a4-quick button:disabled { opacity: .45; cursor: default; }
+  .a4 .mstp button:disabled { opacity: .35; cursor: default; }
+
   /* ---------- notes / pickup ---------- */
   .notes { margin-top: 12px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
   .notes summary { padding: 12px 14px; font-size: .88rem; font-weight: 500; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
@@ -365,6 +379,9 @@
 
     <div class="list" id="list"></div>
 
+    <div class="sec-lbl" style="margin-top:16px"><span>Extras</span><em>no file needed</em></div>
+    <div class="a4" id="a4Card"></div>
+
     <details class="notes" id="notesBlock" hidden>
       <summary>✏️ Add instructions <span style="color:var(--ink-soft);font-weight:400;margin-left:4px">(optional)</span></summary>
       <textarea id="notes" rows="3" placeholder="e.g. staple top-left, spiral bound"></textarea>
@@ -477,6 +494,8 @@ let selectedFiles = [];
 let activeReq = null;   // set while adding more files to an existing token
 let lastReq = null;     // the most recently saved request (token screen)
 let busy = false;
+let a4Qty = 0;          // blank A4 sheets added on top of the print files
+const A4_MAX = 500;
 let resultShown = false;
 let defaultType = 'bw';
 
@@ -672,10 +691,59 @@ function refreshRateTags() {
 // price of the files already in the token, re-rated with the current offer state
 function baseTotal() {
   const un = offerUnlocked();
-  return baseFiles().reduce((sum, b) => sum + (b.pageCount || 0) * ratePerPage(b.printType, un) * (b.copies || 1), 0);
+  return baseFiles().reduce((sum, b) => sum + (b.pageCount || 0) * ratePerPage(b.printType, un) * (b.copies || 1), 0) + basePaper();
 }
 
-function uploadLabel() { return activeReq ? 'Add to token ' + activeReq.token : 'Upload files'; }
+/* ---------- A4 paper add-on (₹1 per sheet, quantity chosen by the customer) ---------- */
+function a4Rate() {
+  const r = CONFIG.pricing && CONFIG.pricing.a4Paper;
+  return r != null && !isNaN(Number(r)) ? Number(r) : 1;
+}
+// A4 paper already saved under the token we are adding to
+function basePaper() { return activeReq && activeReq.paper ? (Number(activeReq.paper.total) || 0) : 0; }
+function paperTotal() { return a4Qty * a4Rate(); }
+function buildPaper() {
+  return a4Qty > 0 ? { name: 'A4 paper', qty: a4Qty, price: a4Rate(), total: paperTotal() } : null;
+}
+function renderA4Card() {
+  const card = $('a4Card');
+  card.innerHTML = `
+    <div class="a4-row">
+      <span class="a4-ic" aria-hidden="true">A4</span>
+      <div class="a4-info"><b>A4 paper</b><small>Blank sheets · ₹${a4Rate()} each</small><div class="a4-sum" id="a4Sum"></div></div>
+      <div class="mstp"><button type="button" data-a4="-1" aria-label="Remove one sheet" id="a4Minus">−</button><span class="n" id="a4N">0</span><button type="button" data-a4="1" aria-label="Add one sheet" id="a4Plus">+</button></div>
+    </div>
+    <div class="a4-quick" role="group" aria-label="Quick quantity">
+      <button type="button" data-a4q="10">+10</button><button type="button" data-a4q="25">+25</button><button type="button" data-a4q="50">+50</button><button type="button" data-a4q="0" id="a4Clear">Clear</button>
+    </div>`;
+  refreshA4Card();
+}
+function refreshA4Card() {
+  const n = $('a4N'); if (!n) return;
+  n.textContent = a4Qty;
+  $('a4Sum').textContent = a4Qty ? `${a4Qty} × ₹${a4Rate()} = ₹${paperTotal()}` : '';
+  $('a4Minus').disabled = a4Qty <= 0;
+  $('a4Plus').disabled = a4Qty >= A4_MAX;
+  $('a4Clear').disabled = a4Qty <= 0;
+}
+function setA4(q) {
+  if (busy) return;
+  a4Qty = Math.max(0, Math.min(A4_MAX, Math.floor(q) || 0));
+  refreshA4Card();
+  msgArea.innerHTML = '';
+  recalcPrice();
+  syncControls();
+}
+$('a4Card').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.a4) setA4(a4Qty + Number(b.dataset.a4));
+  else if (b.dataset.a4q != null) setA4(b.dataset.a4q === '0' ? 0 : a4Qty + Number(b.dataset.a4q));
+});
+
+function uploadLabel() {
+  if (!selectedFiles.length && a4Qty > 0) return activeReq ? 'Add to token ' + activeReq.token : 'Get token';
+  return activeReq ? 'Add to token ' + activeReq.token : 'Upload files';
+}
 
 function renderAppendBanner() {
   const ab = $('appendBanner');
@@ -854,11 +922,12 @@ function renderFileList() {
 }
 
 function syncControls() {
-  const has = selectedFiles.length > 0;
+  const hasFiles = selectedFiles.length > 0;
+  const has = hasFiles || a4Qty > 0;
   checkoutBar.hidden = !has || resultShown;
   $('notesBlock').hidden = !has;
   $('pickupNote').hidden = !has;
-  $('addTopBtn').hidden = !has;
+  $('addTopBtn').hidden = !hasFiles;
   uploadBtn.disabled = busy || !has;
   if (!busy) uploadBtn.textContent = uploadLabel();
   $('pageTitle').textContent = activeReq ? 'Add more files' : 'Send your files';
@@ -867,12 +936,13 @@ function syncControls() {
 }
 
 function recalcPrice() {
-  const total = baseTotal() + selectedFiles.reduce((sum, f) => sum + filePrice(f), 0);
+  const total = baseTotal() + selectedFiles.reduce((sum, f) => sum + filePrice(f), 0) + paperTotal();
   const n = selectedFiles.length;
+  const extra = a4Qty ? ` · ${a4Qty} A4` : '';
   $('barAmount').textContent = '₹' + total;
   $('barMeta').textContent = activeReq
-    ? (n ? `New total · +${n} file${n > 1 ? 's' : ''}` : 'Token total')
-    : (n ? `Total · ${n} file${n > 1 ? 's' : ''}` : 'Total');
+    ? (n || a4Qty ? `New total${n ? ` · +${n} file${n > 1 ? 's' : ''}` : ''}${extra}` : 'Token total')
+    : (n ? `Total · ${n} file${n > 1 ? 's' : ''}${extra}` : (a4Qty ? 'Total · A4 paper' : 'Total'));
   selectedFiles.forEach(f => {
     const pr = $('pr-' + f.id); if (pr) pr.innerHTML = priceHtml(f);
     const sub = $('sub-' + f.id); if (sub) sub.innerHTML = subHtml(f);
@@ -1205,6 +1275,14 @@ function updateUploadUI() {
 }
 
 function showUploadError(msg) {
+  if (upOv.hidden) {   // paper-only order: no overlay was shown
+    busy = false;
+    uploadBtn.classList.remove('busy');
+    uploadBtn.textContent = uploadLabel();
+    uploadBtn.disabled = false;
+    showMsg(escapeHtml(msg), 'error');
+    return;
+  }
   upStage = 'error';
   upErrMsg = msg;
   busy = false;
@@ -1648,7 +1726,23 @@ function showTokenSuccess(req, opts) {
   const due = Math.max(0, amount - paid);
   const canPay = CONFIG.paymentsEnabled && window.Razorpay && due > 0;
   const payLabel = paid > 0 ? 'Pay balance' : 'Pay now';
-  const showSurvey = !opts.added && !opts.noSurvey;
+  const showSurvey = !opts.appended && !opts.noSurvey;
+  const nFiles = (req.files || []).length;
+  const paperQ = req.paper ? Number(req.paper.qty) || 0 : 0;
+  let headTitle, headSub;
+  if (opts.appended) {
+    const bits = [];
+    if (opts.added) bits.push(opts.added + ' file' + (opts.added > 1 ? 's' : ''));
+    if (opts.paperAdded) bits.push(opts.paperAdded + ' A4 sheet' + (opts.paperAdded > 1 ? 's' : ''));
+    headTitle = opts.added ? 'Files added' : 'Added to your token';
+    headSub = bits.join(' + ') + ' added to your token. Price updated.';
+  } else if (nFiles) {
+    headTitle = 'Sent for printing';
+    headSub = 'Files uploaded successfully.';
+  } else {
+    headTitle = 'Order placed';
+    headSub = 'Your A4 paper will be ready at the desk.';
+  }
   msgArea.innerHTML = '';
   resultShown = true;
   mainView.hidden = true;
@@ -1657,7 +1751,7 @@ function showTokenSuccess(req, opts) {
   resultArea.innerHTML = `
     <div class="done-head">
       <div class="check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>
-      <div><h2>${opts.added ? 'Files added' : 'Sent for printing'}</h2><p>${opts.added ? opts.added + ' file' + (opts.added > 1 ? 's' : '') + ' added to your token. Price updated.' : 'Files uploaded successfully.'}</p></div>
+      <div><h2>${headTitle}</h2><p>${headSub}</p></div>
     </div>
     ${opts.notice ? `<div class="msg success"><span>ℹ️</span><span>${escapeHtml(opts.notice)}</span></div>` : ''}
     <div class="bento">
@@ -1676,6 +1770,12 @@ function showTokenSuccess(req, opts) {
         <div class="v">₹${amount}</div>
         <div class="s" id="payStatus">${payStatusText(req)}</div>
       </div>
+      ${paperQ ? `
+      <div class="b wide">
+        <div class="k">Includes</div>
+        <div class="v">${paperQ} × A4 paper</div>
+        <div class="s">₹${Number(req.paper.total) || paperQ * a4Rate()} · blank sheets, collect with your prints</div>
+      </div>` : ''}
       ${canPay ? `
       <div class="b pay wide">
         <div class="k">Pay online</div>
@@ -1736,6 +1836,8 @@ function enterAppendMode() {
 function cancelAppend() {
   selectedFiles.forEach(f => { if (f._objUrl) { try { URL.revokeObjectURL(f._objUrl); } catch (e) {} } });
   selectedFiles = [];
+  a4Qty = 0;
+  refreshA4Card();
   const req = activeReq;
   activeReq = null;
   mainView.hidden = true;
@@ -1748,8 +1850,8 @@ function cancelAppend() {
 function validateAndGetAmount() {
   msgArea.innerHTML = '';
 
-  if (selectedFiles.length === 0) {
-    showMsg('Please attach at least one file.', 'error');
+  if (selectedFiles.length === 0 && a4Qty === 0) {
+    showMsg('Please attach at least one file or add A4 paper.', 'error');
     return null;
   }
 
@@ -1835,17 +1937,20 @@ async function startUpload() {
 
   busy = true;
   uploadBtn.disabled = true;
-  showUploadOverlay();
 
-  try {
-    await processFiles();
-  } catch (err) {
-    showUploadError(err.message || 'Something went wrong preparing your files.');
-    return;
+  if (selectedFiles.length) {
+    showUploadOverlay();
+    try {
+      await processFiles();
+    } catch (err) {
+      showUploadError(err.message || 'Something went wrong preparing your files.');
+      return;
+    }
+    upStage = 'finishing';
+    updateUploadUI();
+  } else {
+    uploadBtn.textContent = 'Please wait…';   // A4 paper only: nothing to upload
   }
-
-  upStage = 'finishing';
-  updateUploadUI();
   const formValues = { notes: $('notes').value.trim() };
   await saveRequest(formValues, amount, { paymentStatus: 'unpaid' });
 }
@@ -1928,6 +2033,8 @@ function finishSave(req, opts) {
   updateUploadUI();
   selectedFiles.forEach(f => { if (f._objUrl) { try { URL.revokeObjectURL(f._objUrl); } catch (e) {} } });
   selectedFiles = [];
+  a4Qty = 0;
+  refreshA4Card();
   lastReq = req;
   activeReq = null;
   uploadBtn.classList.remove('busy');
@@ -1964,6 +2071,14 @@ async function appendToRequest(formValues, amount) {
   const prevFiles = Array.isArray(cur.files) ? cur.files : Object.values(cur.files || {});
   const newFiles = buildFilesData();
   const files = prevFiles.concat(newFiles);
+  const newPaper = buildPaper();
+  const prevPaper = cur.paper || null;
+  const paper = (newPaper || prevPaper) ? {
+    name: 'A4 paper',
+    qty: (prevPaper ? Number(prevPaper.qty) || 0 : 0) + (newPaper ? newPaper.qty : 0),
+    price: a4Rate(),
+    total: (prevPaper ? Number(prevPaper.total) || 0 : 0) + (newPaper ? newPaper.total : 0),
+  } : null;
   const prevPaid = cur.paymentStatus === 'paid'
     ? (cur.paidAmount != null ? cur.paidAmount : (cur.amount || 0))
     : (cur.paidAmount || 0);
@@ -1972,7 +2087,7 @@ async function appendToRequest(formValues, amount) {
 
   try {
     await ref.update({
-      files, amount, notes, paymentStatus,
+      ...(files.length ? { files } : {}), ...(paper ? { paper } : {}), amount, notes, paymentStatus,
       paidAmount: prevPaid,
       updatedAt: firebase.database.ServerValue.TIMESTAMP,
     });
@@ -1981,8 +2096,8 @@ async function appendToRequest(formValues, amount) {
     return;
   }
 
-  finishSave({ key: req.key, token: req.token, files, amount, notes, paymentStatus, paidAmount: prevPaid },
-    { added: newFiles.length });
+  finishSave({ key: req.key, token: req.token, files, paper, amount, notes, paymentStatus, paidAmount: prevPaid },
+    { appended: true, added: newFiles.length, paperAdded: newPaper ? newPaper.qty : 0 });
 }
 
 async function saveRequest(formValues, amount, paymentInfo, notice) {
@@ -1997,16 +2112,18 @@ async function saveRequest(formValues, amount, paymentInfo, notice) {
   }
 
   const filesData = buildFilesData();
+  const paper = buildPaper();
 
   const record = {
     ...formValues,
     amount,
+    ...(paper ? { paper } : {}),
     token,
     status: 'pending',
     paymentStatus: paymentInfo.paymentStatus,
     ...(paymentInfo.paymentId ? { paymentId: paymentInfo.paymentId, paymentMethod: 'razorpay' } : {}),
     createdAt: firebase.database.ServerValue.TIMESTAMP,
-    files: filesData,
+    ...(filesData.length ? { files: filesData } : {}),
   };
 
   const newRef = db.ref('printRequests').push();
@@ -2018,11 +2135,12 @@ async function saveRequest(formValues, amount, paymentInfo, notice) {
   }
 
   finishSave({
-    key: newRef.key, token, files: filesData, amount,
+    key: newRef.key, token, files: filesData, paper, amount,
     notes: formValues.notes || '', paymentStatus: paymentInfo.paymentStatus, paidAmount: 0,
   }, notice ? { notice } : {});
 }
 
+renderA4Card();
 renderFileList();
 </script>
 <script src="analytics.js"></script>
