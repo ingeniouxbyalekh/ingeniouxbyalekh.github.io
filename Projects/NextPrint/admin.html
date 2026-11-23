@@ -255,15 +255,6 @@
   .p-actions .chip-btn:disabled { opacity:.45; cursor:default; }
   .p-msg { font-size:.78rem; min-height:1em; color:var(--ink-soft); }
   .p-msg.ok { color:var(--ok); } .p-msg.err { color:var(--red); }
-  .pcard select { display:block; width:100%; font:inherit; font-size:.9rem; text-transform:none; letter-spacing:0; color:var(--ink); padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-top:3px; }
-  .cat-add { display:flex; gap:8px; }
-  .cat-add input { flex:1; min-width:0; font:inherit; font-size:.9rem; padding:9px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; }
-  .cat-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-  .cat-chip { display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line); background:#fff; border-radius:999px; padding:5px 6px 5px 14px; font-size:.88rem; }
-  .cat-chip small { color:var(--ink-soft); }
-  .cat-chip button { width:24px; height:24px; border:none; border-radius:50%; background:var(--paper-dim); color:var(--red); cursor:pointer; font-size:.8rem; line-height:1; }
-  .cat-chip button:hover { background:#fbe3e1; }
-  #catMsg { font-size:.8rem; color:var(--red); min-height:1em; margin-top:8px; }
   .p-row2 { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:end; margin-bottom:8px; }
   .p-row2 .vis { padding-bottom:10px; white-space:nowrap; }
   .cat-head { display:flex; align-items:baseline; gap:8px; margin:20px 0 10px; font-family:"Fraunces",Georgia,serif; font-size:1.05rem; font-weight:600; }
@@ -317,7 +308,6 @@
     <div class="topbar">
       <div>
         <h1>Admin</h1>
-        <p class="sub">Visitors, availability, stock &amp; ratings</p>
       </div>
       <div class="top-actions">
         <a class="chip-btn" href="print.html" target="_blank">Print desk</a>
@@ -336,10 +326,10 @@
     <!-- ===== Visitors ===== -->
     <section class="panel active" id="panel-visitors">
       <div class="grid g-stats">
-        <div class="card stat accent"><div class="lbl">Total visits</div><div class="val" id="sTotal">–</div><div class="note">all pages, all time</div></div>
-        <div class="card stat"><div class="lbl">Today</div><div class="val" id="sToday">–</div><div class="note">visits since midnight</div></div>
-        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="sWeek">–</div><div class="note">visits</div></div>
-        <div class="card stat"><div class="lbl">Unique visitors</div><div class="val" id="sUnique">–</div><div class="note" id="sUniqueNote">by IP, recent log</div></div>
+        <div class="card stat accent"><div class="lbl">Total visits</div><div class="val" id="sTotal">–</div></div>
+        <div class="card stat"><div class="lbl">Today</div><div class="val" id="sToday">–</div></div>
+        <div class="card stat"><div class="lbl">Last 7 days</div><div class="val" id="sWeek">–</div></div>
+        <div class="card stat"><div class="lbl">Unique visitors</div><div class="val" id="sUnique">–</div></div>
       </div>
 
       <div class="grid g-two">
@@ -348,18 +338,18 @@
           <div class="chart" id="chart"></div>
         </div>
         <div class="card">
-          <h3>Pages <small>all time</small></h3>
+          <h3>Pages</h3>
           <ul class="rank" id="pagesRank"><li class="empty">Loading…</li></ul>
         </div>
       </div>
 
       <div class="grid g-two-even">
         <div class="card">
-          <h3>Top locations <small>recent log</small></h3>
+          <h3>Top locations</h3>
           <ul class="rank" id="locRank"><li class="empty">Loading…</li></ul>
         </div>
         <div class="card">
-          <h3>Devices <small>recent log</small></h3>
+          <h3>Devices</h3>
           <ul class="rank" id="devRank"><li class="empty">Loading…</li></ul>
         </div>
       </div>
@@ -401,7 +391,6 @@
             <button type="button" class="chip-btn" id="selNone">Clear</button>
           </div>
         </div>
-        <p class="slots-help">Tick the hours you will be available. The home page shows “Shop is open” during a ticked hour, and otherwise shows the next upcoming run of consecutive ticked hours (e.g. 7, 8, 9 ticked → “7 AM – 10 AM”). Times are in IST and repeat every day.</p>
         <div class="slots" id="slots"></div>
         <div class="next-pill" id="nextPill"></div>
         <div class="save-note" id="saveNote"></div>
@@ -419,17 +408,12 @@
         <div class="card stat"><div class="lbl">Low / out of stock</div><div class="val" id="stLow">–</div></div>
         <div class="card stat"><div class="lbl">Stock value</div><div class="val" id="stValue">–</div></div>
       </div>
-      <div class="card" style="margin-bottom:16px">
-        <div class="slots-head"><h3>Categories <small id="catCount"></small></h3></div>
-        <div class="cat-add"><input type="text" id="catName" maxlength="40" aria-label="New category name"><button type="button" class="chip-btn" id="catAdd">＋ Add category</button></div>
-        <div id="catMsg"></div>
-        <div class="cat-chips" id="catList"></div>
-      </div>
       <div class="card">
         <div class="slots-head">
           <h3>Products <small id="stCount"></small></h3>
           <div class="slots-tools"><button type="button" class="chip-btn" id="stAdd">＋ Add product</button></div>
         </div>
+        <datalist id="stCats"></datalist>
         <div id="stDrafts"></div>
         <div id="stList"><div class="empty">Loading…</div></div>
       </div>
@@ -460,7 +444,6 @@
           <h3>All feedback <small id="fbCount"></small></h3>
           <button type="button" class="btn-danger" id="clearFb">Clear all feedback</button>
         </div>
-        <p class="fb-note">Clearing removes the written feedback only. Averages and rating counts above are kept.</p>
         <div id="fbList"><div class="empty">Loading…</div></div>
       </div>
     </section>
@@ -545,7 +528,7 @@ function stCardHtml() {
       <label>Name<input type="text" class="f-name" maxlength="80"></label>
       <label>Description<input type="text" class="f-note" maxlength="140"></label>
       <div class="p-row2">
-        <label>Category<select class="f-cat"></select></label>
+        <label>Category<input type="text" class="f-cat" list="stCats" maxlength="40" autocomplete="off"></label>
         <label class="vis"><input type="checkbox" class="f-new"> New arrival</label>
       </div>
       <div class="p-row">
@@ -594,9 +577,7 @@ function stFill(card, p, fillAll) {
   if (fillAll) {
     set('.f-name', p.name || ''); set('.f-note', p.note || ''); set('.f-mrp', p.mrp || 0);
     set('.f-price', p.price || 0); set('.f-low', p.lowAt == null ? 5 : p.lowAt); set('.f-img', p.img || '');
-    const cs = card.querySelector('.f-cat'), cv = String(p.category || '').trim();
-    if (document.activeElement !== cs) { cs.innerHTML = stCatOptionsHtml(cv); cs.value = cv; }
-    card.querySelector('.f-new').checked = p.isNew === true;
+    set('.f-cat', p.category || ''); card.querySelector('.f-new').checked = p.isNew === true;
     card.querySelector('.f-active').checked = p.active !== false;
     stSetPreview(card);
   }
@@ -608,7 +589,6 @@ function stBuildCard(key) {
   const card = document.createElement('div');
   card.className = 'pcard' + (key ? '' : ' draft');
   card.innerHTML = stCardHtml();
-  card.querySelector('.f-cat').innerHTML = stCatOptionsHtml('');
   const q = s => card.querySelector(s);
   const saveBtn = q('.p-save');
   const dirty = () => { saveBtn.disabled = false; card._dirty = true; stCardState(card); };
@@ -680,51 +660,6 @@ function stBuildCard(key) {
 }
 
 let stSig = '';
-let stCatData = {};                 // category id -> { name, createdAt } (live)
-const stEsc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-function stCatNames() { return Object.keys(stCatData).map(k => String(stCatData[k].name || '').trim()).filter(Boolean).sort(stCatCmp); }
-function stCatOptionsHtml(current) {
-  const names = stCatNames();
-  if (current && names.indexOf(current) < 0) names.push(current);   // keep a category that is no longer in the list
-  return '<option value="">Other</option>' + names.map(n => '<option value="' + stEsc(n) + '">' + stEsc(n) + '</option>').join('');
-}
-function stRefreshCatOptions() {
-  document.querySelectorAll('#panel-stock .f-cat').forEach(sel => {
-    const cur = sel.value;
-    sel.innerHTML = stCatOptionsHtml(cur);
-    sel.value = cur;
-  });
-}
-function renderCats() {
-  const names = stCatNames();
-  const count = {};
-  Object.keys(stData).forEach(k => { const c = String(stData[k].category || '').trim(); if (c) count[c] = (count[c] || 0) + 1; });
-  $('catCount').textContent = names.length ? names.length : '';
-  $('catList').innerHTML = names.map(n =>
-    '<span class="cat-chip"><b>' + stEsc(n) + '</b><small>' + (count[n] || 0) + '</small><button type="button" data-cat="' + stEsc(n) + '" aria-label="Delete category ' + stEsc(n) + '">✕</button></span>').join('');
-  stRefreshCatOptions();
-}
-function catMsg(t) { $('catMsg').textContent = t || ''; }
-async function addCategory() {
-  const inp = $('catName'), name = inp.value.trim().replace(/\s+/g, ' ');
-  if (!name) return;
-  if (stCatNames().some(n => n.toLowerCase() === name.toLowerCase())) { catMsg('That category already exists.'); return; }
-  catMsg('');
-  try {
-    await db.ref('store/categories').push().set({ name, createdAt: firebase.database.ServerValue.TIMESTAMP });
-    inp.value = '';
-  } catch (err) { stShowError(err); }
-}
-async function deleteCategory(name) {
-  const ids = Object.keys(stCatData).filter(k => String(stCatData[k].name || '').trim() === name);
-  const prods = Object.keys(stData).filter(k => String(stData[k].category || '').trim() === name);
-  const msg = 'Delete the category "' + name + '"?' + (prods.length ? '\n\n' + prods.length + ' product' + (prods.length === 1 ? '' : 's') + ' in it will move to Other.' : '');
-  if (!confirm(msg)) return;
-  const updates = {};
-  ids.forEach(k => { updates['store/categories/' + k] = null; });
-  prods.forEach(k => { updates['store/products/' + k + '/category'] = ''; });
-  try { await db.ref().update(updates); } catch (err) { stShowError(err); }
-}
 const ST_OTHER = 'Other';
 const stCatOf = p => String(p.category || '').trim() || ST_OTHER;
 function stCatCmp(x, y) {
@@ -747,7 +682,6 @@ function stGroup(arr) {
 }
 
 function renderStock() {
-  renderCats();
   const keys = Object.keys(stData).sort((a, b) => (stData[a].createdAt || 0) - (stData[b].createdAt || 0));
   const list = $('stList');
 
@@ -778,7 +712,6 @@ function renderStock() {
         const k = db.ref('store/products').push().key;
         updates['store/products/' + k] = Object.assign({ lowAt: 5, active: true, createdAt: Date.now() + i }, d);
       });
-      if (!stCatNames().some(n => n.toLowerCase() === 'notebooks')) updates['store/categories/' + db.ref('store/categories').push().key] = { name: 'Notebooks', createdAt: Date.now() };
       try { await db.ref().update(updates); } catch (err) { sb.disabled = false; stShowError(err); }
     };
     return;
@@ -791,6 +724,10 @@ function renderStock() {
     if (!card) { card = stCards[k] = stBuildCard(k); stFill(card, stData[k], true); }
     else stFill(card, stData[k], !card._dirty);
   });
+
+  // category suggestions for the Category field
+  const cats = Array.from(new Set(keys.map(k => String(stData[k].category || '').trim()).filter(Boolean))).sort(stCatCmp);
+  $('stCats').innerHTML = cats.map(c => '<option value="' + c.replace(/"/g, '&quot;') + '"></option>').join('');
 
   // layout: category by category (new arrivals first, then price low to high);
   // out-of-stock products are pulled into their own zone at the bottom
@@ -821,12 +758,7 @@ function renderStock() {
 }
 
 function startStock() {
-  db.ref('store/categories').on('value', snap => { stCatData = snap.val() || {}; renderCats(); }, stShowError);
   db.ref('store/products').on('value', snap => { stData = snap.val() || {}; renderStock(); }, stShowError);
-  $('catAdd').addEventListener('click', addCategory);
-  $('catName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } });
-  $('catName').addEventListener('input', () => catMsg(''));
-  $('catList').addEventListener('click', e => { const b = e.target.closest('button[data-cat]'); if (b) deleteCategory(b.dataset.cat); });
   $('stAdd').addEventListener('click', () => {
     const card = stBuildCard(null);
     stFill(card, { name: '', note: '', category: '', isNew: false, mrp: 0, price: 0, stock: 10, lowAt: 5, img: '', active: true }, true);
@@ -894,7 +826,6 @@ function startVisitors() {
     $('sWeek').textContent = list.filter(v => v.timestamp >= weekAgo).length;
     const ips = new Set(list.map(v => v.ip).filter(Boolean));
     $('sUnique').textContent = ips.size;
-    $('sUniqueNote').textContent = 'by IP, last ' + list.length + ' visits';
 
     // 14-day chart
     const days = [];
