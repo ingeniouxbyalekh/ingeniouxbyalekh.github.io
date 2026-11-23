@@ -1,0 +1,2224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>OUTR-Community</title>
+<script src="js/theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f4fb;
+    --panel: #ffffff;
+    --ink: #14152b;
+    --muted: #62647f;
+    --line: #e3e4f1;
+    --accent: #4f46e5;
+    --accent-ink: #ffffff;
+    --theirs: #ffffff;
+    --ok: #16a06a;
+    --danger: #c93a2f;
+    --font-body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-head: "Fraunces", Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme]) {
+      --bg: #0d0e1a;
+      --panel: #151728;
+      --ink: #ebecf8;
+      --muted: #9496b5;
+      --line: #25273d;
+      --accent: #8b93ff;
+      --accent-ink: #0f1030;
+      --theirs: #1e2040;
+    } }
+  :root[data-theme="dark"] {
+      --bg: #0d0e1a;
+      --panel: #151728;
+      --ink: #ebecf8;
+      --muted: #9496b5;
+      --line: #25273d;
+      --accent: #8b93ff;
+      --accent-ink: #0f1030;
+      --theirs: #1e2040;
+    }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.45;
+  }
+  button, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .hidden { display: none !important; }
+
+  input[type=text] {
+    width: 100%;
+    padding: 11px 12px;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+  }
+  input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .btn {
+    cursor: pointer;
+    border: 0;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-weight: 600;
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 7px 12px; font-weight: 500; }
+  .btn.ghost:hover { color: var(--ink); }
+
+  /* ---------- Loading / redirect screen ---------- */
+  #boot {
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+  }
+  #boot strong { display: block; font-family: var(--font-head); font-size: 34px; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 6px; }
+
+  /* ---------- Chat layout ---------- */
+  #app {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 100dvh;              /* JS below overrides this while the keyboard is open */
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+    overflow: hidden;
+  }
+  aside {
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .me-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .me-bar .who { flex: 1; min-width: 0; }
+  .me-bar .who strong { display: block; font-family: var(--font-head); font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .me-bar .who span { color: var(--muted); font-size: 13px; }
+  .contacts { overflow-y: auto; flex: 1; }
+  .contact {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+  }
+  .contact:hover { background: var(--bg); }
+  .contact.active { background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+  .avatar {
+    position: relative;
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    color: #fff;
+    flex: none;
+  }
+  .avatar img {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+  }
+  .avatar .dot {
+    position: absolute; right: -1px; bottom: -1px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--muted);
+    border: 2px solid var(--panel);
+  }
+  .avatar .dot.on { background: var(--ok); }
+  .avatar.sring { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4.5px var(--accent); cursor: pointer; }
+  .avatar.sring-seen { box-shadow: 0 0 0 2px var(--panel), 0 0 0 4.5px color-mix(in srgb, var(--muted) 45%, transparent); }
+  .contact .name { font-weight: 600; }
+  .contact > div:last-child { flex: 1; min-width: 0; }
+  .contact .name, .contact .status { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .contact .status { color: var(--muted); font-size: 13px; }
+  .contact .status.received { font-weight: 700; color: var(--ink); }
+  .empty { padding: 24px 16px; color: var(--muted); }
+
+  main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .chat-head {
+    flex: none;
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .chat-head .back { display: none; padding: 7px; }
+  .chat-head .back svg { display: block; }
+  .chat-head .name { font-family: var(--font-head); font-size: 18px; font-weight: 600; }
+  .chat-head .status { color: var(--muted); font-size: 13px; }
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: var(--bg);
+  }
+  .day {
+    align-self: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 12px 0 6px;
+  }
+  .msg {
+    position: relative;
+    max-width: min(75%, 520px);
+    padding: 9px 13px;
+    border-radius: 16px;
+    background: var(--theirs);
+    border: 1px solid var(--line);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    touch-action: pan-y;
+    transition: transform .15s ease;
+  }
+  .msg.swiping { transition: none; }
+  .msg.mine {
+    align-self: flex-end;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-color: var(--accent);
+    border-radius: 16px;
+    border-bottom-right-radius: 4px;
+  }
+  .msg .txt { display: block; }
+  .meta { display: flex; justify-content: flex-end; gap: 8px; font-size: 11px; opacity: .7; margin-top: 2px; }
+  .msg.mine .tick.seen { opacity: 1; font-weight: 600; color: #dfe1ff; }
+  .status.typing { color: var(--accent); font-weight: 500; }
+  .msg.typing { display: inline-flex; gap: 4px; padding: 13px 14px; width: fit-content; }
+  .msg.typing span {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--muted);
+    animation: blink 1.2s infinite ease-in-out;
+  }
+  .msg.typing span:nth-child(2) { animation-delay: .15s; }
+  .msg.typing span:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink {
+    0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+    30% { opacity: 1; transform: translateY(-3px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .msg.typing span { animation: none; opacity: .6; }
+  }
+  .placeholder {
+    flex: 1; display: grid; place-items: center;
+    color: var(--muted); background: var(--bg); text-align: center; padding: 24px;
+  }
+  form.composer {
+    display: flex; gap: 10px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+  }
+  form.composer input { flex: 1; border-radius: 22px; padding: 11px 16px; }
+  form.composer .btn { border-radius: 22px; padding: 11px 22px; }
+
+  /* ---------- Image messages ---------- */
+  .attach { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+  .attach:hover { background: var(--bg); color: var(--accent); }
+  .attach svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .img-prev { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--line); background: var(--panel); }
+  .img-prev img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
+  .img-prev span { flex: 1; min-width: 0; color: var(--muted); font-size: 13px; }
+  .img-prev button { border: 0; background: var(--bg); color: var(--ink); width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }
+  .msg img.pic { display: block; width: auto; max-width: min(300px, 60vw); max-height: 320px; border-radius: 10px; cursor: zoom-in; margin: 0 0 4px; background: rgba(0,0,0,.08); }
+  .msg .txt:empty { display: none; }
+  .lightbox { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(0,0,0,.92); cursor: zoom-out; }
+  .lightbox img { max-width: 96vw; max-height: 94vh; object-fit: contain; }
+
+  /* ---------- Video call ---------- */
+  .call-actions { margin-left: auto; display: flex; gap: 8px; }
+  .call-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px; }
+  /* ---------- Clear chat confirm ---------- */
+  #clear-chat-modal {
+    position: fixed; inset: 0; z-index: 65;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.45);
+  }
+  #clear-chat-modal .cc-box {
+    width: min(92vw, 340px);
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  }
+  #clear-chat-modal .cc-title { font-family: var(--font-head); font-size: 18px; margin: 0 0 6px; }
+  #clear-chat-modal .cc-sub { color: var(--muted); font-size: 13px; margin: 0; }
+  #clear-chat-modal .cc-actions { display: flex; gap: 10px; margin-top: 16px; }
+  #clear-chat-modal .cc-actions .btn { flex: 1; }
+  .btn.cc-ok { background: var(--danger); }
+  #call {
+    position: fixed; inset: 0; z-index: 50;
+    background: #0b1018; color: #fff;
+    display: flex; flex-direction: column;
+  }
+  #call .stage { position: relative; flex: 1; min-height: 0; }
+  #remote-video { width: 100%; height: 100%; object-fit: contain; background: #0b1018; display: block; }
+  .snap-target {
+    position: absolute; display: none; z-index: 2; pointer-events: none;
+  }
+  #call.capture-enabled .snap-target {
+    pointer-events: auto; cursor: pointer;
+  }
+  #call.capture-enabled .snap-target:hover {
+    box-shadow: inset 0 0 0 3px rgba(255,255,255,.25);
+  }
+  .snap-flash {
+    position: absolute; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 5;
+  }
+  .snap-flash.go { animation: snapflash .35s ease-out; }
+  @keyframes snapflash { 0% { opacity: .8; } 100% { opacity: 0; } }
+  #local-video {
+    position: absolute; right: 16px; top: 16px; z-index: 3;
+    width: min(28vw, 180px); aspect-ratio: 3 / 4; object-fit: cover;
+    border-radius: 12px; border: 2px solid rgba(255,255,255,.35);
+    background: #1b2433; transform: scaleX(-1);
+  }
+  .call-avatar {
+    display: none;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    align-items: center; justify-content: center;
+    font-family: var(--font-head); font-weight: 700; font-size: 44px;
+    color: #fff;
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  }
+  #call.audio-only .call-avatar { display: flex; }
+  #call.audio-only #remote-video,
+  #call.audio-only #local-video,
+  #call.audio-only #cam-btn,
+  #call.audio-only #flip-btn { display: none; }
+  .call-info {
+    position: absolute; left: 20px; top: 16px;
+    text-shadow: 0 1px 6px rgba(0,0,0,.6);
+  }
+  .call-info strong { display: block; font-family: var(--font-head); font-size: 15px; text-transform: uppercase; letter-spacing: .02em; }
+  .call-info span { font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .02em; }
+  .call-text-bar {
+    display: flex; flex-direction: column; gap: 8px;
+    padding: 10px 16px 0px;
+    background: #0b1018;
+  }
+  .call-text-bubble {
+    align-self: flex-start;
+    max-width: 78%;
+    background: rgba(255,255,255,.14);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    padding: 8px 12px;
+    font-size: 13px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .call-text-bubble .who {
+    display: block; font-size: 11px; font-weight: 600;
+    opacity: .65; margin-bottom: 2px;
+  }
+  .call-text-bubble.mine {
+    align-self: flex-end;
+    background: var(--accent);
+    border-radius: 14px;
+    border-bottom-right-radius: 4px;
+  }
+  .call-text-form {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .call-text-form input {
+    flex: 1;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.25);
+    border-radius: 20px;
+    padding: 9px 14px;
+    color: #fff;
+  }
+  .call-text-form input::placeholder { color: rgba(255,255,255,.55); }
+  .call-text-form input:focus { border-color: #fff; }
+  .call-text-send {
+    cursor: pointer; border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
+    width: 38px; height: 38px; padding: 0; flex: 0 0 auto;
+    background: var(--accent); color: #fff; border-color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .call-text-send svg { width: 17px; height: 17px; display: block; }
+  .call-text-send:disabled { opacity: .5; cursor: default; }
+  .call-bar {
+    display: flex; justify-content: center; align-items: center; gap: 16px;
+    padding: 20px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    background: #0b1018;
+  }
+  .cbtn {
+    cursor: pointer; border: 1px solid rgba(255,255,255,.3); border-radius: 50%;
+    width: 52px; height: 52px; padding: 0; flex: 0 0 auto;
+    background: transparent; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .cbtn svg { width: 22px; height: 22px; display: block; }
+  .cbtn.quality { font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+  .cbtn .icon-off { display: none; }
+  .cbtn.off .icon-on { display: none; }
+  .cbtn.off .icon-off { display: block; }
+  .cbtn:hover { border-color: #fff; }
+  .cbtn:disabled { opacity: .5; cursor: default; }
+  .cbtn.off { background: #fff; color: #111; border-color: #fff; }
+  .cbtn.end { background: var(--danger); border-color: var(--danger); }
+  #call.facing-environment #local-video { transform: none; }
+  #incoming {
+    position: fixed; z-index: 60; left: 50%; top: calc(16px + env(safe-area-inset-top, 0px));
+    transform: translateX(-50%);
+    width: min(92vw, 380px);
+    background: var(--panel); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  }
+  #incoming .row { display: flex; align-items: center; gap: 12px; }
+  #incoming strong { font-family: var(--font-head); font-size: 18px; display: block; }
+  #incoming .sub { color: var(--muted); font-size: 13px; }
+  #incoming .actions { display: flex; gap: 10px; margin-top: 14px; }
+  #incoming .actions .btn { flex: 1; }
+  .btn.accept { background: var(--ok); }
+  .btn.decline { background: var(--danger); }
+  #toast {
+    position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%); z-index: 70;
+    background: var(--ink); color: var(--bg);
+    padding: 10px 18px; border-radius: 8px; font-size: 14px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  #toast.show { opacity: 1; }
+
+  /* ---------- Swipe to reply ---------- */
+  .msg .swipe-icon {
+    position: absolute;
+    top: 50%;
+    left: -34px;
+    transform: translateY(-50%);
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    display: grid; place-items: center;
+    font-size: 14px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---------- Quoted reply inside a bubble ---------- */
+  .msg .quote {
+    border-left: 3px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    border-radius: 6px;
+    padding: 5px 8px;
+    margin-bottom: 5px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .msg.mine .quote { border-left-color: rgba(255,255,255,.7); background: rgba(255,255,255,.15); }
+  .msg .quote .qname { font-weight: 600; display: block; font-size: 12px; }
+  .msg .quote .qtext { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .msg.mine .quote .qtext { color: rgba(255,255,255,.85); }
+  .msg.highlight { animation: flash 1s ease; }
+  @keyframes flash {
+    0%, 100% { box-shadow: none; }
+    30% { box-shadow: 0 0 0 3px var(--accent); }
+  }
+
+  .tag-edited { opacity: .65; font-size: 11px; }
+
+  /* ---------- Call log entries in chat ---------- */
+  .msg.calllog, .msg.calllog.mine {
+    display: flex; align-items: center; gap: 10px;
+    min-width: 200px; white-space: normal; cursor: pointer;
+    background: var(--theirs); color: var(--ink); border-color: var(--line);
+  }
+  .msg.calllog:hover { border-color: var(--accent); }
+  .cl-ico {
+    width: 36px; height: 36px; border-radius: 50%; flex: none;
+    display: grid; place-items: center; background: var(--accent); color: #fff;
+  }
+  .cl-ico.missed { background: var(--danger); }
+  .cl-ico svg { display: block; }
+  .cl-body { flex: 1; min-width: 0; }
+  .cl-title { font-weight: 600; }
+  .cl-title.missed { color: var(--danger); }
+  .cl-sub { font-size: 12px; color: var(--muted); }
+
+  /* ---------- Inline edit box ---------- */
+  .msg .edit-wrap { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+  .msg .edit-wrap textarea {
+    width: 100%;
+    resize: none;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font: inherit;
+  }
+  .msg.mine .edit-wrap textarea { background: rgba(255,255,255,.15); color: #fff; border-color: rgba(255,255,255,.4); }
+  .edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
+  .edit-actions button {
+    border: 0; border-radius: 6px; padding: 4px 10px;
+    font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+  .edit-actions .save { background: var(--ok); color: #fff; }
+  .edit-actions .cancel { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .8; }
+
+  /* ---------- Reply preview bar above composer ---------- */
+  .reply-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+  }
+  .reply-bar-accent { width: 3px; align-self: stretch; background: var(--accent); border-radius: 2px; }
+  .reply-bar-content { flex: 1; min-width: 0; }
+  .reply-bar-name { font-weight: 600; font-size: 13px; color: var(--accent); }
+  .reply-bar-text { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reply-bar-close {
+    background: none; border: 0; color: var(--muted);
+    font-size: 16px; cursor: pointer; padding: 4px 6px; line-height: 1;
+  }
+  .reply-bar-close:hover { color: var(--ink); }
+
+  @media (max-width: 720px) {
+    .call-btn span { display: none; }
+    #app { grid-template-columns: 1fr; border: 0; }
+    #app aside { display: flex; }
+    #app main { display: none; }
+    #app.chat-open aside { display: none; }
+    #app.chat-open main { display: flex; }
+    .chat-head .back { display: inline-block; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Shown while the shop session is checked; if nobody is signed in, the page redirects to the shop's login page -->
+<section id="boot">
+  <div>
+    <strong>OUTR-Community</strong>
+    <span id="boot-msg">Loading your account…</span>
+  </div>
+</section>
+
+<!-- CHAT -->
+<div id="app" class="hidden">
+  <aside>
+    <div class="me-bar">
+      <div class="avatar" id="me-avatar"></div>
+      <div class="who"><strong id="me-name"></strong><span>Signed in</span></div>
+    </div>
+    <div class="contacts" id="contacts"></div>
+  </aside>
+  <main>
+    <div class="placeholder" id="no-chat">Choose someone from the list to start a conversation.</div>
+    <div id="chat-pane" style="display:none;flex-direction:column;flex:1;min-height:0">
+      <div class="chat-head">
+        <button class="btn ghost back" id="back-btn" type="button" aria-label="Back to contacts">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="avatar" id="ch-avatar"></div>
+        <div>
+          <div class="name" id="ch-name"></div>
+          <div class="status" id="ch-status"></div>
+        </div>
+        <div class="call-actions">
+          <button class="btn ghost icon-btn" id="clear-chat-btn" type="button" aria-label="Clear chat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+          <button class="btn call-btn" id="audio-call-btn" type="button" aria-label="Start audio call">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            <span>Audio call</span>
+          </button>
+          <button class="btn call-btn" id="call-btn" type="button" aria-label="Start video call">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4z"/></svg>
+            <span>Video call</span>
+          </button>
+        </div>
+      </div>
+      <div id="messages" aria-live="polite"></div>
+      <div class="reply-bar hidden" id="reply-bar">
+        <div class="reply-bar-accent"></div>
+        <div class="reply-bar-content">
+          <div class="reply-bar-name" id="reply-bar-name"></div>
+          <div class="reply-bar-text" id="reply-bar-text"></div>
+        </div>
+        <button class="reply-bar-close" id="reply-bar-close" type="button" aria-label="Cancel reply">✕</button>
+      </div>
+      <div class="img-prev hidden" id="img-prev"><img id="img-prev-img" alt=""><span>Add a caption below (optional), then press Send.</span><button type="button" id="img-prev-x" aria-label="Remove image">✕</button></div>
+      <form class="composer" id="composer" autocomplete="off">
+        <button class="attach" id="attach-btn" type="button" aria-label="Send an image" title="Send an image"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <input type="text" id="msg-input" placeholder="Write a message" maxlength="2000" aria-label="Message">
+        <button class="btn" type="submit">Send</button>
+      </form>
+    </div>
+  </main>
+</div>
+
+<!-- VIDEO CALL -->
+<div id="call" class="hidden">
+  <div class="stage">
+    <video id="remote-video" autoplay playsinline></video>
+    <div class="snap-target" id="snap-target"></div>
+    <video id="local-video" autoplay playsinline muted></video>
+    <div class="snap-flash" id="snap-flash"></div>
+    <div class="call-avatar" id="call-avatar"></div>
+    <div class="call-info">
+      <strong id="call-name"></strong>
+      <span id="call-status"></span>
+    </div>
+  </div>
+  <div class="call-text-bar">
+    <div class="call-text-bubble hidden" id="call-text-bubble">
+      <span class="who" id="call-text-who"></span>
+      <span class="txt" id="call-text-txt"></span>
+    </div>
+    <form class="call-text-form" id="call-text-form" autocomplete="off">
+      <input type="text" id="call-text-input" placeholder="Send a message…" maxlength="300" autocomplete="off" aria-label="Send a message during the call">
+      <button class="call-text-send" id="call-text-send" type="submit" aria-label="Send message">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </form>
+  </div>
+  <div class="call-bar">
+    <button class="cbtn quality" id="quality-btn" type="button" aria-label="Switch to standard definition">
+      <span id="quality-btn-label">SD</span>
+    </button>
+    <button class="cbtn hidden" id="flip-btn" type="button" aria-label="Flip camera">
+      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    </button>
+    <button class="cbtn" id="mic-btn" type="button" aria-label="Mute microphone">
+      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
+    <button class="cbtn" id="cam-btn" type="button" aria-label="Turn camera off">
+      <svg class="icon-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      <svg class="icon-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2m5.66 0H14a2 2 0 0 1 2 2v3.34l1 1L23 7v10"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+    </button>
+    <button class="cbtn end" id="end-btn" type="button" aria-label="End call">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(135deg)"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.902.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div id="incoming" class="hidden" role="alertdialog" aria-label="Incoming video call">
+  <div class="row">
+    <div class="avatar" id="in-avatar"></div>
+    <div>
+      <strong id="in-name"></strong>
+      <div class="sub" id="in-sub">is calling you</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn decline" id="decline-btn" type="button">Decline</button>
+    <button class="btn accept" id="accept-btn" type="button">Accept</button>
+  </div>
+</div>
+
+<div id="clear-chat-modal" class="hidden" role="dialog" aria-label="Clear chat">
+  <div class="cc-box">
+    <p class="cc-title">Clear chat?</p>
+    <p class="cc-sub">All messages in this conversation will be deleted for both of you.</p>
+    <div class="cc-actions">
+      <button class="btn ghost" id="clear-chat-cancel" type="button">Cancel</button>
+      <button class="btn cc-ok" id="clear-chat-ok" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status"></div>
+<input type="file" id="img-file" accept="image/*" hidden>
+
+<!-- Shop session (same files the shop pages use). Community/ sits inside the playlearn folder, so auth.js is one level up. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<!-- PlayLearn data lake (Firestore): records user actions for future AI training. No UI/behaviour change. -->
+<script src="js/datalake.js"></script>
+<script src="../auth.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+  import {
+    getDatabase, ref, get, set as _set, update as _update, remove as _remove, push as _push, onValue, onChildAdded, onChildChanged, onChildRemoved, query,
+    limitToLast, orderByChild, startAt, serverTimestamp, onDisconnect
+  } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+  // Community chat database (separate from the shop's own Firebase project that auth.js talks to).
+  const firebaseConfig = {
+    apiKey: "AIzaSyD5hTz1FRLLdPtdQHBu0NZw971OhqTlkgQ",
+    authDomain: "outr-community.firebaseapp.com",
+    databaseURL: "https://outr-community-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "outr-community",
+    storageBucket: "outr-community.firebasestorage.app",
+    messagingSenderId: "305868195576",
+    appId: "1:305868195576:web:d2582d040f4ab69b849d0d"
+  };
+  // Named app so it can never collide with anything else on the page.
+  const app = initializeApp(firebaseConfig, "community");
+  const db = getDatabase(app);
+
+  // Data lake (datalake.js): same behaviour as before — each write is also recorded in Firestore for future AI training.
+  const _dl = (op, r, v) => { try { window.PLDL && window.PLDL.dbWrite(op, r, v); } catch (e) { /* never block a write */ } };
+  const set = (r, v) => { _dl("set", r, v); return _set(r, v); };
+  const update = (r, v) => { _dl("update", r, v); return _update(r, v); };
+  const remove = (r) => { _dl("remove", r); return _remove(r); };
+  const push = (r, v) => { if (v === undefined) return _push(r); const out = _push(r, v); _dl("push", r, v); return out; };
+
+  const $ = (id) => document.getElementById(id);
+  const LOGIN_URL = "../login.html";
+
+  // auth.js's toasts (e.g. "Logged out — this account signed in on another device") go through this page's toast.
+  window.showToast = (msg) => toast(msg);
+
+  const COLORS = ["#4f46e5", "#c2410c", "#db2777", "#9333ea", "#be123c", "#4d7c0f", "#0369a1", "#a16207"];
+  function colorFor(str) {
+    let h = 0;
+    for (const c of String(str)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return COLORS[h % COLORS.length];
+  }
+  // Only https image URLs are ever used for profile pictures.
+  function safePhoto(u) { return typeof u === "string" && /^https:\/\//i.test(u) ? u : ""; }
+
+  // Paints the letter or the profile picture (photo wins when it loads) into an avatar circle.
+  function paintFace(el, name, photo) {
+    el.style.background = colorFor(name);
+    el.innerHTML = "";
+    const letter = String(name || "?").charAt(0).toUpperCase();
+    const src = safePhoto(photo);
+    if (src) {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.referrerPolicy = "no-referrer";
+      img.addEventListener("error", () => { img.remove(); el.prepend(document.createTextNode(letter)); });
+      img.src = src;
+      el.append(img);
+    } else {
+      el.append(document.createTextNode(letter));
+    }
+  }
+  function setAvatar(el, name, online, photo) {
+    paintFace(el, name, photo);
+    const dot = document.createElement("span");
+    dot.className = "dot" + (online ? " on" : "");
+    el.append(dot);
+  }
+
+  let me = null;           // {id, username, photoUrl, isSpecial}  — built from the shop session
+  let users = {};          // id -> {id, username, photoUrl}  — me + my friends only (what the chat list shows)
+  let allUsers = {};       // id -> {id, username, photoUrl}  — everyone who has opened the community
+  let friendSet = new Set(); // ids of my friends
+  let blockedMine = new Set(), blockedMe = new Set(); // people I blocked / who blocked me (never listed)
+  let usersLoaded = false, friendsLoaded = false;
+  let presence = {};       // id -> true
+  let lastSeen = {};       // id -> timestamp (ms) of when they last went offline
+  let lastMsg = {};        // contact id -> {key, text, mine, ts} latest message in that chat
+  let seenByMe = {};       // contact id -> timestamp when I last read that chat
+  let active = null;       // {id, username, photoUrl}
+  let unsubMessages = null;
+  let unsubs = [];
+  let leaving = false;
+
+  /* ---------------- Shop session (auth.js) ---------------- */
+  function goLogin() {
+    leaving = true;
+    location.replace(LOGIN_URL);
+  }
+
+  // Loads the signed-in shop customer's name + profile picture. The shop session only
+  // holds name/email/phone, so the picture comes from the shop's /users record.
+  async function loadProfile(user) {
+    let name = (user.name || "").trim();
+    let photo = user.photoUrl || "";
+    try {
+      const rec = await fetchUserFromCloud(user.email);
+      if (rec) {
+        if (rec.name) name = String(rec.name).trim();
+        if (rec.photoUrl) photo = rec.photoUrl;
+      }
+    } catch (e) { /* shop database unreachable — fall back to what the session has */ }
+    return { name: name || user.email.split("@")[0], photoUrl: safePhoto(photo) };
+  }
+
+  // Stops everything this page has running; returns the presence-removal promise.
+  function shutdown() {
+    stopTyping();
+    Object.values(watchers).forEach(u => u()); watchers = {};
+    if (unsubMeta) { unsubMeta(); unsubMeta = null; }
+    typingMap = {}; typingEl = null;
+    if (inCall) hangUp();
+    hideIncoming();
+    const done = me
+      ? Promise.all([
+          set(ref(db, "presence/" + me.id), null),
+          set(ref(db, "lastSeen/" + me.id), serverTimestamp())
+        ]).catch(() => {})
+      : Promise.resolve();
+    unsubs.forEach(u => u());
+    unsubs = [];
+    if (unsubMessages) unsubMessages();
+    unsubMessages = null;
+    return done;
+  }
+
+  // The shop session ended (signed out here, in another tab, or by a newer login on another device).
+  async function sessionEnded() {
+    if (leaving) return;
+    leaving = true;
+    await Promise.race([shutdown(), new Promise(r => setTimeout(r, 1500))]);
+    location.replace(LOGIN_URL);
+  }
+  /* ---------------- App ---------------- */
+  function startApp(session) {
+    me = session;
+    $("boot").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    $("me-name").textContent = me.username;
+    paintFace($("me-avatar"), me.username, me.photoUrl);
+    showNoChat();
+    listenIncoming();
+
+    // Typing indicators
+    unsubs.push(onValue(ref(db, "typing"), (s) => {
+      typingMap = s.val() || {};
+      renderContacts();
+      updateTypingUI();
+    }));
+
+    // Presence
+    const myPresence = ref(db, "presence/" + me.id);
+    unsubs.push(onValue(ref(db, ".info/connected"), (s) => {
+      if (s.val() === true) {
+        onDisconnect(myPresence).remove();
+        onDisconnect(ref(db, "lastSeen/" + me.id)).set(serverTimestamp());
+        set(myPresence, true);
+      }
+    }));
+    unsubs.push(onValue(ref(db, "lastSeen"), (s) => {
+      lastSeen = s.val() || {};
+      updateHeadStatus();
+    }));
+    unsubs.push(onValue(ref(db, "presence"), (s) => {
+      presence = s.val() || {};
+      renderContacts();
+      updateHeadStatus();
+    }));
+
+    // Everyone who has opened the community (each person's record is written on load, see boot below).
+    unsubs.push(onValue(ref(db, "users"), (s) => {
+      allUsers = {};
+      s.forEach(c => {
+        const v = c.val() || {};
+        if (!v.username) return;
+        allUsers[c.key] = { id: c.key, username: v.username, photoUrl: safePhoto(v.photoUrl) };
+      });
+      usersLoaded = true;
+      rebuildUsers();
+    }));
+
+    // Only friends can be chatted with: keep my own record plus the people I'm friends with.
+    unsubs.push(onValue(ref(db, "friends/" + me.id), (s) => {
+      friendSet = new Set(Object.keys(s.val() || {}));
+      friendsLoaded = true;
+      rebuildUsers();
+    }));
+    unsubs.push(onValue(ref(db, "blocks/" + me.id), (s) => { blockedMine = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
+    unsubs.push(onValue(ref(db, "blockedBy/" + me.id), (s) => { blockedMe = new Set(Object.keys(s.val() || {})); rebuildUsers(); }));
+    unsubs.push(onValue(query(ref(db, "stories"), orderByChild("ts"), startAt(Date.now() - STORY_DAY)), (s) => {
+      storyData = s.val() || {};
+      if (usersLoaded) { renderContacts(); updateHeadStatus(); ringAvatar($("me-avatar"), me.id); }
+    }));
+  }
+
+  /* ---------------- Story rings ---------------- */
+  // A ring around a friend's avatar means they have a story from the last 24 h. Tapping it opens that story on the home page.
+  const STORY_SEEN_KEY = "OUTR_seen_stories", STORY_DAY = 864e5;
+  let storyData = {};
+  function seenStories() { try { return new Set(JSON.parse(localStorage.getItem(STORY_SEEN_KEY)) || []); } catch (e) { return new Set(); } }
+  function storyOf(uid) {   // { id: story to open, seen: all watched } or null
+    if (!me || !(uid === me.id || users[uid])) return null;
+    const list = [];
+    for (const id in storyData) {
+      const s = storyData[id];
+      if (s && s.uid === uid && Date.now() - s.ts < STORY_DAY && (s.mediaType === "text" ? s.text : safePhoto(s.mediaUrl))) list.push([id, s]);
+    }
+    if (!list.length) return null;
+    list.sort((a, b) => a[1].ts - b[1].ts);
+    const seen = seenStories(), fresh = list.find(([id]) => !seen.has(id));
+    return { id: (fresh || list[0])[0], seen: !fresh };
+  }
+  function ringAvatar(el, uid) {
+    const st = storyOf(uid);
+    el.classList.toggle("sring", !!st);
+    el.classList.toggle("sring-seen", !!st && st.seen);
+    el._story = st ? st.id : "";
+    if (!el._ringOn) {
+      el._ringOn = true;
+      el.addEventListener("click", (ev) => {
+        if (!el._story) return;
+        ev.stopPropagation();
+        location.href = "index.html?s=" + encodeURIComponent(el._story);
+      });
+    }
+  }
+
+  function rebuildUsers() {
+    users = {};
+    for (const id in allUsers) if (id === me.id || (friendSet.has(id) && !blockedMine.has(id) && !blockedMe.has(id))) users[id] = allUsers[id];
+    onUsersChanged();
+  }
+
+  function onUsersChanged() {
+    if (!me) return;
+    if (users[me.id]) {
+      me.username = users[me.id].username;
+      me.photoUrl = users[me.id].photoUrl;
+      $("me-name").textContent = me.username;
+      paintFace($("me-avatar"), me.username, me.photoUrl);
+      ringAvatar($("me-avatar"), me.id);
+    }
+    if (active) {
+      if (!users[active.id]) { active = null; showNoChat(); }
+      else { active = users[active.id]; $("ch-name").textContent = active.username; updateHeadStatus(); }
+    }
+    renderContacts();
+    syncWatchers();
+  }
+
+  function renderContacts() {
+    const box = $("contacts");
+    box.innerHTML = "";
+    const list = Object.values(users).filter(u => u.id !== me.id)
+      .sort((a, b) => {
+        // newest conversation first; people with no messages go last, A–Z
+        const ta = lastMsg[a.id] ? lastMsg[a.id].ts : 0;
+        const tb = lastMsg[b.id] ? lastMsg[b.id].ts : 0;
+        return (tb - ta) || a.username.localeCompare(b.username);
+      });
+    if (!list.length) {
+      const d = document.createElement("div");
+      d.className = "empty";
+      if (usersLoaded && friendsLoaded) {
+        d.append("No friends to chat with yet. Add friends in the ");
+        const a = document.createElement("a"); a.href = "index.html"; a.textContent = "community";
+        d.append(a, " and they'll show up here.");
+      } else d.textContent = "Loading friends…";
+      box.append(d);
+      return;
+    }
+    for (const u of list) {
+      const online = !!presence[u.id];
+      // A div (not a <button>) so the shop's click logger in auth.js never records message previews.
+      const b = document.createElement("div");
+      b.className = "contact" + (active && active.id === u.id ? " active" : "");
+      b.setAttribute("role", "button");
+      b.tabIndex = 0;
+      const av = document.createElement("div");
+      av.className = "avatar";
+      setAvatar(av, u.username, online, u.photoUrl);
+      ringAvatar(av, u.id);
+      const info = document.createElement("div");
+      const n = document.createElement("div"); n.className = "name"; n.textContent = u.username;
+      const s = document.createElement("div"); s.className = "status"; const typing = isTyping(u.id);
+      const lm = lastMsg[u.id];
+      s.textContent = typing ? "typing…" : lm ? (lm.mine ? "You: " : "") + lm.text : "No messages yet";
+      if (typing) s.classList.add("typing");
+      else if (lm && !lm.mine && lm.ts > (seenByMe[u.id] || 0)) s.classList.add("received"); // unseen
+      info.append(n, s);
+      b.append(av, info);
+      b.addEventListener("click", () => openChat(u));
+      b.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); openChat(u); }
+      });
+      box.append(b);
+    }
+  }
+
+  function chatIdFor(otherId) { return [me.id, otherId].sort().join("__"); }
+
+  /* ---------- Typing, delivered and seen ---------- */
+  let typingMap = {};
+  let typingOn = false, typingTimer = null, typingChatId = null, typingEl = null;
+  let deliveredAt = 0, seenAt = 0;
+  let unsubMeta = null;
+  let msgEls = {};      // message key -> {ts, mine, timeEl, tick}
+  let lastDay = "";
+  let watchers = {};    // contact id -> unsubscribe
+
+  /* ---------- Reply preview bar ---------- */
+  let replyTarget = null; // { id, text, fromName }
+
+  function showReplyBar() {
+    if (!replyTarget) { $("reply-bar").classList.add("hidden"); return; }
+    $("reply-bar-name").textContent = replyTarget.fromName;
+    $("reply-bar-text").textContent = replyTarget.text;
+    $("reply-bar").classList.remove("hidden");
+  }
+  function setReplyTarget(id, text, fromName) {
+    replyTarget = { id, text: (text || "").slice(0, 300), fromName };
+    showReplyBar();
+    $("msg-input").focus();
+  }
+  function clearReplyTarget() {
+    replyTarget = null;
+    showReplyBar();
+  }
+  $("reply-bar-close").addEventListener("click", clearReplyTarget);
+
+  function scrollToMessage(id) {
+    const rec = msgEls[id];
+    if (!rec || !rec.el) return;
+    rec.el.scrollIntoView({ behavior: "smooth", block: "center" });
+    rec.el.classList.add("highlight");
+    setTimeout(() => rec.el.classList.remove("highlight"), 1000);
+  }
+
+  /* ---------- Swipe-right to reply, long-press to edit ---------- */
+  function attachGestures(el, rec, key, chatId) {
+    const SWIPE_THRESHOLD = 60, MAX_PULL = 70, LONG_PRESS_MS = 450;
+    let startX = 0, startY = 0, dx = 0, dragging = false, moved = false, longPressTimer = null;
+    const icon = el.querySelector(".swipe-icon");
+
+    function onDown(e) {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      startX = e.clientX; startY = e.clientY; dx = 0; dragging = true; moved = false;
+      el.classList.add("swiping");
+      if (rec.mine) {
+        longPressTimer = setTimeout(() => {
+          if (!moved) { dragging = false; el.classList.remove("swiping"); beginEdit(el, rec, key, chatId); }
+        }, LONG_PRESS_MS);
+      }
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      const ddx = e.clientX - startX, ddy = e.clientY - startY;
+      if (Math.abs(ddx) > 6 || Math.abs(ddy) > 6) { moved = true; clearTimeout(longPressTimer); }
+      if (Math.abs(ddy) > Math.abs(ddx)) return;
+      if (ddx <= 0) { dx = 0; el.style.transform = ""; if (icon) icon.style.opacity = 0; return; }
+      dx = Math.min(ddx, MAX_PULL);
+      el.style.transform = "translateX(" + dx + "px)";
+      if (icon) icon.style.opacity = String(Math.min(dx / SWIPE_THRESHOLD, 1));
+    }
+    function onUp() {
+      clearTimeout(longPressTimer);
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove("swiping");
+      el.style.transform = "";
+      if (icon) icon.style.opacity = 0;
+      if (dx >= SWIPE_THRESHOLD) setReplyTarget(key, rec.text || (rec.img ? "📷 Photo" : ""), rec.mine ? "You" : rec.fromName);
+    }
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", onUp);
+    el.addEventListener("pointerleave", () => { if (dragging) onUp(); });
+  }
+
+  function beginEdit(el, rec, key, chatId) {
+    if (!rec.mine || el.querySelector(".edit-wrap")) return;
+    const txtEl = el.querySelector(".txt");
+    const metaEl = el.querySelector(".meta");
+    const wrap = document.createElement("div");
+    wrap.className = "edit-wrap";
+    const ta = document.createElement("textarea");
+    ta.value = rec.text;
+    ta.maxLength = 2000;
+    ta.rows = Math.min(6, Math.max(1, Math.ceil(rec.text.length / 40)));
+    const actions = document.createElement("div");
+    actions.className = "edit-actions";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.type = "button"; cancelBtn.className = "cancel"; cancelBtn.textContent = "Cancel";
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button"; saveBtn.className = "save"; saveBtn.textContent = "Save";
+    actions.append(cancelBtn, saveBtn);
+    wrap.append(ta, actions);
+    txtEl.replaceWith(wrap);
+    ta.focus();
+    ta.setSelectionRange(ta.value.length, ta.value.length);
+
+    function finish(newTxt) {
+      wrap.replaceWith(txtEl);
+      if (newTxt !== null) {
+        const clean = newTxt.trim().slice(0, 2000);
+        if (clean && clean !== rec.text) {
+          txtEl.textContent = clean;
+          rec.text = clean;
+          update(ref(db, "chats/" + chatId + "/messages/" + key), {
+            text: clean, edited: true, editedTs: serverTimestamp()
+          }).catch(() => toast("Could not save the edit."));
+          if (metaEl && !metaEl.querySelector(".tag-edited")) {
+            const tag = document.createElement("span");
+            tag.className = "tag-edited"; tag.textContent = "edited";
+            metaEl.insertBefore(tag, metaEl.firstChild);
+          }
+        }
+      }
+    }
+    cancelBtn.addEventListener("click", () => finish(null));
+    saveBtn.addEventListener("click", () => finish(ta.value));
+    ta.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); finish(ta.value); }
+      else if (e.key === "Escape") { finish(null); }
+    });
+  }
+
+  function isTyping(id) {
+    const c = typingMap[chatIdFor(id)];
+    return !!(c && c[id]);
+  }
+
+  function stopTyping() {
+    clearTimeout(typingTimer); typingTimer = null;
+    if (typingOn && typingChatId && me) {
+      remove(ref(db, "typing/" + typingChatId + "/" + me.id)).catch(() => {});
+    }
+    typingOn = false; typingChatId = null;
+  }
+
+  $("msg-input").addEventListener("input", () => {
+    if (!active || !me) return;
+    if (!$("msg-input").value.trim()) { stopTyping(); return; }
+    if (!typingOn) {
+      typingOn = true;
+      typingChatId = chatIdFor(active.id);
+      const r = ref(db, "typing/" + typingChatId + "/" + me.id);
+      set(r, true).catch(() => {});
+      onDisconnect(r).remove();
+    }
+    clearTimeout(typingTimer);
+    typingTimer = setTimeout(stopTyping, 2500);
+  });
+
+  function updateTypingUI() {
+    const box = $("messages");
+    const t = !!(me && active && isTyping(active.id));
+    if (t && !typingEl) {
+      typingEl = document.createElement("div");
+      typingEl.className = "msg typing";
+      typingEl.setAttribute("aria-label", active.username + " is typing");
+      typingEl.innerHTML = "<span></span><span></span><span></span>";
+      const near = box.scrollHeight - box.scrollTop - box.clientHeight < 80;
+      box.append(typingEl);
+      if (near) box.scrollTop = box.scrollHeight;
+    } else if (!t && typingEl) {
+      typingEl.remove(); typingEl = null;
+    }
+    updateHeadStatus();
+  }
+
+  function tickState(ts) {
+    return ts <= seenAt ? "seen" : ts <= deliveredAt ? "delivered" : "sent";
+  }
+  function paintTick(rec) {
+    const s = tickState(rec.ts);
+    rec.tick.className = "tick " + s;
+    rec.tick.textContent = s === "seen" ? "✓✓ Seen" : s === "delivered" ? "✓✓ Delivered" : "✓ Sent";
+  }
+  function refreshTicks() {
+    Object.values(msgEls).forEach(r => { if (r.mine) paintTick(r); });
+  }
+
+  function viewing() {
+    return document.visibilityState === "visible" && document.hasFocus();
+  }
+
+  // Tell the sender that messages reached this device (and optionally that they were read)
+  function markReceipt(cid, seen) {
+    if (!me) return;
+    const base = "chats/" + cid + "/meta/";
+    const ts = serverTimestamp();
+    const upd = {};
+    upd[base + "deliveredTo/" + me.id] = ts;
+    if (seen) upd[base + "seenBy/" + me.id] = ts;
+    update(ref(db), upd).catch(() => {});
+  }
+  function markSeenIfViewing() {
+    if (me && active && viewing()) markReceipt(chatIdFor(active.id), true);
+  }
+  document.addEventListener("visibilitychange", markSeenIfViewing);
+  window.addEventListener("focus", markSeenIfViewing);
+
+  // Watch every conversation so messages count as "delivered" as soon as this user is online
+  function syncWatchers() {
+    const want = new Set(Object.keys(users).filter(id => id !== me.id));
+    for (const id of Object.keys(watchers)) {
+      if (!want.has(id)) { watchers[id](); delete watchers[id]; }
+    }
+    for (const id of want) {
+      if (watchers[id]) continue;
+      const cid = chatIdFor(id);
+      const lq = query(ref(db, "chats/" + cid + "/messages"), limitToLast(1));
+      const setLast = (snap) => {
+        const m = snap.val();
+        if (!m) return;
+        lastMsg[id] = { key: snap.key, text: m.text || (m.imageUrl ? "📷 Photo" : ""), mine: !!me && m.from === me.id, ts: m.ts || Date.now() };
+        renderContacts();
+      };
+      const w1 = onChildAdded(lq, (snap) => {
+        setLast(snap);
+        const m = snap.val();
+        if (!m || m.from === me.id) return;
+        markReceipt(cid, !!(active && active.id === id && viewing()));
+      });
+      const w2 = onChildChanged(lq, (snap) => {
+        if (lastMsg[id] && lastMsg[id].key === snap.key) setLast(snap);
+      });
+      const w3 = onChildRemoved(lq, (snap) => {
+        if (lastMsg[id] && lastMsg[id].key === snap.key) { delete lastMsg[id]; renderContacts(); }
+      });
+      const w4 = onValue(ref(db, "chats/" + cid + "/meta/seenBy/" + me.id), (s) => {
+        seenByMe[id] = s.val() || 0;
+        renderContacts();
+      });
+      watchers[id] = () => { w1(); w2(); w3(); w4(); };
+    }
+  }
+
+  function showNoChat() {
+    stopTyping();
+    clearReplyTarget();
+    $("no-chat").style.display = "";
+    $("chat-pane").style.display = "none";
+    $("app").classList.remove("chat-open");
+    if (unsubMessages) { unsubMessages(); unsubMessages = null; }
+    if (unsubMeta) { unsubMeta(); unsubMeta = null; }
+    typingEl = null;
+    active = null;
+    if (me) renderContacts();
+  }
+
+  function updateHeadStatus() {
+    if (!active) return;
+    const online = !!presence[active.id];
+    const typing = isTyping(active.id);
+    const st = $("ch-status");
+    st.textContent = typing ? "typing…" : online ? "Online" : lastSeenText(lastSeen[active.id]);
+    st.classList.toggle("typing", typing);
+    setAvatar($("ch-avatar"), active.username, online, active.photoUrl);
+    ringAvatar($("ch-avatar"), active.id);
+  }
+
+  function fmtTime(ts) {
+    return new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  function fmtDay(ts) {
+    const d = new Date(ts), t = new Date();
+    const y = new Date(); y.setDate(t.getDate() - 1);
+    if (d.toDateString() === t.toDateString()) return "Today";
+    if (d.toDateString() === y.toDateString()) return "Yesterday";
+    return d.toLocaleDateString([], { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  // "Today at 4:29 PM" / "Yesterday at …" / "12 Sep 2026 at …"
+  function lastSeenText(ts) {
+    if (!ts || typeof ts !== "number") return "Offline";
+    const day = fmtDay(ts);
+    return day + " at " + fmtTime(ts);
+  }
+
+  function openChat(user) {
+    stopTyping();
+    clearReplyTarget();
+    if (unsubMessages) unsubMessages();
+    if (unsubMeta) unsubMeta();
+    active = user;
+    $("msg-input").value = "";
+    $("no-chat").style.display = "none";
+    $("chat-pane").style.display = "flex";
+    $("app").classList.add("chat-open");
+    $("ch-name").textContent = user.username;
+    updateHeadStatus();
+    renderContacts();
+
+    const box = $("messages");
+    box.innerHTML = "";
+    typingEl = null;
+    msgEls = {};
+    deliveredAt = 0; seenAt = 0;
+    lastDay = "";
+    const chatId = chatIdFor(user.id);
+
+    // Delivered / seen pointers written by the other person
+    unsubMeta = onValue(ref(db, "chats/" + chatId + "/meta"), (s) => {
+      const v = s.val() || {};
+      deliveredAt = (v.deliveredTo && v.deliveredTo[user.id]) || 0;
+      seenAt = (v.seenBy && v.seenBy[user.id]) || 0;
+      refreshTicks();
+    });
+
+    const q = query(ref(db, "chats/" + chatId + "/messages"), limitToLast(300));
+    const u1 = onChildAdded(q, (snap) => {
+      const m = snap.val();
+      const key = snap.key;
+      const ts = m.ts || Date.now();
+      const mine = m.from === me.id;
+      const fromName = mine ? me.username : active.username;
+      const day = fmtDay(ts);
+      if (day !== lastDay) {
+        lastDay = day;
+        const d = document.createElement("div");
+        d.className = "day"; d.textContent = day;
+        box.insertBefore(d, typingEl);
+      }
+
+      // Call log entry (completed / missed) — tap to call again
+      if (m.kind === "call") {
+        const declined = m.status === "declined";
+        const missed = m.status === "missed" || declined;
+        const type = m.callType === "audio" ? "audio" : "video";
+        const cl = document.createElement("div");
+        cl.className = "msg calllog" + (mine ? " mine" : "");
+        cl.setAttribute("role", "button");
+        cl.tabIndex = 0;
+        cl.setAttribute("aria-label", (m.text || "Call") + ". Tap to call again.");
+        const ico = document.createElement("span");
+        ico.className = "cl-ico" + (missed ? " missed" : "");
+        ico.innerHTML = callIconSvg(type);
+        const body = document.createElement("div");
+        body.className = "cl-body";
+        const title = document.createElement("div");
+        title.className = "cl-title" + (missed ? " missed" : "");
+        title.textContent = declined ? "Declined " + type + " call" : missed ? "Missed " + type + " call" : (type === "audio" ? "Audio" : "Video") + " call";
+        const sub = document.createElement("div");
+        sub.className = "cl-sub";
+        const time = document.createElement("time");
+        time.textContent = fmtTime(ts);
+        sub.append(document.createTextNode(!missed && m.duration ? "Duration " + fmtDuration(m.duration) + " · " : ""), time);
+        body.append(title, sub);
+        cl.append(ico, body);
+        const redial = () => startCall(type);
+        cl.addEventListener("click", redial);
+        cl.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); redial(); }
+        });
+        // mine:false keeps call entries out of the ticks/edit logic
+        msgEls[key] = { ts, mine: false, timeEl: time, tick: null, text: m.text || "", el: cl, fromName };
+        box.insertBefore(cl, typingEl);
+        box.scrollTop = box.scrollHeight;
+        return;
+      }
+
+      const el = document.createElement("div");
+      el.className = "msg" + (mine ? " mine" : "");
+
+      const swipeIcon = document.createElement("span");
+      swipeIcon.className = "swipe-icon";
+      swipeIcon.textContent = "↩";
+      swipeIcon.setAttribute("aria-hidden", "true");
+      el.append(swipeIcon);
+
+      if (m.replyTo) {
+        const quote = document.createElement("div");
+        quote.className = "quote";
+        const qn = document.createElement("span"); qn.className = "qname"; qn.textContent = m.replyTo.fromName;
+        const qt = document.createElement("span"); qt.className = "qtext"; qt.textContent = m.replyTo.text;
+        quote.append(qn, qt);
+        quote.addEventListener("click", () => scrollToMessage(m.replyTo.id));
+        el.append(quote);
+      }
+
+      if (typeof m.imageUrl === "string" && /^https:\/\//i.test(m.imageUrl)) {
+        const im = document.createElement("img");
+        im.className = "pic"; im.alt = "Photo"; im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.src = m.imageUrl;
+        im.addEventListener("load", () => { box.scrollTop = box.scrollHeight; });
+        im.addEventListener("click", () => openLightbox(m.imageUrl));
+        im.addEventListener("pointerdown", (ev) => ev.stopPropagation());   // don't start swipe/long-press on the picture
+        el.append(im);
+      }
+      const txt = document.createElement("span");
+      txt.className = "txt"; txt.textContent = m.text || "";
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      const time = document.createElement("time");
+      time.textContent = fmtTime(ts);
+      meta.append(time);
+      if (m.edited) {
+        const tag = document.createElement("span");
+        tag.className = "tag-edited"; tag.textContent = "edited";
+        meta.append(tag);
+      }
+      const rec = { ts, mine, timeEl: time, tick: null, text: m.text || "", img: !!m.imageUrl, el, fromName };
+      if (mine) {
+        rec.tick = document.createElement("span");
+        meta.append(rec.tick);
+        paintTick(rec);
+      }
+      el.append(txt, meta);
+      msgEls[key] = rec;
+      attachGestures(el, rec, key, chatId);
+      box.insertBefore(el, typingEl);
+      box.scrollTop = box.scrollHeight;
+    });
+    // The server replaces the local timestamp estimate with the real one, and reflects edits made from either device
+    const u2 = onChildChanged(q, (snap) => {
+      const rec = msgEls[snap.key], m = snap.val();
+      if (!rec) return;
+      if (m.ts && m.ts !== rec.ts) {
+        rec.ts = m.ts;
+        rec.timeEl.textContent = fmtTime(m.ts);
+        if (rec.mine) paintTick(rec);
+      }
+      if (typeof m.text === "string" && m.text !== rec.text) {
+        rec.text = m.text;
+        const txtEl = rec.el.querySelector(".txt");
+        if (txtEl && !rec.el.querySelector(".edit-wrap")) txtEl.textContent = m.text;
+      }
+      if (m.edited) {
+        const metaEl = rec.el.querySelector(".meta");
+        if (metaEl && !metaEl.querySelector(".tag-edited")) {
+          const tag = document.createElement("span");
+          tag.className = "tag-edited"; tag.textContent = "edited";
+          metaEl.insertBefore(tag, metaEl.firstChild);
+        }
+      }
+    });
+    // Reflects messages deleted from either device (e.g. Clear chat) instantly.
+    const u3 = onChildRemoved(q, (snap) => {
+      const rec = msgEls[snap.key];
+      if (rec) { rec.el.remove(); delete msgEls[snap.key]; }
+      if (Object.keys(msgEls).length === 0) {
+        box.innerHTML = "";
+        typingEl = null;
+        lastDay = "";
+        updateTypingUI();
+      }
+    });
+    unsubMessages = () => { u1(); u2(); u3(); };
+
+    markReceipt(chatId, viewing());
+    updateTypingUI();
+  }
+
+  $("back-btn").addEventListener("click", showNoChat);
+
+  /* ---------- permanentChat: write-once copy of every message. "Clear chat" only touches /chats, never this. ---------- */
+  function sendMsg(chatId, payload) {                   // one atomic write to both places, same message id
+    const key = push(ref(db, "chats/" + chatId + "/messages")).key;
+    return update(ref(db), {
+      ["chats/" + chatId + "/messages/" + key]: payload,
+      ["permanentChat/" + chatId + "/messages/" + key]: payload
+    });
+  }
+
+  /* ---------- Send image ---------- */
+  const CLOUD = (window.CFG && CFG.cloud) || { name: "fygvclvm", preset: "PlayLearn" };
+  let pendingImg = null;
+  function openLightbox(url) {
+    const o = document.createElement("div"); o.className = "lightbox";
+    const i = document.createElement("img"); i.alt = ""; i.referrerPolicy = "no-referrer"; i.src = url; o.append(i);
+    const close = () => { o.remove(); document.removeEventListener("keydown", esc); };
+    const esc = (ev) => { if (ev.key === "Escape") close(); };
+    o.addEventListener("click", close); document.addEventListener("keydown", esc); document.body.append(o);
+  }
+  function clearImg() {
+    pendingImg = null; $("img-file").value = ""; $("img-prev").classList.add("hidden");
+    const p = $("img-prev-img"); if (p.src.startsWith("blob:")) URL.revokeObjectURL(p.src); p.removeAttribute("src");
+  }
+  async function shrink(file) {                         // max 1600px JPEG; GIFs are sent untouched
+    if (file.type === "image/gif") return file;
+    try {
+      const bmp = await createImageBitmap(file), k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      const blob = await new Promise((r) => c.toBlob(r, "image/jpeg", 0.85));
+      return blob && blob.size < file.size ? blob : file;
+    } catch (e) { return file; }
+  }
+  async function uploadImg(file) {
+    const fd = new FormData(); fd.append("file", await shrink(file)); fd.append("upload_preset", CLOUD.preset);
+    const r = await fetch("https://api.cloudinary.com/v1_1/" + CLOUD.name + "/image/upload", { method: "POST", body: fd });
+    if (!r.ok) throw new Error("upload");
+    return (await r.json()).secure_url;
+  }
+  $("attach-btn").addEventListener("click", () => { if (!active) { toast("Open a chat first."); return; } $("img-file").click(); });
+  $("img-file").addEventListener("change", () => {
+    const f = $("img-file").files[0]; if (!f) return;
+    if (!f.type.startsWith("image/")) { toast("Please choose an image."); $("img-file").value = ""; return; }
+    if (f.size > 10 * 1048576) { toast("Image must be under 10 MB."); $("img-file").value = ""; return; }
+    pendingImg = f; $("img-prev-img").src = URL.createObjectURL(f); $("img-prev").classList.remove("hidden"); $("msg-input").focus();
+  });
+  $("img-prev-x").addEventListener("click", clearImg);
+
+  $("composer").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = $("msg-input");
+    const text = input.value.trim();
+    if ((!text && !pendingImg) || !active) return;
+    const sendBtn = e.target.querySelector('button[type="submit"]'), file = pendingImg;
+    input.value = "";
+    stopTyping();
+    const chatId = chatIdFor(active.id);
+    const payload = {
+      from: me.id,
+      text: text.slice(0, 2000),
+      ts: serverTimestamp()
+    };
+    const pendingReply = replyTarget;
+    if (pendingReply) payload.replyTo = { id: pendingReply.id, text: pendingReply.text, fromName: pendingReply.fromName };
+    clearReplyTarget();
+    try {
+      if (file) {
+        sendBtn.disabled = true; sendBtn.textContent = "Sending…";
+        payload.imageUrl = await uploadImg(file);
+        clearImg();
+      }
+      await sendMsg(chatId, payload);
+    } catch (ex) {
+      input.value = text;
+      if (pendingReply) setReplyTarget(pendingReply.id, pendingReply.text, pendingReply.fromName);
+      alert(file ? "Image not sent. Check your connection and try again." : "Message not sent. Check your connection and try again.");
+    }
+    sendBtn.disabled = false; sendBtn.textContent = "Send";
+  });
+
+  /* ---------------- Video call (WebRTC, signaling via Realtime Database) ---------------- */
+  const ICE = {
+    iceServers: [
+      { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }
+      // Strict firewalls / mobile networks may need a TURN relay. Add yours here:
+      // , { urls: "turn:your.turn.server:3478", username: "USER", credential: "PASS" }
+    ]
+  };
+
+  let pc = null, localStream = null;
+  let inCall = false, callId = null, callRole = null, callPeer = null, callType = "video";
+  let callUnsubs = [], callDisc = [], pendingCands = [], answerApplied = false;
+  let ringTimer = null, timerInt = null, ringCtx = null, ringInt = null;
+  let callTextHideTimer = null;
+  let hdQuality = true; // current preference: true = HD (default), false = SD; persists across calls
+  let currentFacing = "user"; // "user" (front) or "environment" (back) — for the flip-camera button
+  let cachedPrimaryBackCameraId = null; // resolved once per session, then reused on later flips
+  let incoming = null;
+  let callConnectedAt = null; // set once when a call actually connects (for duration)
+  let callEndReason = null;   // set to "declined" when the callee declines
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove("show"), 3000);
+  }
+
+  function fmtDuration(sec) {
+    sec = Math.max(0, Math.round(sec || 0));
+    const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    const mm = h ? String(m).padStart(2, "0") : String(m);
+    return (h ? h + ":" : "") + mm + ":" + String(s).padStart(2, "0");
+  }
+  function callIconSvg(type) {
+    return type === "audio"
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="13" height="12" rx="2"/><path d="M15 10l7-4v12l-7-4z"/></svg>';
+  }
+  // Writes a call entry into the chat with `peerId` (status: "completed" | "missed").
+  function logCall(peerId, type, status, seconds) {
+    if (!me || !peerId) return;
+    const t = type === "audio" ? "audio" : "video";
+    const text = status === "missed"
+      ? "Missed " + t + " call"
+      : status === "declined"
+        ? "Declined " + t + " call"
+        : (t === "audio" ? "Audio" : "Video") + " call · " + fmtDuration(seconds);
+    sendMsg(chatIdFor(peerId), {
+      from: me.id, kind: "call", callType: t, status,
+      duration: status === "completed" ? (seconds || 0) : 0,
+      text, ts: serverTimestamp()
+    }).catch(() => {});
+  }
+
+  function setCallStatus(t) { $("call-status").textContent = t; }
+
+  function showCallUI(status) {
+    $("call-name").textContent = callPeer.username;
+    setCallStatus(status);
+    $("mic-btn").classList.remove("off");
+    $("cam-btn").classList.remove("off");
+    currentFacing = "user";
+    $("call").classList.remove("facing-environment");
+    $("flip-btn").classList.add("hidden");
+    $("call").classList.toggle("audio-only", callType === "audio");
+    $("call").classList.toggle("capture-enabled", !!(me && me.isSpecial) && callType === "video");
+    if (callType === "audio") {
+      paintFace($("call-avatar"), callPeer.username, callPeer.photoUrl);
+    }
+    $("call").classList.remove("hidden");
+    clearTimeout(callTextHideTimer);
+    $("call-text-bubble").classList.add("hidden");
+    $("call-text-input").value = "";
+  }
+
+  // In-call live text: one ephemeral message at a time, stored at
+  // calls/{callId}/liveText (overwritten with `set`, not appended with
+  // `push`), so only the most recent message ever exists. It's wiped in
+  // teardown() below, so nothing survives past the end of the call.
+  function listenCallText() {
+    callUnsubs.push(onValue(ref(db, "calls/" + callId + "/liveText"), (snap) => {
+      const v = snap.val();
+      clearTimeout(callTextHideTimer);
+      const bubble = $("call-text-bubble");
+      if (!v || !v.text) { bubble.classList.add("hidden"); return; }
+      const mine = v.from === me.id;
+      $("call-text-who").textContent = mine ? "You" : (v.fromName || (callPeer && callPeer.username) || "");
+      $("call-text-txt").textContent = v.text;
+      bubble.classList.toggle("mine", mine);
+      bubble.classList.remove("hidden");
+      callTextHideTimer = setTimeout(() => bubble.classList.add("hidden"), 6000);
+    }));
+  }
+
+  $("call-text-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const input = $("call-text-input");
+    const text = input.value.trim();
+    if (!text || !callId) return;
+    input.value = "";
+    set(ref(db, "calls/" + callId + "/liveText"), {
+      from: me.id, fromName: me.username, text: text, ts: serverTimestamp()
+    }).catch(() => {});
+  });
+
+  // Show the flip-camera button only when more than one camera is available
+  // (front + back, typically on phones) and this is a video call.
+  async function updateFlipAvailability() {
+    if (callType !== "video" || !navigator.mediaDevices.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === "videoinput");
+      $("flip-btn").classList.toggle("hidden", cams.length < 2);
+    } catch (e) { /* leave it hidden if we can't tell */ }
+  }
+
+  // On phones with multiple rear lenses (main + ultra-wide + telephoto),
+  // asking for facingMode:"environment" alone can hand back the ultra-wide
+  // lens instead of the primary camera — device labels aren't reliable
+  // enough to tell them apart by name alone. Instead, briefly probe each
+  // back-facing camera's reported max resolution and pick the one with the
+  // most pixels: on phones the primary sensor is almost always the
+  // highest-resolution one, while ultra-wide/telephoto sensors are lower-res.
+  // The result is cached so we only probe once per call.
+  async function pickPrimaryBackCameraId() {
+    if (cachedPrimaryBackCameraId) return cachedPrimaryBackCameraId;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter(d => d.kind === "videoinput");
+      let candidates = cams.filter(d => /back|rear|environment/i.test(d.label));
+      if (!candidates.length) candidates = cams.filter(d => !/front|user|face/i.test(d.label));
+      if (!candidates.length) candidates = cams;
+      if (!candidates.length) return null;
+      if (candidates.length === 1) {
+        cachedPrimaryBackCameraId = candidates[0].deviceId;
+        return cachedPrimaryBackCameraId;
+      }
+
+      let bestId = null, bestPixels = -1;
+      for (const cam of candidates) {
+        try {
+          const probe = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: cam.deviceId } },
+            audio: false
+          });
+          const track = probe.getVideoTracks()[0];
+          const caps = track.getCapabilities ? track.getCapabilities() : {};
+          const pixels = (caps.width && caps.width.max ? caps.width.max : 0) *
+                         (caps.height && caps.height.max ? caps.height.max : 0);
+          track.stop();
+          if (pixels > bestPixels) { bestPixels = pixels; bestId = cam.deviceId; }
+        } catch (e) { /* this lens couldn't be opened for probing — skip it */ }
+      }
+      cachedPrimaryBackCameraId = bestId || candidates[0].deviceId;
+      return cachedPrimaryBackCameraId;
+    } catch (e) { /* fall back to facingMode below */ }
+    return null;
+  }
+
+  async function getMedia(withVideo) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Calls need a secure page (https or localhost).");
+    }
+    try {
+      return await navigator.mediaDevices.getUserMedia({
+        // Keep the camera's 4:3 shape, just ask for a sharper capture at that ratio.
+        video: withVideo ? { width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } } : false,
+        audio: true
+      });
+    } catch (e) {
+      throw new Error(withVideo
+        ? "Could not use the camera and microphone. Allow access in your browser and try again."
+        : "Could not use the microphone. Allow access in your browser and try again.");
+    }
+  }
+
+  // SD/HD toggle: true = HD (2.5Mbps, full res), false = SD (400kbps video /
+  // 24kbps audio, half res). Applies live via setParameters — no renegotiation
+  // needed — and also seeds every new call's senders via createPeer().
+  function applyQuality() {
+    if (!pc) return;
+    pc.getSenders().forEach((sender) => {
+      if (!sender.track) return;
+      const params = sender.getParameters();
+      if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+      if (sender.track.kind === "video") {
+        params.encodings[0].maxBitrate = hdQuality ? 2500000 : 400000;
+        params.encodings[0].scaleResolutionDownBy = hdQuality ? 1 : 2;
+      } else if (sender.track.kind === "audio") {
+        params.encodings[0].maxBitrate = hdQuality ? 128000 : 24000;
+      }
+      sender.setParameters(params).catch(() => {});
+    });
+  }
+  function updateQualityButton() {
+    $("quality-btn-label").textContent = hdQuality ? "SD" : "HD";
+    $("quality-btn").setAttribute("aria-label", hdQuality ? "Switch to standard definition" : "Switch to high definition");
+  }
+
+  function createPeer(myCandidatesPath) {
+    const conn = new RTCPeerConnection(ICE);
+    pc = conn;
+    localStream.getTracks().forEach(t => conn.addTrack(t, localStream));
+    applyQuality(); // apply the current SD/HD preference to the fresh senders
+    conn.ontrack = (e) => { $("remote-video").srcObject = e.streams[0]; };
+    conn.onicecandidate = (e) => {
+      if (e.candidate) push(ref(db, myCandidatesPath), e.candidate.toJSON()).catch(() => {});
+    };
+    conn.onconnectionstatechange = () => {
+      if (pc !== conn) return;
+      const s = conn.connectionState;
+      if (s === "connected") {
+        clearTimeout(ringTimer);
+        if (!callConnectedAt) callConnectedAt = Date.now();
+        const start = Date.now();
+        clearInterval(timerInt);
+        timerInt = setInterval(() => {
+          const sec = Math.floor((Date.now() - start) / 1000);
+          setCallStatus(String(Math.floor(sec / 60)).padStart(2, "0") + ":" + String(sec % 60).padStart(2, "0"));
+        }, 1000);
+        setCallStatus("00:00");
+      } else if (s === "disconnected") {
+        clearInterval(timerInt);
+        setCallStatus("Reconnecting…");
+      } else if (s === "failed") {
+        hangUp();
+        toast("The connection failed. A TURN server may be needed on this network.");
+      }
+    };
+  }
+
+  function addRemoteCandidate(c) {
+    if (pc && pc.remoteDescription) pc.addIceCandidate(c).catch(() => {});
+    else pendingCands.push(c);
+  }
+  function flushCandidates() {
+    if (!pc) return;
+    pendingCands.splice(0).forEach(c => pc.addIceCandidate(c).catch(() => {}));
+  }
+
+  function teardown(msg) {
+    const id = callId, role = callRole, peer = callPeer;
+    const connectedAt = callConnectedAt, typeAtEnd = callType;
+    const endReason = callEndReason;
+    callConnectedAt = null; callEndReason = null;
+    clearTimeout(ringTimer); clearInterval(timerInt); stopRing();
+    clearTimeout(callTextHideTimer);
+    $("snap-target").style.display = "none";
+    $("call-text-bubble").classList.add("hidden");
+    $("call-text-input").value = "";
+    if (id) remove(ref(db, "calls/" + id + "/liveText")).catch(() => {});
+    callUnsubs.forEach(u => u()); callUnsubs = [];
+    callDisc.forEach(d => d.cancel().catch(() => {})); callDisc = [];
+    if (pc) {
+      pc.onicecandidate = null; pc.ontrack = null; pc.onconnectionstatechange = null;
+      pc.close(); pc = null;
+    }
+    if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+    $("remote-video").srcObject = null;
+    $("local-video").srcObject = null;
+    $("call").classList.add("hidden");
+    $("call").classList.remove("audio-only");
+    $("call").classList.remove("facing-environment");
+    $("flip-btn").classList.add("hidden");
+    currentFacing = "user";
+    pendingCands = []; answerApplied = false;
+    inCall = false; callId = null; callRole = null; callPeer = null;
+
+    if (id && role === "caller") {
+      // Only the caller writes the chat entry, so it is never duplicated
+      if (connectedAt) logCall(peer.id, typeAtEnd, "completed", (Date.now() - connectedAt) / 1000);
+      else logCall(peer.id, typeAtEnd, endReason === "declined" ? "declined" : "missed", 0);
+      // Clean up signaling data
+      get(ref(db, "incoming/" + peer.id)).then(s => {
+        if (s.exists() && s.val().callId === id) remove(ref(db, "incoming/" + peer.id));
+      }).catch(() => {});
+      setTimeout(() => remove(ref(db, "calls/" + id)).catch(() => {}), 3000);
+    }
+    if (msg) toast(msg);
+  }
+
+  function hangUp() {
+    if (callId) update(ref(db, "calls/" + callId), { state: "ended" }).catch(() => {});
+    teardown();
+  }
+
+  /* ----- Caller ----- */
+  async function startCall(type) {
+    if (!active || inCall || incoming) return;
+    if (!presence[active.id]) {
+      toast(active.username + " is offline. They need to have the community open to get a call.");
+      logCall(active.id, type, "missed", 0);
+      return;
+    }
+    inCall = true;
+    callPeer = active;
+    callRole = "caller";
+    callType = type;
+    showCallUI(type === "video" ? "Starting camera…" : "Calling…");
+    try {
+      localStream = await getMedia(type === "video");
+      if (!inCall) { localStream.getTracks().forEach(t => t.stop()); localStream = null; return; }
+      if (type === "video") { $("local-video").srcObject = localStream; updateFlipAvailability(); }
+
+      const callRef = push(ref(db, "calls"));
+      callId = callRef.key;
+      listenCallText();
+      createPeer("calls/" + callId + "/callerCandidates");
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      if (!inCall) return;
+
+      await set(callRef, {
+        caller: me.id, callerName: me.username, callee: callPeer.id,
+        type,
+        offer: { type: offer.type, sdp: offer.sdp },
+        state: "ringing", ts: serverTimestamp()
+      });
+      const incRef = ref(db, "incoming/" + callPeer.id);
+      await set(incRef, { callId, from: me.id, fromName: me.username, fromPhoto: me.photoUrl || "", type, ts: serverTimestamp() });
+      const d1 = onDisconnect(incRef); d1.remove();
+      const d2 = onDisconnect(ref(db, "calls/" + callId + "/state")); d2.set("ended");
+      callDisc.push(d1, d2);
+      if (!inCall) return;
+
+      const peerName = callPeer.username;
+      setCallStatus("Calling " + peerName + "…");
+      ringTimer = setTimeout(() => {
+        if (inCall && (!pc || pc.connectionState !== "connected")) { hangUp(); toast("No answer from " + peerName + "."); }
+      }, 45000);
+
+      callUnsubs.push(onValue(callRef, (snap) => {
+        const c = snap.val();
+        if (!c) { teardown("Call ended"); return; }
+        if (c.state === "declined") { callEndReason = "declined"; teardown(peerName + " declined the call."); return; }
+        if (c.state === "busy") { teardown(peerName + " is on another call."); return; }
+        if (c.state === "ended") { teardown("Call ended"); return; }
+        if (c.answer && !answerApplied && pc) {
+          answerApplied = true;
+          setCallStatus("Connecting…");
+          pc.setRemoteDescription(c.answer).then(flushCandidates).catch(() => {});
+        }
+      }));
+      callUnsubs.push(onChildAdded(ref(db, "calls/" + callId + "/calleeCandidates"), (s) => addRemoteCandidate(s.val())));
+    } catch (e) {
+      teardown(e.message || "Could not start the call.");
+    }
+  }
+
+  /* ----- Callee ----- */
+  function startRing() {
+    try {
+      ringCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = () => {
+        const o = ringCtx.createOscillator(), g = ringCtx.createGain();
+        o.frequency.value = 440; g.gain.value = 0.08;
+        o.connect(g); g.connect(ringCtx.destination);
+        o.start(); o.stop(ringCtx.currentTime + 0.4);
+      };
+      beep();
+      ringInt = setInterval(beep, 1500);
+    } catch (e) { /* sound is optional */ }
+  }
+  function stopRing() {
+    clearInterval(ringInt); ringInt = null;
+    if (ringCtx) { ringCtx.close().catch(() => {}); ringCtx = null; }
+  }
+
+  function showIncoming(inc) {
+    incoming = inc;
+    $("in-name").textContent = inc.fromName;
+    $("in-sub").textContent = inc.type === "audio" ? "Voice call" : "Video call";
+    setAvatar($("in-avatar"), inc.fromName, true, inc.fromPhoto);
+    $("incoming").classList.remove("hidden");
+    startRing();
+  }
+  function hideIncoming() {
+    incoming = null;
+    stopRing();
+    $("incoming").classList.add("hidden");
+  }
+
+  function listenIncoming() {
+    unsubs.push(onValue(ref(db, "incoming/" + me.id), async (snap) => {
+      const inc = snap.val();
+      if (!inc) { if (incoming && !inCall) hideIncoming(); return; }
+      if (incoming && incoming.callId === inc.callId) return;
+      if (inCall || incoming) {
+        update(ref(db, "calls/" + inc.callId), { state: "busy" }).catch(() => {});
+        remove(ref(db, "incoming/" + me.id)).catch(() => {});
+        return;
+      }
+      try {
+        const c = (await get(ref(db, "calls/" + inc.callId))).val();
+        const stale = inc.ts && Date.now() - inc.ts > 60000;
+        if (!c || c.state !== "ringing" || stale) { remove(ref(db, "incoming/" + me.id)).catch(() => {}); return; }
+        if (!inCall && !incoming) showIncoming(inc);
+      } catch (e) { /* ignore */ }
+    }));
+  }
+
+  async function acceptCall() {
+    const inc = incoming;
+    if (!inc || inCall) return;
+    hideIncoming();
+    inCall = true;
+    callId = inc.callId;
+    listenCallText();
+    callRole = "callee";
+    callPeer = { id: inc.from, username: inc.fromName, photoUrl: safePhoto(inc.fromPhoto) };
+    callType = inc.type || "video";
+    showCallUI("Connecting…");
+    try {
+      const c = (await get(ref(db, "calls/" + callId))).val();
+      if (!c || c.state !== "ringing") throw new Error("The caller hung up.");
+      callType = c.type || callType;
+      localStream = await getMedia(callType === "video");
+      if (!inCall) { localStream.getTracks().forEach(t => t.stop()); localStream = null; return; }
+      if (callType === "video") { $("local-video").srcObject = localStream; updateFlipAvailability(); }
+
+      createPeer("calls/" + callId + "/calleeCandidates");
+      await pc.setRemoteDescription(c.offer);
+      flushCandidates();
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      const callRef = ref(db, "calls/" + callId);
+      await update(callRef, { answer: { type: answer.type, sdp: answer.sdp }, state: "active" });
+      remove(ref(db, "incoming/" + me.id)).catch(() => {});
+      const d = onDisconnect(ref(db, "calls/" + callId + "/state")); d.set("ended");
+      callDisc.push(d);
+
+      const peerName = callPeer.username;
+      callUnsubs.push(onValue(callRef, (snap) => {
+        const v = snap.val();
+        if (!v || v.state === "ended") teardown("Call ended");
+      }));
+      callUnsubs.push(onChildAdded(ref(db, "calls/" + callId + "/callerCandidates"), (s) => addRemoteCandidate(s.val())));
+    } catch (e) {
+      const id = callId;
+      if (id) update(ref(db, "calls/" + id), { state: "ended" }).catch(() => {});
+      remove(ref(db, "incoming/" + me.id)).catch(() => {});
+      teardown(e.message || "Could not join the call.");
+    }
+  }
+
+  function declineCall() {
+    const inc = incoming;
+    if (!inc) return;
+    hideIncoming();
+    update(ref(db, "calls/" + inc.callId), { state: "declined" }).catch(() => {});
+    remove(ref(db, "incoming/" + me.id)).catch(() => {});
+  }
+
+  /* ----- Clear chat ----- */
+  $("clear-chat-btn").addEventListener("click", () => {
+    if (!active) return;
+    $("clear-chat-modal").classList.remove("hidden");
+  });
+  $("clear-chat-cancel").addEventListener("click", () => {
+    $("clear-chat-modal").classList.add("hidden");
+  });
+  $("clear-chat-ok").addEventListener("click", async () => {
+    $("clear-chat-modal").classList.add("hidden");
+    if (!active) return;
+    const clearedUser = active;
+    // Clear the screen instantly for this device instead of waiting on the round-trip.
+    const box = $("messages");
+    box.innerHTML = "";
+    typingEl = null;
+    msgEls = {};
+    lastDay = "";
+    try {
+      await remove(ref(db, "chats/" + chatIdFor(clearedUser.id) + "/messages"));
+    } catch (ex) {
+      // Deletion failed server-side: resync the view from what's actually in the database.
+      if (active && active.id === clearedUser.id) openChat(active);
+      alert("Couldn't clear chat. Check your connection and try again.");
+    }
+  });
+
+  /* ----- Call controls ----- */
+  $("audio-call-btn").addEventListener("click", () => startCall("audio"));
+  $("call-btn").addEventListener("click", () => startCall("video"));
+  $("end-btn").addEventListener("click", hangUp);
+  $("accept-btn").addEventListener("click", acceptCall);
+  $("decline-btn").addEventListener("click", declineCall);
+  $("quality-btn").addEventListener("click", () => {
+    hdQuality = !hdQuality;
+    updateQualityButton();
+    applyQuality();
+  });
+  updateQualityButton();
+
+  // Special-user only: clicking the peer's live video feed during a video
+  // call (not audio) instantly saves that frame as a PNG named YYMMDDHHMMSS.png.
+  function pad(n, len) { return String(n).padStart(len, "0"); }
+  function frameFilename() {
+    const d = new Date();
+    return pad(d.getFullYear() % 100, 2) + pad(d.getMonth() + 1, 2) + pad(d.getDate(), 2) +
+           pad(d.getHours(), 2) + pad(d.getMinutes(), 2) + pad(d.getSeconds(), 2) + ".png";
+  }
+  function captureRemoteFrame() {
+    if (!me || !me.isSpecial) return;
+    if (!inCall || callType !== "video") return;
+    const video = $("remote-video");
+    if (!video.videoWidth || !video.videoHeight) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = frameFilename();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, "image/png");
+    const flash = $("snap-flash");
+    flash.classList.remove("go");
+    void flash.offsetWidth; // restart animation
+    flash.classList.add("go");
+  }
+  // The <video> element fills its whole tile, but with object-fit:contain the
+  // actual picture is letterboxed/pillarboxed inside it. Rather than hit-testing
+  // every click against that math, size a real overlay element to match just
+  // the visible picture, and only that overlay is clickable/hoverable — so the
+  // bars around it (and the local-preview corner, which sits above it) never
+  // trigger a capture.
+  function positionSnapTarget() {
+    const video = $("remote-video"), stage = video.parentElement, target = $("snap-target");
+    if (!video.videoWidth || !video.videoHeight) { target.style.display = "none"; return; }
+    const vRect = video.getBoundingClientRect(), sRect = stage.getBoundingClientRect();
+    const scale = Math.min(vRect.width / video.videoWidth, vRect.height / video.videoHeight);
+    const w = video.videoWidth * scale, h = video.videoHeight * scale;
+    target.style.left = (vRect.left - sRect.left + (vRect.width - w) / 2) + "px";
+    target.style.top = (vRect.top - sRect.top + (vRect.height - h) / 2) + "px";
+    target.style.width = w + "px";
+    target.style.height = h + "px";
+    target.style.display = "block";
+  }
+  {
+    const rv = $("remote-video");
+    rv.addEventListener("loadedmetadata", positionSnapTarget);
+    rv.addEventListener("resize", positionSnapTarget);
+    window.addEventListener("resize", positionSnapTarget);
+    if (window.ResizeObserver) new ResizeObserver(positionSnapTarget).observe(rv);
+  }
+  $("snap-target").addEventListener("click", captureRemoteFrame);
+
+  $("mic-btn").addEventListener("click", () => {
+    if (!localStream) return;
+    const tracks = localStream.getAudioTracks();
+    const on = !tracks.every(t => t.enabled);
+    tracks.forEach(t => t.enabled = on);
+    $("mic-btn").classList.toggle("off", !on);
+    $("mic-btn").setAttribute("aria-label", on ? "Mute microphone" : "Unmute microphone");
+  });
+  $("cam-btn").addEventListener("click", () => {
+    if (!localStream) return;
+    const tracks = localStream.getVideoTracks();
+    const on = !tracks.every(t => t.enabled);
+    tracks.forEach(t => t.enabled = on);
+    $("cam-btn").classList.toggle("off", !on);
+    $("cam-btn").setAttribute("aria-label", on ? "Turn camera off" : "Turn camera on");
+  });
+  let flipping = false;
+  $("flip-btn").addEventListener("click", async () => {
+    if (!localStream || !pc || flipping) return;
+    const oldTrack = localStream.getVideoTracks()[0];
+    if (!oldTrack) return;
+    flipping = true;
+    $("flip-btn").disabled = true;
+    const previousFacing = currentFacing;
+    const wantFacing = currentFacing === "user" ? "environment" : "user";
+    const wasEnabled = oldTrack.enabled;
+    const sender = pc.getSenders().find(s => s.track && s.track.kind === "video");
+
+    // Release the current camera before asking for the other one — most phones
+    // only let one capture session use the camera hardware at a time, so
+    // requesting the new facing mode while the old track is still live fails
+    // on many devices. This briefly freezes the local preview, which is expected.
+    localStream.removeTrack(oldTrack);
+    oldTrack.stop();
+
+    async function swapIn(facing) {
+      const baseVideo = { width: { ideal: 1280 }, height: { ideal: 960 }, aspectRatio: { ideal: 4 / 3 } };
+      let newStream;
+      if (facing === "environment") {
+        // Try to target the main rear camera by deviceId first (avoids
+        // landing on an ultra-wide lens); fall back to plain facingMode
+        // if we can't identify it or that device fails.
+        const backId = await pickPrimaryBackCameraId();
+        try {
+          if (backId) {
+            newStream = await navigator.mediaDevices.getUserMedia({
+              video: { ...baseVideo, deviceId: { exact: backId } },
+              audio: false
+            });
+          } else {
+            throw new Error("no-primary-back-camera-id");
+          }
+        } catch (e) {
+          newStream = await navigator.mediaDevices.getUserMedia({
+            video: { ...baseVideo, facingMode: { ideal: facing } },
+            audio: false
+          });
+        }
+      } else {
+        newStream = await navigator.mediaDevices.getUserMedia({
+          video: { ...baseVideo, facingMode: { ideal: facing } },
+          audio: false
+        });
+      }
+      const newTrack = newStream.getVideoTracks()[0];
+      newTrack.enabled = wasEnabled;
+      if (sender) await sender.replaceTrack(newTrack);
+      localStream.addTrack(newTrack);
+      $("local-video").srcObject = localStream;
+      return facing;
+    }
+
+    try {
+      currentFacing = await swapIn(wantFacing);
+      $("call").classList.toggle("facing-environment", currentFacing === "environment");
+    } catch (e) {
+      // Switch failed — try to get the original camera back rather than
+      // leaving the call with no outgoing video at all.
+      try {
+        currentFacing = await swapIn(previousFacing);
+        $("call").classList.toggle("facing-environment", currentFacing === "environment");
+        toast("Could not switch cameras.");
+      } catch (e2) {
+        toast("Could not switch cameras. Camera access was lost — you may need to rejoin the call.");
+      }
+    } finally {
+      flipping = false;
+      $("flip-btn").disabled = false;
+    }
+  });
+
+  /* ---------- Keep the header visible when the mobile keyboard opens ---------- */
+  function fitToViewport() {
+    const vv = window.visualViewport;
+    const appEl = $("app");
+    if (!vv) return;
+    appEl.style.height = vv.height + "px";
+    appEl.style.top = vv.offsetTop + "px";
+    // undo the browser's own "scroll the page to show the input" jump
+    if (window.scrollY !== 0) window.scrollTo(0, 0);
+    const box = $("messages");
+    if (box && document.activeElement === $("msg-input")) box.scrollTop = box.scrollHeight;
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", fitToViewport);
+    window.visualViewport.addEventListener("scroll", fitToViewport);
+  }
+  $("msg-input").addEventListener("focus", () => {
+    setTimeout(fitToViewport, 50);
+    setTimeout(fitToViewport, 300);   // iOS animates the keyboard, so re-check after it finishes
+  });
+  $("msg-input").addEventListener("blur", () => {
+    const appEl = $("app");
+    appEl.style.height = "";
+    appEl.style.top = "";
+  });
+
+  /* ---------------- Boot ---------------- */
+  (async function boot() {
+    // No login or photo check here: index.html does that once and saves the result for this tab.
+    let saved = null;
+    try { saved = JSON.parse(sessionStorage.getItem("OUTR_community_session")); } catch (e) { /* unreadable */ }
+    if (!saved || !saved.id) {                       // opened directly, so let index.html set things up first
+      $("boot-msg").textContent = "Opening the community…";
+      location.replace("index.html");
+      return;
+    }
+    const id = saved.id;
+    const profile = { name: saved.username, photoUrl: safePhoto(saved.photoUrl) };
+    me = { id, username: profile.name, photoUrl: profile.photoUrl, isSpecial: false };
+
+    // Publish this person's name + picture so everyone else's contact list shows them.
+    try {
+      await update(ref(db, "users/" + id), {
+        username: profile.name,
+        photoUrl: profile.photoUrl,
+        updatedAt: serverTimestamp()
+      });
+    } catch (e) { /* can't reach the community database — the app still opens and retries on reload */ }
+
+    // Special accounts are listed by the admin at special_user/<emailKey> in the community database.
+    try {
+      const sp = await get(ref(db, "special_user/" + id));
+      me.isSpecial = sp.exists() && sp.val() !== false;
+    } catch (e) { /* treat as a regular account */ }
+
+    if (leaving) return;
+    startApp(me);
+  })();
+</script>
+</body>
+</html>
