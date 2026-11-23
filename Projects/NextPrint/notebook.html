@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e9ecf1">
+<title>Notebooks · NextPrint</title>
+<meta name="description" content="Buy notebooks and pick them up at Room No. 136">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#e9ecf1; --paper:#fff; --key:#16161a; --mute:#5d6370; --rule:#dfe3ea; --c:#00a3e0; --m:#e6007e; --y:#ffd400; --open:#0f9158; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--bg); color:var(--key); font-family:"Instrument Sans",system-ui,sans-serif; line-height:1.45; -webkit-font-smoothing:antialiased; min-height:100dvh; }
+  .app { max-width:440px; margin:0 auto; padding:calc(18px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom)); }
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .mark { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.45rem; letter-spacing:-.03em; color:var(--key); text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+  .cmy { display:inline-flex; }
+  .cmy i { width:12px; height:12px; border-radius:50%; mix-blend-mode:multiply; margin-right:-4px; }
+  .cmy i:nth-child(1){background:var(--c)} .cmy i:nth-child(2){background:var(--m)} .cmy i:nth-child(3){background:var(--y)}
+  .back { font-size:.82rem; font-weight:600; padding:7px 12px; border-radius:999px; background:var(--paper); border:1px solid var(--rule); color:var(--key); text-decoration:none; }
+
+  h1 { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:2.3rem; line-height:1; letter-spacing:-.035em; margin:8px 0 8px; }
+  .lead { margin:0 0 20px; color:var(--mute); }
+
+  .list { list-style:none; margin:0; padding:0; background:var(--paper); border:1px solid var(--rule); border-radius:18px; }
+  .item { display:flex; align-items:center; gap:14px; padding:14px 16px; }
+  .item + .item { border-top:1px solid var(--rule); }
+  .cover { flex:none; width:52px; height:66px; border-radius:4px 8px 8px 4px; position:relative; box-shadow:inset 5px 0 0 rgba(0,0,0,.18), 0 6px 12px -6px rgba(22,22,26,.5); }
+  .cover::after { content:""; position:absolute; left:14px; right:8px; top:14px; height:14px; border-radius:3px; background:rgba(255,255,255,.85); }
+  .cover { width:76px; height:100px; overflow:hidden; }
+  .cover::after { display:none; }
+  .cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+  .price s { font-family:"Instrument Sans",sans-serif; font-weight:500; font-size:.8rem; color:var(--mute); }
+  .item .price { display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; }
+  .price em { white-space:nowrap; line-height:1.4; font-style:normal; font-family:"Instrument Sans",sans-serif; font-weight:600; font-size:.72rem; color:#fff; background:var(--open); padding:2px 7px; border-radius:999px; }
+  .info { flex:1; min-width:0; }
+  .info b { display:block; font-weight:600; }
+  .info span { font-size:.82rem; color:var(--mute); }
+  .price { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.15rem; margin-top:2px; }
+  .price small { font-family:"Instrument Sans",sans-serif; font-weight:500; font-size:.78rem; color:var(--mute); letter-spacing:0; }
+  .info .sub { display:block; font-size:.8rem; font-weight:600; color:var(--open); }
+  .qty { display:flex; align-items:center; gap:2px; background:var(--bg); border-radius:12px; padding:3px; }
+  .qty button { width:32px; height:32px; border:0; border-radius:9px; background:var(--paper); font-size:1.1rem; font-weight:600; color:var(--key); cursor:pointer; }
+  .qty button:active { transform:scale(.92); }
+  .qty output { min-width:26px; text-align:center; font-weight:600; }
+
+  .pickup { margin-top:14px; display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--paper); border:1px solid var(--rule); border-radius:18px; }
+  .plate { flex:none; width:54px; height:54px; border-radius:12px; background:var(--key); color:#fff; display:grid; place-items:center; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.4rem; }
+  .pickup h2 { margin:0; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; }
+  .pickup p { margin:0; font-size:.86rem; color:var(--mute); }
+
+  .slip { display:none; margin-top:14px; background:var(--paper); border-radius:18px; padding:20px; border:1.5px dashed var(--rule); }
+  .slip.show { display:block; }
+  .slip h3 { margin:0 0 4px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.4rem; color:var(--open); }
+  .slip ul { margin:10px 0; padding:0; list-style:none; font-size:.95rem; }
+  .slip li { display:flex; justify-content:space-between; padding:3px 0; }
+  .slip .tot { border-top:1.5px dashed var(--rule); padding-top:8px; font-weight:600; }
+  .slip small { color:var(--mute); }
+
+  .dock { position:fixed; left:0; right:0; bottom:0; z-index:10; padding:28px 16px calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(to top,var(--bg) 55%,rgba(233,236,241,0)); pointer-events:none; }
+  .go { pointer-events:auto; max-width:408px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 22px; height:58px; width:100%; border:0; border-radius:18px; background:var(--key); color:#fff; font:600 1.06rem "Instrument Sans",sans-serif; box-shadow:0 14px 26px -12px rgba(22,22,26,.7); cursor:pointer; transition:transform .14s; }
+  .go:active { transform:scale(.97); }
+  .go:disabled { background:#a9aeb9; box-shadow:none; cursor:default; }
+  .go strong { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.2rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a href="index.html" class="mark"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span>NextPrint</a>
+    <a href="index.html" class="back">&larr; Back</a>
+  </header>
+
+  <h1>Notebooks</h1>
+  <p class="lead">Pick your notebooks and collect them at the print desk.</p>
+
+  <ul class="list" id="list"></ul>
+
+  <section class="pickup">
+    <span class="plate" aria-hidden="true">136</span>
+    <div>
+      <h2>Pick up at Room No. 136</h2>
+      <p>Pay at the desk. Collect during shop hours.</p>
+    </div>
+  </section>
+
+  <section class="slip" id="slip" aria-live="polite"></section>
+</div>
+
+<div class="dock">
+  <button class="go" id="go" disabled><span id="goLabel">Select a notebook</span><strong id="goTotal"></strong></button>
+</div>
+
+<script>
+/* Edit names, prices and colours here */
+var PRODUCTS = [
+  { id: 'qw-a4-ruled', name: 'Quick Work Ruled Notebook', note: '21 \u00D7 29.7 cm (A4) \u00B7 Ruled \u00B7 140 pages', mrp: 80, price: 60, color: '#7ac70c', img: 'notebook1.jpg' },
+  { id: 'cw-spiral', name: 'Cube Works Spiral Notebook', note: '14.7 \u00D7 20.5 cm \u00B7 Spiral, ruled \u00B7 160 pages', mrp: 160, price: 60, color: '#e0262b', img: 'notebook3.jpg' },
+  { id: 'cw-5-subject', name: 'Cube Works 5 Subject Notebook Spiral', note: '14.7 \u00D7 20.5 cm \u00B7 Single ruled \u00B7 300 pages', mrp: 300, price: 100, color: '#1ea7d8', img: 'notebook2.jpg' }
+];
+var qty = {};
+var list = document.getElementById('list');
+var go = document.getElementById('go');
+var slip = document.getElementById('slip');
+
+PRODUCTS.forEach(function (p) {
+  qty[p.id] = 0;
+  var li = document.createElement('li');
+  li.className = 'item';
+  li.innerHTML =
+    '<span class="cover" style="background:' + p.color + '"><img src="' + p.img + '" alt="' + p.name + '" onerror="this.remove()"></span>' +
+    '<div class="info"><b>' + p.name + '</b><span>' + p.note + '</span><div class="price">\u20B9' + p.price + ' <small>/ copy</small> <s>\u20B9' + p.mrp + '</s> <em>Save \u20B9' + (p.mrp - p.price) + '</em></div><span class="sub" id="s-' + p.id + '"></span></div>' +
+    '<div class="qty"><button type="button" aria-label="Remove one ' + p.name + '">\u2212</button><output id="q-' + p.id + '">0</output><button type="button" aria-label="Add one ' + p.name + '">+</button></div>';
+  var b = li.querySelectorAll('button');
+  b[0].onclick = function () { change(p.id, -1); };
+  b[1].onclick = function () { change(p.id, 1); };
+  list.appendChild(li);
+});
+
+function change(id, d) {
+  qty[id] = Math.max(0, Math.min(20, qty[id] + d));
+  document.getElementById('q-' + id).textContent = qty[id];
+  var pr = PRODUCTS.filter(function (x) { return x.id === id; })[0];
+  document.getElementById('s-' + id).textContent = qty[id] ? qty[id] + ' \u00D7 \u20B9' + pr.price + ' = \u20B9' + qty[id] * pr.price : '';
+  slip.classList.remove('show');
+  update();
+}
+function totals() {
+  var n = 0, t = 0;
+  PRODUCTS.forEach(function (p) { n += qty[p.id]; t += qty[p.id] * p.price; });
+  return { n: n, t: t };
+}
+function update() {
+  var s = totals();
+  go.disabled = s.n === 0;
+  document.getElementById('goLabel').textContent = s.n ? 'Reserve ' + s.n + (s.n > 1 ? ' items' : ' item') : 'Select a notebook';
+  document.getElementById('goTotal').textContent = s.n ? '\u20B9' + s.t : '';
+}
+go.onclick = function () {
+  var s = totals(), rows = '';
+  PRODUCTS.forEach(function (p) {
+    if (qty[p.id]) rows += '<li><span>' + qty[p.id] + ' \u00D7 ' + p.name + ' (\u20B9' + p.price + '/copy)</span><span>\u20B9' + qty[p.id] * p.price + '</span></li>';
+  });
+  var code = 'NB-' + Math.floor(1000 + Math.random() * 9000);
+  slip.innerHTML = '<h3>Show this at Room 136</h3><small>Order code ' + code + '</small><ul>' + rows +
+    '<li class="tot"><span>Total to pay</span><span>\u20B9' + s.t + '</span></li></ul><small>Pay at the print desk when you collect.</small>';
+  slip.classList.add('show');
+  slip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
+update();
+</script>
+</body>
+</html>
