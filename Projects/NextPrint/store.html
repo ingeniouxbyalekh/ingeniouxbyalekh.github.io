@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e9ecf1">
+<title>Store · NextPrint</title>
+<meta name="description" content="Buy stationery and notebooks and pick them up at Room No. 136">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Instrument+Sans:wght@400;500;600&family=Fraunces:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#e9ecf1; --paper:#fff; --key:#16161a; --mute:#5d6370; --rule:#dfe3ea; --c:#00a3e0; --m:#e6007e; --y:#ffd400; --open:#0f9158; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; background:var(--bg); color:var(--key); font-family:"Instrument Sans",system-ui,sans-serif; line-height:1.45; -webkit-font-smoothing:antialiased; min-height:100dvh; }
+  .app { max-width:440px; margin:0 auto; padding:calc(18px + env(safe-area-inset-top)) 16px calc(120px + env(safe-area-inset-bottom)); }
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .mark { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.45rem; letter-spacing:-.03em; color:var(--key); text-decoration:none; display:inline-flex; align-items:center; gap:8px; }
+  .cmy { display:inline-flex; }
+  .cmy i { width:12px; height:12px; border-radius:50%; mix-blend-mode:multiply; margin-right:-4px; }
+  .cmy i:nth-child(1){background:var(--c)} .cmy i:nth-child(2){background:var(--m)} .cmy i:nth-child(3){background:var(--y)}
+  .back { font-size:.82rem; font-weight:600; padding:7px 12px; border-radius:999px; background:var(--paper); border:1px solid var(--rule); color:var(--key); text-decoration:none; }
+
+  h1 { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:2.3rem; line-height:1; letter-spacing:-.035em; margin:8px 0 8px; }
+  .lead { margin:0 0 20px; color:var(--mute); }
+
+  .list { list-style:none; margin:0; padding:0; background:var(--paper); border:1px solid var(--rule); border-radius:18px; }
+  .cat { margin:22px 2px 10px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; letter-spacing:-.01em; }
+  .cat:first-child { margin-top:0; }
+  .cat + .list { margin-bottom:0; }
+  .newtag { display:inline-block; vertical-align:middle; margin-left:6px; font-family:"Instrument Sans",sans-serif; font-weight:600; font-size:.66rem; letter-spacing:.04em; text-transform:uppercase; color:#fff; background:var(--m); padding:2px 7px; border-radius:999px; }
+  .item { align-items:center; gap:14px; padding:14px 16px; }
+  .item + .item { border-top:1px solid var(--rule); }
+  .cover { flex:none; width:52px; height:66px; border-radius:4px 8px 8px 4px; position:relative; box-shadow:inset 5px 0 0 rgba(0,0,0,.18), 0 6px 12px -6px rgba(22,22,26,.5); }
+  .cover::after { content:""; position:absolute; left:14px; right:8px; top:14px; height:14px; border-radius:3px; background:rgba(255,255,255,.85); }
+  .cover { width:76px; height:100px; overflow:hidden; }
+  .cover::after { display:none; }
+  .cover img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+  .price s { font-family:"Instrument Sans",sans-serif; font-weight:500; font-size:.8rem; color:var(--mute); }
+  .item .price { display:flex; flex-wrap:wrap; align-items:center; gap:2px 6px; }
+  .price em { white-space:nowrap; line-height:1.4; font-style:normal; font-family:"Instrument Sans",sans-serif; font-weight:600; font-size:.72rem; color:#fff; background:var(--open); padding:2px 7px; border-radius:999px; }
+  .info { flex:1; min-width:0; }
+  .info b { display:block; font-weight:600; }
+  .info span { font-size:.82rem; color:var(--mute); }
+  .price { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.15rem; margin-top:2px; }
+  .price small { font-family:"Instrument Sans",sans-serif; font-weight:500; font-size:.78rem; color:var(--mute); letter-spacing:0; }
+  .info .sub { display:block; font-size:.8rem; font-weight:600; color:var(--open); }
+  .qty { display:flex; align-items:center; gap:2px; background:var(--bg); border-radius:12px; padding:3px; }
+  .qty button { width:32px; height:32px; border:0; border-radius:9px; background:var(--paper); font-size:1.1rem; font-weight:600; color:var(--key); cursor:pointer; }
+  .qty button:active { transform:scale(.92); }
+  .qty output { min-width:26px; text-align:center; font-weight:600; }
+
+  .pickup { margin-top:14px; display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--paper); border:1px solid var(--rule); border-radius:18px; }
+  .plate { flex:none; width:54px; height:54px; border-radius:12px; background:var(--key); color:#fff; display:grid; place-items:center; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.4rem; }
+  .pickup h2 { margin:0; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.05rem; }
+  .pickup p { margin:0; font-size:.86rem; color:var(--mute); }
+
+  .slip { display:none; margin-top:14px; background:var(--paper); border-radius:18px; padding:20px; border:1.5px dashed var(--rule); }
+  .slip.show { display:block; }
+  .slip h3 { margin:0 0 4px; font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.4rem; color:var(--open); }
+  .slip ul { margin:10px 0; padding:0; list-style:none; font-size:.95rem; }
+  .slip li { display:flex; justify-content:space-between; padding:3px 0; }
+  .slip .tot { border-top:1.5px dashed var(--rule); padding-top:8px; font-weight:600; }
+  .slip small { color:var(--mute); }
+
+  .dock { position:fixed; left:0; right:0; bottom:0; z-index:10; padding:28px 16px calc(14px + env(safe-area-inset-bottom)); background:linear-gradient(to top,var(--bg) 55%,rgba(233,236,241,0)); pointer-events:none; }
+  .go { pointer-events:auto; max-width:408px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 22px; height:58px; width:100%; border:0; border-radius:18px; background:var(--key); color:#fff; font:600 1.06rem "Instrument Sans",sans-serif; box-shadow:0 14px 26px -12px rgba(22,22,26,.7); cursor:pointer; transition:transform .14s; }
+  .go:active { transform:scale(.97); }
+  .go:disabled { background:#a9aeb9; box-shadow:none; cursor:default; }
+  .go strong { font-family:"Bricolage Grotesque",sans-serif; font-weight:800; font-size:1.2rem; }
+  .slip .err { color:#b3261e; font-weight:600; }
+  .item.out .cover, .item.out .info { opacity:.55; }
+  .stk { display:inline-block; margin-top:3px; font-size:.74rem; font-weight:600; padding:2px 8px; border-radius:999px; background:#fdf0d9; color:#8a5200; }
+  .stk.out { background:#fbe3e1; color:#b3261e; }
+  .qty button:disabled { opacity:.35; cursor:default; }
+  .empty { padding:22px 16px; text-align:center; color:var(--mute); }
+
+  /* ============ token screen (same look as upload.html) ============ */
+  html.tk-mode { font-size: 15px; }
+  body.tk-mode { background: #f4f2ea; }
+  body.tk-mode .app, body.tk-mode .dock { display: none; }
+  #tkScreen { --bg:#f4f2ea; --paper-dim:#ebe8dd; --card:#fff; --ink:#17181c; --ink-soft:#62625c; --line:#e3e0d4; --red:#c6332e; --red-dark:#a02722; --blue:#1f5fa8; --ok:#2f7a4d; --r:18px; --r-sm:12px; --shadow:0 1px 2px rgba(23,24,28,.05), 0 6px 18px rgba(23,24,28,.06); color:var(--ink); font-family:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif; line-height:1.4; min-height:100vh; }
+  #tkScreen[hidden] { display: none; }
+  #tkScreen button { font: inherit; color: inherit; touch-action: manipulation; }
+  #tkScreen h2, #tkScreen h3, #tkScreen h4 { font-family:"Fraunces",Georgia,serif; font-weight:600; margin:0; letter-spacing:-.01em; line-height:1.12; }
+  #tkScreen textarea { font-size: 16px; }
+  #tkScreen .tkapp { max-width: 520px; margin: 0 auto; padding: 14px 14px 60px; }
+  #tkScreen .btn-primary { background: var(--ink); color: #fff; }
+  #tkScreen .btn-outline { background: #fff; border-color: var(--ink); color: var(--ink); }
+  #tkScreen .b.items ul { list-style: none; margin: 8px 0 0; padding: 0; font-size: .92rem; }
+  #tkScreen .b.items li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; }
+  #tkScreen .b.items li.tot { border-top: 1.5px dashed var(--line); margin-top: 4px; padding-top: 8px; font-weight: 600; }
+  #tkScreen footer { text-align: center; font-size: .74rem; color: var(--ink-soft); padding: 18px 16px 0; }
+  @keyframes burst { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes pop { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+  #tkScreen .site-header { position: sticky; top: 0; z-index: 30; background: rgba(244,242,234,.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  #tkScreen .site-header .in { max-width: 520px; margin: 0 auto; padding: 0 14px; height: 48px; display: flex; align-items: center; justify-content: space-between; }
+  #tkScreen .logo { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.25rem; color: var(--ink); text-decoration: none; }
+  #tkScreen .logo .dot { color: var(--red); }
+  #tkScreen .room-pill { font-size: .76rem; font-weight: 500; padding: 5px 11px; border-radius: 999px; background: var(--paper-dim); color: var(--ink); text-decoration: none; }
+  #tkScreen .msg { padding: 11px 14px; border-radius: var(--r-sm); font-size: .88rem; margin-bottom: 12px; display: flex; gap: 8px; align-items: flex-start; }
+  #tkScreen .msg.error { background: #fbeceb; color: var(--red-dark); border: 1px solid #f0c9c7; }
+  #tkScreen .msg.success { background: #eef6f0; color: var(--ok); border: 1px solid #c9e4d1; }
+  #tkScreen .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1.5px solid transparent; border-radius: 14px; padding: 14px 18px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: background .15s, transform .1s, opacity .15s; width: 100%; min-height: 50px; }
+  #tkScreen .btn:active { transform: scale(.98); }
+  #tkScreen .btn:disabled { opacity: .55; cursor: not-allowed; }
+  #tkScreen .btn-primary { background: var(--ink); color: #fff; }
+  #tkScreen .btn-primary:hover:not(:disabled) { background: var(--red-dark); }
+  #tkScreen .btn-outline { background: #fff; border-color: var(--ink); color: var(--ink); }
+  #tkScreen .btn-outline:hover { border-color: var(--red); color: var(--red); }
+  #tkScreen .done-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  #tkScreen .done-head .check { width: 42px; height: 42px; border-radius: 50%; background: #e6f3ea; color: var(--ok); display: grid; place-items: center; flex: none; animation: burst .45s cubic-bezier(.2,1.4,.4,1); }
+  #tkScreen .done-head h2 { font-size: 1.4rem; }
+  #tkScreen .done-head p { margin: 0; font-size: .84rem; color: var(--ink-soft); }
+  #tkScreen .bento { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  #tkScreen .b { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 14px; box-shadow: var(--shadow); }
+  #tkScreen .b.wide { grid-column: 1 / -1; }
+  #tkScreen .b .k { font-size: .66rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; color: var(--ink-soft); }
+  #tkScreen .b .v { font-size: 1.05rem; font-weight: 600; margin-top: 4px; }
+  #tkScreen .b .s { font-size: .74rem; color: var(--ink-soft); }
+  #tkScreen .b.token { background: var(--red); border-color: var(--red); color: #fff; text-align: center; padding: 20px 16px; position: relative; overflow: hidden; animation: burst .5s cubic-bezier(.2,1.2,.4,1); }
+  #tkScreen .b.token::before, #tkScreen .b.token::after { content: ""; position: absolute; top: 50%; width: 22px; height: 22px; border-radius: 50%; background: var(--bg); transform: translateY(-50%); }
+  #tkScreen .b.token::before { left: -11px; } #tkScreen .b.token::after { right: -11px; }
+  #tkScreen .b.token .k { color: rgba(255,255,255,.75); }
+  #tkScreen .b.token .code { font-family: "IBM Plex Mono", monospace; font-size: 3.6rem; font-weight: 500; letter-spacing: .2em; padding-left: .2em; line-height: 1.1; margin: 4px 0 10px; }
+  #tkScreen .b.token .copy { border: 1.5px solid rgba(255,255,255,.65); background: transparent; color: #fff; border-radius: 999px; padding: 8px 18px; font-size: .84rem; cursor: pointer; }
+  #tkScreen .b.token .copy:active { background: #fff; color: var(--red); }
+  #tkScreen .survey { position: relative; padding: 18px 14px 14px; text-align: center; overflow: hidden; background: linear-gradient(180deg, #fffdf7 0%, #fff 60%); }
+  #tkScreen .survey::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: linear-gradient(90deg, var(--red), #e0a210, var(--ok)); }
+  #tkScreen .survey-skip { position: absolute; top: 10px; right: 10px; font-size: .74rem; color: var(--ink-soft); background: var(--paper-dim); border: none; border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  #tkScreen .survey h4 { font-size: 1.05rem; margin-bottom: 4px; }
+  #tkScreen .stars { display: flex; justify-content: center; }
+  #tkScreen .stars button { font-size: 2.4rem; line-height: 1; background: none; border: none; cursor: pointer; color: #dcd8ca; padding: 0 4px; transition: transform .15s, color .15s; }
+  #tkScreen .stars button.on { color: #f0b010; }
+  #tkScreen .stars button:active { transform: scale(1.15); }
+  #tkScreen .rate-label { min-height: 1.3em; font-size: .84rem; font-weight: 600; color: var(--ink-soft); }
+  #tkScreen .survey[data-tone="low"] .rate-label { color: var(--red); }
+  #tkScreen .survey[data-tone="mid"] .rate-label { color: #b27a00; }
+  #tkScreen .survey[data-tone="high"] .rate-label { color: var(--ok); }
+  #tkScreen .survey-more { display: none; margin-top: 10px; text-align: left; }
+  #tkScreen .survey-more.show { display: block; animation: pop .25s ease; }
+  #tkScreen .survey-title { font-size: .86rem; font-weight: 600; margin-bottom: 8px; text-align: center; }
+  #tkScreen .survey-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-bottom: 10px; }
+  #tkScreen .survey-opt { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 999px; font-size: .8rem; cursor: pointer; background: #fff; user-select: none; }
+  #tkScreen .survey-opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; display: block; }
+  #tkScreen .survey-opt .tick { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid #b9b5a8; display: grid; place-items: center; font-size: .54rem; color: transparent; flex: none; }
+  #tkScreen .survey-opt:has(input:checked) { background: var(--ink); border-color: var(--ink); color: #fff; }
+  #tkScreen .survey-opt:has(input:checked) .tick { background: #fff; border-color: #fff; color: var(--ink); }
+  #tkScreen .survey textarea { width: 100%; min-height: 60px; font: inherit; font-size: 16px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; resize: vertical; background: #fcfbf7; }
+  #tkScreen .survey textarea:focus { outline: none; border-color: var(--ink); background: #fff; }
+  #tkScreen .survey-submit { margin-top: 8px; width: 100%; font-weight: 600; padding: 13px; border: none; border-radius: 12px; cursor: pointer; color: #fff; background: var(--ink); }
+  #tkScreen .survey[data-tone="low"] .survey-submit { background: var(--red); }
+  #tkScreen .survey[data-tone="mid"] .survey-submit { background: #d9970a; }
+  #tkScreen .survey[data-tone="high"] .survey-submit { background: var(--ok); }
+  #tkScreen .survey-submit:disabled { opacity: .65; }
+  #tkScreen .survey-thanks { padding: 10px 0 4px; font-weight: 600; color: var(--ok); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <a href="index.html" class="mark"><span class="cmy" aria-hidden="true"><i></i><i></i><i></i></span>NextPrint</a>
+    <a href="index.html" class="back">&larr; Back</a>
+  </header>
+
+  <h1>Store</h1>
+  <p class="lead">Pick what you need and collect it at the print desk.</p>
+
+  <div id="list"><ul class="list"><li class="item"><div class="info"><span>Loading…</span></div></li></ul></div>
+
+  <section class="pickup">
+    <span class="plate" aria-hidden="true">136</span>
+    <div>
+      <h2>Pick up at Room No. 136</h2>
+      <p>Pay online and get your token. Show it at the desk to collect.</p>
+    </div>
+  </section>
+
+  <section class="slip" id="slip" aria-live="polite"></section>
+</div>
+
+<div id="tkScreen" hidden>
+  <header class="site-header">
+    <div class="in">
+      <a href="index.html" class="logo">Next<span class="dot">Print</span></a>
+      <span class="room-pill">📍 Room 136</span>
+    </div>
+  </header>
+  <main class="tkapp" id="tkApp"></main>
+</div>
+
+<div class="dock">
+  <button class="go" id="go" disabled><span id="goLabel">Select an item</span><strong id="goTotal"></strong></button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="config.js"></script>
+<script>
+/* Products, prices and stock come from Firebase (store/products) and are
+   managed in admin.html -> Stock. Nothing to edit here. */
+var MAX_PER_ITEM = 20;
+var products = [];        // visible products, live from Firebase
+var qty = {};             // cart: product id -> quantity
+var list = document.getElementById('list');
+var go = document.getElementById('go');
+var slip = document.getElementById('slip');
+var busy = false;
+var db = null;
+try { firebase.initializeApp(CONFIG.firebase); db = firebase.database(); } catch (e) { console.error(e); }
+
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function find(id) { return products.filter(function (p) { return p.id === id; })[0]; }
+function limitFor(p) { return Math.min(MAX_PER_ITEM, p.stock); }
+function coverColor(name) {
+  var h = 0; for (var i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
+  return 'hsl(' + h + ',55%,48%)';
+}
+
+function normalize(id, v) {
+  return {
+    id: id,
+    name: String(v.name || 'Untitled'),
+    note: String(v.note || ''),
+    category: String(v.category || '').trim() || 'Other',
+    isNew: v.isNew === true,
+    mrp: Number(v.mrp) || 0,
+    price: Number(v.price) || 0,
+    stock: Math.max(0, Math.floor(Number(v.stock) || 0)),
+    lowAt: v.lowAt == null ? 5 : Number(v.lowAt) || 0,
+    img: String(v.img || ''),
+    active: v.active !== false,
+    createdAt: Number(v.createdAt) || 0
+  };
+}
+
+function itemHtml(p) {
+  var out = p.stock <= 0, q = qty[p.id] || 0;
+  var stk = out ? '<span class="stk out">Out of stock</span>' : (p.stock <= p.lowAt ? '<span class="stk">Only ' + p.stock + ' left</span>' : '');
+  var save = p.mrp > p.price ? ' <s>₹' + p.mrp + '</s> <em>Save ₹' + (p.mrp - p.price) + '</em>' : '';
+  return '<li class="item' + (out ? ' out' : '') + '" data-id="' + esc(p.id) + '">' +
+    '<span class="cover" style="background:' + coverColor(p.name) + '">' + (p.img ? '<img src="' + esc(p.img) + '" alt="' + esc(p.name) + '" onerror="this.remove()">' : '') + '</span>' +
+    '<div class="info"><b>' + esc(p.name) + (p.isNew ? '<span class="newtag">New</span>' : '') + '</b>' + (p.note ? '<span>' + esc(p.note) + '</span>' : '') +
+    '<div class="price">₹' + p.price + '' + save + '</div>' + stk +
+    '<span class="sub" id="s-' + esc(p.id) + '">' + subText(p, q) + '</span></div>' +
+    '<div class="qty"><button type="button" data-d="-1" aria-label="Remove one"' + (q <= 0 ? ' disabled' : '') + '>−</button>' +
+    '<output id="q-' + esc(p.id) + '">' + q + '</output>' +
+    '<button type="button" data-d="1" aria-label="Add one"' + (q >= limitFor(p) ? ' disabled' : '') + '>+</button></div></li>';
+}
+function subText(p, q) { return q ? q + ' × ₹' + p.price + ' = ₹' + q * p.price : ''; }
+
+function catCmp(x, y) {
+  if (x === y) return 0;
+  if (x === 'Other') return 1;
+  if (y === 'Other') return -1;
+  return x.toLowerCase().localeCompare(y.toLowerCase());
+}
+// inside a category: in-stock first (new arrivals, then price low to high),
+// out-of-stock products at the bottom
+function prodCmp(a, b) {
+  return ((a.stock <= 0 ? 1 : 0) - (b.stock <= 0 ? 1 : 0)) ||
+    ((a.isNew ? 0 : 1) - (b.isNew ? 0 : 1)) ||
+    (a.price - b.price) ||
+    a.name.localeCompare(b.name);
+}
+function groupedHtml() {
+  var groups = {};
+  products.forEach(function (p) { (groups[p.category] = groups[p.category] || []).push(p); });
+  return Object.keys(groups).sort(catCmp).map(function (c) {
+    return '<h2 class="cat">' + esc(c) + '</h2><ul class="list">' + groups[c].sort(prodCmp).map(itemHtml).join('') + '</ul>';
+  }).join('');
+}
+function listMsg(text) { list.innerHTML = '<ul class="list"><li class="empty">' + text + '</li></ul>'; }
+
+function render() {
+  if (!products.length) listMsg('No items available right now. Please check back soon.');
+  else list.innerHTML = groupedHtml();
+  update();
+}
+
+// in-place refresh of one row (so images don't reload on every tap)
+function refreshItem(p) {
+  var li = list.querySelector('[data-id="' + p.id.replace(/"/g, '') + '"]');
+  if (!li) return;
+  var q = qty[p.id] || 0;
+  document.getElementById('q-' + p.id).textContent = q;
+  document.getElementById('s-' + p.id).textContent = subText(p, q);
+  var b = li.querySelectorAll('.qty button');
+  b[0].disabled = q <= 0;
+  b[1].disabled = q >= limitFor(p);
+}
+
+list.addEventListener('click', function (e) {
+  var btn = e.target.closest('.qty button');
+  if (!btn || btn.disabled) return;
+  var id = btn.closest('.item').getAttribute('data-id');
+  change(id, Number(btn.getAttribute('data-d')));
+});
+
+function change(id, d) {
+  var p = find(id); if (!p) return;
+  qty[id] = Math.max(0, Math.min(limitFor(p), (qty[id] || 0) + d));
+  refreshItem(p);
+  slip.classList.remove('show');
+  update();
+}
+
+// keep the cart valid when stock/prices/visibility change live
+function sanitizeCart() {
+  Object.keys(qty).forEach(function (id) {
+    var p = find(id);
+    if (!p) { delete qty[id]; return; }
+    qty[id] = Math.min(qty[id], limitFor(p));
+    if (qty[id] <= 0) delete qty[id];
+  });
+}
+
+function totals() {
+  var n = 0, t = 0;
+  products.forEach(function (p) { var q = qty[p.id] || 0; n += q; t += q * p.price; });
+  return { n: n, t: t };
+}
+function update() {
+  var s = totals();
+  go.disabled = s.n === 0 || busy;
+  document.getElementById('goLabel').textContent = s.n ? 'Pay now · ' + s.n + (s.n > 1 ? ' items' : ' item') : 'Select an item';
+  document.getElementById('goTotal').textContent = s.n ? '₹' + s.t : '';
+}
+
+if (db) {
+  db.ref('store/products').on('value', function (snap) {
+    var v = snap.val() || {};
+    products = Object.keys(v).map(function (k) { return normalize(k, v[k] || {}); })
+      .filter(function (p) { return p.active; })
+      .sort(function (a, b) { return a.createdAt - b.createdAt; });
+    sanitizeCart();
+    render();
+  }, function (err) {
+    listMsg('Could not load the store (' + esc(err && err.message || err) + ').');
+  });
+} else {
+  listMsg('Could not connect to the store right now.');
+}
+
+function resetCart() { qty = {}; render(); }
+
+function showSlip(html) {
+  slip.innerHTML = html;
+  slip.classList.add('show');
+  slip.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Same sequential 4-digit token as the print requests (1001-9999),
+// advanced atomically so two customers never get the same number.
+async function nextToken() {
+  var r = await db.ref('tokenCounter/current').transaction(function (cur) {
+    if (!cur || cur >= 9999) return 1001;
+    return cur + 1;
+  });
+  return String(r.snapshot.val());
+}
+
+// Take the bought quantities out of stock (atomic per product). If two
+// people bought the last unit at the same moment, stock is clamped at 0 and
+// the shortfall is returned so the admin can see it on the order.
+async function takeStock(items) {
+  var short = [];
+  for (var k = 0; k < items.length; k++) {
+    var i = items[k];
+    try {
+      var ex = await db.ref('store/products/' + i.id + '/name').once('value');
+      if (!ex.exists()) continue;           // product was deleted meanwhile
+      var seen = 0;
+      await db.ref('store/products/' + i.id + '/stock').transaction(function (cur) {
+        seen = Number(cur) || 0;
+        return Math.max(0, seen - i.qty);
+      });
+      if (seen < i.qty) short.push({ id: i.id, name: i.name, wanted: i.qty, had: seen });
+    } catch (e) { console.error(e); }
+  }
+  return short;
+}
+
+go.onclick = async function () {
+  if (busy) return;
+  var s = totals();
+  if (!s.n) return;
+  if (!db || !CONFIG.paymentsEnabled || !window.Razorpay) {
+    showSlip('<p class="err">Online payment is unavailable right now. Please try again in a moment.</p>');
+    return;
+  }
+  busy = true; update();
+  slip.classList.remove('show');
+
+  // Re-check stock and prices against the database right before paying
+  var items = [], total = 0, problems = [];
+  try {
+    var fresh = (await db.ref('store/products').once('value')).val() || {};
+    products.forEach(function (shown) {
+      var q = qty[shown.id] || 0; if (!q) return;
+      var p = fresh[shown.id] ? normalize(shown.id, fresh[shown.id]) : null;
+      if (!p || !p.active) problems.push(esc(shown.name) + ' is no longer available.');
+      else if (p.stock < q) problems.push(esc(p.name) + ': only ' + p.stock + ' left.');
+      else if (p.price !== shown.price) problems.push(esc(p.name) + ' price changed to ₹' + p.price + '.');
+      else { items.push({ id: p.id, name: p.name, qty: q, price: p.price, total: q * p.price }); total += q * p.price; }
+    });
+  } catch (err) {
+    busy = false; update();
+    showSlip('<p class="err">Could not check stock (' + esc(err && err.message || err) + '). Please try again.</p>');
+    return;
+  }
+  if (problems.length) {
+    busy = false; update();
+    showSlip('<p class="err">Please review your order:</p><ul>' + problems.map(function (m) { return '<li>' + m + '</li>'; }).join('') + '</ul><small>The list above has been updated.</small>');
+    return;
+  }
+
+  var processing = false;
+  var rzp = new Razorpay({
+    key: CONFIG.razorpay.keyId,
+    amount: Math.round(total * 100),
+    currency: 'INR',
+    name: 'NextPrint',
+    description: 'Store order (' + s.n + (s.n > 1 ? ' items' : ' item') + ')',
+    handler: function (resp) { processing = true; finishOrder(items, total, resp.razorpay_payment_id); },
+    modal: { ondismiss: function () { if (!processing) { busy = false; update(); } } }
+  });
+  rzp.on('payment.failed', function (resp) {
+    busy = false; update();
+    var d = resp && resp.error && resp.error.description;
+    showSlip('<p class="err">Payment failed' + (d ? ': ' + esc(d) : '.') + ' You can try again.</p>');
+  });
+  rzp.open();
+};
+
+// Payment succeeded -> now (and only now) generate the token, reduce stock
+// and save the order to printRequests so it appears on the print desk.
+async function finishOrder(items, total, paymentId) {
+  showSlip('<h3>Payment received</h3><small>Generating your token…</small>');
+  try {
+    var token = await nextToken();
+    var short = await takeStock(items);
+    var ref = db.ref('printRequests').push();
+    var rec = {
+      token: token,
+      status: 'pending',
+      source: 'store',
+      items: items,
+      amount: total,
+      paidAmount: total,
+      paymentStatus: 'paid',
+      paymentId: paymentId,
+      paymentMethod: 'razorpay',
+      notes: 'Store order',
+      createdAt: firebase.database.ServerValue.TIMESTAMP
+    };
+    if (short.length) rec.stockShort = short;
+    await ref.set(rec);
+    resetCart();
+    busy = false; update();
+    renderToken(token, items, total, ref.key);
+  } catch (err) {
+    busy = false; update();
+    showSlip('<p class="err">Payment went through (ID: ' + esc(paymentId) + ') but we could not create your token (' + esc(err && err.message || err) + ').</p><small>Please show this payment ID at Room 136 to collect your items.</small>');
+  }
+}
+
+function renderToken(token, items, total, key) {
+  var rows = items.map(function (i) {
+    return '<li><span>' + i.qty + ' × ' + esc(i.name) + '</span><span>₹' + i.total + '</span></li>';
+  }).join('');
+  var tkApp = document.getElementById('tkApp');
+  tkApp.innerHTML =
+    '<div class="done-head">' +
+      '<div class="check"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>' +
+      '<div><h2>Order placed</h2><p>Payment received. Collect your items at the desk.</p></div>' +
+    '</div>' +
+    '<div class="bento">' +
+      '<div class="b token wide">' +
+        '<div class="k">Your token number</div>' +
+        '<div class="code" id="tokenCode">' + esc(token) + '</div>' +
+        '<button type="button" class="copy" id="copyToken">Copy token</button>' +
+      '</div>' +
+      '<div class="b"><div class="k">Collect from</div><div class="v">📍 Room 136</div><div class="s">Show your token</div></div>' +
+      '<div class="b"><div class="k">Amount</div><div class="v">₹' + total + '</div><div class="s">✓ Paid online</div></div>' +
+      '<div class="b items wide"><div class="k">Your items</div><ul>' + rows + '<li class="tot"><span>Paid</span><span>₹' + total + '</span></li></ul></div>' +
+      '<div class="b survey wide" id="survey">' +
+        '<button type="button" class="survey-skip" id="surveySkip">Skip</button>' +
+        '<h4>How was your experience?</h4>' +
+        '<div class="stars" id="surveyStars" role="radiogroup" aria-label="Rate your experience from 1 to 5">' +
+          [1,2,3,4,5].map(function (n) { return '<button type="button" data-n="' + n + '" role="radio" aria-checked="false" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '">★</button>'; }).join('') +
+        '</div>' +
+        '<div class="rate-label" id="rateLabel">Tap a star (optional)</div>' +
+        '<div class="survey-more" id="surveyMore"><div class="survey-title" id="surveyTitle"></div><div class="survey-opts" id="surveyOpts"></div>' +
+          '<textarea id="surveyComment" maxlength="500" placeholder="Anything else? (optional)"></textarea>' +
+          '<button type="button" class="survey-submit" id="surveySubmit">Submit feedback</button></div>' +
+      '</div>' +
+      '<div style="grid-column:1/-1"><button type="button" class="btn btn-outline" id="orderMoreBtn">＋ Order more items</button></div>' +
+    '</div>';
+
+  // switch from the store to the token screen
+  slip.classList.remove('show');
+  document.documentElement.classList.add('tk-mode');
+  document.body.classList.add('tk-mode');
+  document.getElementById('tkScreen').hidden = false;
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', '#f4f2ea');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  var cb = document.getElementById('copyToken');
+  cb.addEventListener('click', function () {
+    var done = function (t) { cb.textContent = t; setTimeout(function () { cb.textContent = 'Copy token'; }, 1800); };
+    try { navigator.clipboard.writeText(token).then(function () { done('Copied ✓'); }, function () { done('Press and hold to copy'); }); }
+    catch (e) { done('Press and hold to copy'); }
+  });
+  document.getElementById('orderMoreBtn').addEventListener('click', backToStore);
+  initSurvey(token, key);
+}
+
+function backToStore() {
+  document.getElementById('tkScreen').hidden = true;
+  document.getElementById('tkApp').innerHTML = '';
+  document.documentElement.classList.remove('tk-mode');
+  document.body.classList.remove('tk-mode');
+  var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', '#e9ecf1');
+  slip.classList.remove('show');
+  window.scrollTo({ top: 0 });
+}
+
+// Same feedback flow as the upload page: saved to feedback/ and added to
+// the running totals in ratingStats/ so the admin averages include it.
+var RATE_LABELS = { 1: 'Terrible', 2: 'Poor', 3: 'Okay', 4: 'Good', 5: 'Excellent' };
+var SURVEY_OPTIONS = {
+  1: { title: 'Sorry about that. What went wrong?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Wrong choices', 'Other'] },
+  2: { title: 'We can do better. What bothered you?', opts: ['Hard to use', 'Prices are high', 'Payment was confusing', 'Few product choices', 'Other'] },
+  3: { title: 'Thanks! What could be better?', opts: ['Easier to use', 'Lower prices', 'More product choices', 'Smoother payment', 'Other'] },
+  4: { title: 'Glad it went well! What worked?', opts: ['Easy to use', 'Fair prices', 'Smooth payment', 'Good products', 'Just minor issues'] },
+  5: { title: 'Awesome! What did you like?', opts: ['Super easy website', 'Great prices', 'Easy payment', 'Good products', 'Will use again'] }
+};
+function dayKey(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+function initSurvey(token, requestKey) {
+  var box = document.getElementById('survey');
+  if (!box) return;
+  var stars = [].slice.call(document.querySelectorAll('#surveyStars button'));
+  var more = document.getElementById('surveyMore'), optsEl = document.getElementById('surveyOpts');
+  var rating = 0;
+  document.getElementById('surveySkip').addEventListener('click', function () { box.remove(); });
+  stars.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var n = Number(btn.dataset.n), changed = n !== rating;
+      rating = n;
+      stars.forEach(function (s) {
+        s.classList.toggle('on', Number(s.dataset.n) <= n);
+        s.setAttribute('aria-checked', String(Number(s.dataset.n) === n));
+      });
+      box.dataset.tone = n <= 2 ? 'low' : n === 3 ? 'mid' : 'high';
+      document.getElementById('rateLabel').textContent = RATE_LABELS[n];
+      if (changed) {
+        var cfg = SURVEY_OPTIONS[n];
+        document.getElementById('surveyTitle').textContent = cfg.title;
+        optsEl.innerHTML = cfg.opts.map(function (o) {
+          return '<label class="survey-opt"><input type="checkbox" value="' + esc(o) + '"><span class="tick">✓</span><span>' + esc(o) + '</span></label>';
+        }).join('');
+      }
+      more.classList.add('show');
+    });
+  });
+  document.getElementById('surveySubmit').addEventListener('click', function (e) {
+    if (!rating) return;
+    var btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Sending…';
+    var reasons = [].slice.call(optsEl.querySelectorAll('input:checked')).map(function (i) { return i.value; });
+    var comment = document.getElementById('surveyComment').value.trim().slice(0, 500);
+    var dk = dayKey(new Date()), r = rating;
+    db.ref('feedback').push({
+      rating: r, reasons: reasons, comment: comment, token: token, requestKey: requestKey, source: 'store',
+      day: dk, createdAt: firebase.database.ServerValue.TIMESTAMP
+    }).then(function () {
+      return db.ref('ratingStats/days/' + dk).transaction(function (cur) {
+        cur = cur || { count: 0, sum: 0 };
+        return { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + r };
+      });
+    }).then(function () {
+      return db.ref('ratingStats/total').transaction(function (cur) {
+        cur = cur || { count: 0, sum: 0 };
+        var out = { count: (cur.count || 0) + 1, sum: (cur.sum || 0) + r };
+        for (var i = 1; i <= 5; i++) out['s' + i] = (cur['s' + i] || 0) + (i === r ? 1 : 0);
+        return out;
+      });
+    }).then(function () {
+      box.innerHTML = '<div class="survey-thanks">🙏 Thanks for your feedback!</div>';
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = 'Submit feedback';
+      alert('Could not send feedback right now. You can skip it, no problem.');
+    });
+  });
+}
+update();
+</script>
+</body>
+</html>

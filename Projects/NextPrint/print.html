@@ -711,8 +711,8 @@ function startDashboard() {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
 
-    if (!confirm(req.source === 'notebook'
-      ? `Mark notebook order (token ${req.token || ''}) as handed over?\n\nThis will remove it from the list.`
+    if (!confirm((req.source === 'store' || req.source === 'notebook')
+      ? `Mark store order (token ${req.token || ''}) as handed over?\n\nThis will remove it from the list.`
       : `Mark "${req.name || ('token ' + (req.token || ''))}" as printed?\n\nThis will permanently delete the request and its files.`)) {
       return;
     }
@@ -770,6 +770,19 @@ function startDashboard() {
     }
   };
 
+  // put cancelled store items back into stock (skips products that were deleted)
+  async function restoreStock(items) {
+    for (const i of (items || [])) {
+      const pid = i.id || i.productId;
+      if (!pid) continue;
+      try {
+        const ex = await db.ref('store/products/' + pid + '/name').once('value');
+        if (!ex.exists()) continue;
+        await db.ref('store/products/' + pid + '/stock').transaction(c => (Number(c) || 0) + (Number(i.qty) || 0));
+      } catch (e) { console.error(e); }
+    }
+  }
+
   window.cancelRequest = async function (id) {
     const req = allRequests.find(r => r.id === id);
     if (!req) return;
@@ -785,6 +798,7 @@ function startDashboard() {
       if (!ok) failed.push(f.name);
     }
 
+    if (req.source === 'store' || req.source === 'notebook') await restoreStock(req.items);
     await db.ref('printRequests/' + id).remove();
 
     if (failed.length) {
@@ -852,8 +866,10 @@ function renderCard(r) {
   const status = r.status || 'pending';
   const files = r.files || [];
   const isWA = r.source === 'whatsapp';
-  const isNB = r.source === 'notebook';
-  const items = r.items || [];
+  const paper = r.paper && Number(r.paper.qty) > 0 ? r.paper : null;
+  const paperOnly = !!paper && !files.length && !r.source;
+  const isNB = r.source === 'store' || r.source === 'notebook' || paperOnly;
+  const items = paperOnly ? [{ name: 'A4 paper', qty: paper.qty, price: paper.price, total: paper.total }] : (r.items || []);
   const itemCount = items.reduce((t, i) => t + (Number(i.qty) || 0), 0);
   const expanded = expandedIds.has(r.id);
   const hasPhotoPaper = files.some(f => f.printType === 'photo');
@@ -862,7 +878,8 @@ function renderCard(r) {
 
   const chips = [
     isWA ? `<span class="chip wa">${WA_ICON}WhatsApp</span>` : '',
-    isNB ? '<span class="chip nb">📓 Notebook</span>' : '',
+    isNB ? `<span class="chip nb">${paperOnly ? '📄 A4 paper' : '🛍 Store'}</span>` : '',
+    (isNB && (r.stockShort || []).length) ? '<span class="chip topay">⚠ Check stock</span>' : '',
     (!isWA || (r.amount || 0) > 0) ? (paid ? '<span class="chip paid">Paid</span>' : '<span class="chip topay">To pay</span>') : '',
     hasPhotoPaper ? '<span class="chip glossy">Glossy</span>' : '',
     status === 'printed' ? '<span class="chip printed">printed</span>' : '',
@@ -871,15 +888,16 @@ function renderCard(r) {
   const shown = files.slice(0, 2).map(f => escapeHtml(f.name)).join(', ');
   const more = files.length > 2 ? ` <span class="more">+${files.length - 2} more</span>` : '';
   const itemsText = items.map(i => (Number(i.qty) || 0) + ' × ' + escapeHtml(i.name)).join(', ');
+  const paperTag = (paper && !paperOnly) ? ` <span class="more">+ ${Number(paper.qty)} × A4 paper</span>` : '';
   const filesLine = isNB
     ? `<div class="pd-files" title="${escapeAttr(items.map(i => i.qty + ' × ' + i.name).join(', '))}">${itemsText}</div>`
     : isWA
     ? `<div class="pd-files wa">${WA_ICON}Files sent on WhatsApp</div>`
-    : `<div class="pd-files" title="${escapeAttr(files.map(f => f.name).join(', '))}">${shown}${more}</div>`;
+    : `<div class="pd-files" title="${escapeAttr(files.map(f => f.name).join(', '))}">${shown}${more}${paperTag}</div>`;
 
   const when = `<span title="${escapeAttr(formatDateTime(r.createdAt).replace('<br>', ' · '))}">${timeAgo(r.createdAt)}</span>`;
   const metaLine = isNB
-    ? `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${itemCount} notebook${itemCount === 1 ? '' : 's'} · ${when}</div>`
+    ? `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${itemCount} item${itemCount === 1 ? '' : 's'} · ${when}</div>`
     : isWA
     ? `<div class="pd-meta">${(r.amount || 0) > 0 ? '<b>₹' + r.amount + '</b> ' + (paid ? 'paid' : 'to pay') + ' · ' : 'Amount not set · '}${when}</div>`
     : `<div class="pd-meta"><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'} · ${files.length} file${files.length === 1 ? '' : 's'} · ${when}</div>`;
@@ -900,9 +918,9 @@ function renderCard(r) {
   const bodyHtml = expanded ? `
       <div class="pd-body">
         <div class="pd-spec">
-          ${isNB ? `<span><b>${itemCount}</b> notebook${itemCount === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}`
+          ${isNB ? `<span><b>${itemCount}</b> item${itemCount === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> ${paid ? 'paid' : 'to pay'}</span>${r.paymentId ? `<span>Payment ID: ${escapeHtml(r.paymentId)}</span>` : ''}${(r.stockShort || []).map(x => `<span>⚠ ${escapeHtml(x.name)}: ordered ${x.wanted}, only ${x.had} were in stock</span>`).join('')}`
           : isWA ? '<span><b>WhatsApp</b> request — the customer sends files in chat</span>'
-                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span><span><b>₹${r.amount || 0}</b> estimated</span>`}
+                 : `<span><b>${files.length}</b> file${files.length === 1 ? '' : 's'}</span>${paper ? `<span><b>${Number(paper.qty)}</b> × A4 paper (₹${Number(paper.total) || 0})</span>` : ''}<span><b>₹${r.amount || 0}</b> estimated</span>`}
         </div>
         ${r.notes && !isWA ? `<p class="pd-note">Note: ${escapeHtml(r.notes)}</p>` : ''}
         ${isNB ? items.map(i => `<div class="pd-file"><span>${Number(i.qty) || 0} × ${escapeHtml(i.name)} — ₹${i.total != null ? i.total : (Number(i.qty) || 0) * (Number(i.price) || 0)}</span></div>`).join('') : filesHtml}
