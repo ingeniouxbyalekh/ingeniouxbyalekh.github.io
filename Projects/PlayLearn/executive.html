@@ -883,7 +883,7 @@
     // Student type — "normal" unless the record says "special".
     const type = u.type === "special" ? "special" : "normal";
     return `
-      <tr data-key="${key}">
+      <tr data-key="${key}" data-type="${type}">
         <td><input type="text" class="cust-name" value="${name}" /></td>
         <td><input type="tel" class="cust-phone" value="${phone}" inputmode="numeric" maxlength="10" /></td>
         <td><input type="email" class="cust-email" value="${email}" /></td>
@@ -917,7 +917,11 @@
         return;
       }
       const users = snap.val();
-      const keys = Object.keys(users).sort((a, b) => String(users[b].regNo || "").localeCompare(String(users[a].regNo || ""), undefined, { numeric: true }));
+      // Special students first, then everyone else; each group by reg. no., highest first.
+      const isSp = (k) => (users[k].type === "special" ? 1 : 0);
+      const keys = Object.keys(users).sort((a, b) =>
+        (isSp(b) - isSp(a)) ||
+        String(users[b].regNo || "").localeCompare(String(users[a].regNo || ""), undefined, { numeric: true }));
       tbody.innerHTML = keys.map((key) => customerRowHTML(key, users[key])).join("");
     } catch (err) {
       console.error("Could not load students:", err);
@@ -1093,6 +1097,8 @@
         row.dataset.key = newKey;
         showToast("Email updated — account and history moved");
       }
+      // Type changed: reload so the student moves to its new place in the list.
+      if (row.dataset.type !== type) { row.dataset.type = type; loadCustomers(); }
     } catch (err) {
       console.error("Could not save student:", err);
       showToast("Couldn't save — try again");
